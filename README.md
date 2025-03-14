@@ -59,8 +59,8 @@
 
 # **TO-DO:**
 1. <ins>**Merge pull requests**</ins>
-2. Task tracker
-3. Refactor
+2. **Task tracker**
+3. **Refactor**
 - Enemy Health
 - Change Damage
 - Get All Upgrade Items
