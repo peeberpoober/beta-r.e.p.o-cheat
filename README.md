@@ -1,5 +1,5 @@
 # beta-r.e.p.o-cheat
-<sub>Made by D4rkks (and contributors)</sub>
+<sub>*Made by D4rkks (and contributors)* | **v1.1.1.1**</sub>
 
 # **FUNCTIONS:**
 
@@ -20,10 +20,10 @@
 - Item ESP
 - Extraction ESP
 - Player ESP
-  - Name ESP
-  - Distance ESP
-  - Health ESP
-  - 3D ESP Function (contribution from https://github.com/chadlrnsn)
+  - Name
+  - Distance
+  - Health
+  - 3D ESP (contribution from https://github.com/chadlrnsn)
     
 ### Combat
 - Revive Any Player
