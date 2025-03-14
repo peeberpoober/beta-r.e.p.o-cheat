@@ -58,7 +58,7 @@
 - Change Item Value
 
 # **TO-DO:**
-1. Merge pull requests
+1. __**Merge pull requests**__
 2. Task tracker
 3. Refactor
 - Enemy Health
