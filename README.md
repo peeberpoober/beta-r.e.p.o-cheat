@@ -60,7 +60,6 @@ Made by D4rkks (and contributors)
 - Merge pull requests
 - Task tracker
 - Refactor
-<br />
 - Enemy Health
 - Change Damage
 - Get All Upgrade Items
