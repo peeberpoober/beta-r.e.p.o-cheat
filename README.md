@@ -1,5 +1,5 @@
 # beta-r.e.p.o-cheat
-<sub>*Made by D4rkks (and contributors)* | **v1.1.1.1**</sub>
+<sub>*Made by D4rkks (and contributors)* | **v1.1.2**</sub>
 
 # **FUNCTIONS:**
 
@@ -10,6 +10,7 @@
 - Toggle Infinite Health
 - Toggle Infinity Stamina
 - Toggle God Mode
+- Toggle Noclip
 - Change Speed
 - Change Strength
 - Change Stamina Recharge Delay
@@ -18,6 +19,7 @@
 ### ESP
 - Enemy ESP
 - Item ESP
+  - Dead player head
 - Extraction ESP
 - Player ESP
   - Name
@@ -56,6 +58,8 @@
 - Teleport Item to You
 - Teleport All Items To You
 - Change Item Value
+
+### Hotkeys
 
 # **TO-DO:**
 1. <ins>**Merge pull requests**</ins>
