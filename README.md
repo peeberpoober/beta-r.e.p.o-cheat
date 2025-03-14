@@ -13,7 +13,7 @@
 - Change Speed
 - Change Strength
 - Change Stamina Recharge Delay
-- Change Stamina Recharge Rate
+- Change Stamina Recharge Rate  
   
 ### ESP
 - Enemy ESP
