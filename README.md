@@ -13,7 +13,7 @@
 - Change Speed
 - Change Strength
 - Change Stamina Recharge Delay
-- Change Stamina Recharge Rate  
+- Change Stamina Recharge Rate
   
 ### ESP
 - Enemy ESP
@@ -55,7 +55,7 @@
 - Item List
 - Teleport Item to You
 - Teleport All Items To You
-- Change Item Value  
+- Change Item Value
 
 # **TO-DO:**
 1. Merge pull requests
