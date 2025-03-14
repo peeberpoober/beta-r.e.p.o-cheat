@@ -60,7 +60,7 @@
 # **TO-DO:**
 1. Merge pull requests
 2. Task tracker
-3. Refactor/
+3. Refactor
 - Enemy Health
 - Change Damage
 - Get All Upgrade Items
