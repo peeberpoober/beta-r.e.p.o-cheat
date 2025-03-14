@@ -18,14 +18,21 @@
   
 ### ESP
 - Enemy ESP
+  - Name
+  - Distance
 - Item ESP
-  - Dead player head
+  - Name
+  - Distance
+  - Value
+  - 3D ESP (contribution from https://github.com/chadlrnsn)
+  - Dead Player Heads
 - Extraction ESP
-- Player ESP
+  - See idle/completed Extractions
+  - Distance
+- 2/3D Player ESP
   - Name
   - Distance
   - Health
-  - 3D ESP (contribution from https://github.com/chadlrnsn)
     
 ### Combat
 - Revive Any Player
