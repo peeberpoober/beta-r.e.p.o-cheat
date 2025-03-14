@@ -70,11 +70,11 @@
 
 # **TO-DO:**
 1. <ins>**Merge pull requests/local contributions**</ins>
-  - August's Chams
-  - LustWare's Force Mute/Raise Player Volume
-  - Add Noclip as Applicable Hotkey
-  - SheratoD's Improved Spawn Money Function
-  - August's Spawn Enemies
+  August's Chams
+  LustWare's Force Mute/Raise Player Volume
+  Add Noclip as Applicable Hotkey
+  SheratoD's Improved Spawn Money Function
+  August's Spawn Enemies
 2. **Task tracker**
 3. **Refactor**
 - Take/Give Host
