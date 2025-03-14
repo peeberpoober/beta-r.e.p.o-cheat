@@ -1,66 +1,71 @@
 # beta-r.e.p.o-cheat
-Made by D4rkks (and contributors)<br />
+Made by D4rkks (and contributors)
 
 # **FUNCTIONS:**
 - Player
-  - See Live/Dead Players<br />
-  - Heal Any Player<br />
-  - Damage Any Player<br />
-  - Toggle Infinite Health<br />
-  - Toggle Infinity Stamina<br />
-  - Toggle God Mode<br />
-  - Change Speed <br />
-  - Change Strength<br />
-  - Change Stamina Recharge Delay<br />
-  - Change Stamina Recharge Rate<br />
+  - See Live/Dead Players
+  - Heal Any Player
+  - Damage Any Player
+  - Toggle Infinite Health
+  - Toggle Infinity Stamina
+  - Toggle God Mode
+  - Change Speed
+  - Change Strength
+  - Change Stamina Recharge Delay
+  - Change Stamina Recharge Rate
+  
 - ESP
-  - Enemy ESP<br />
-  - Item ESP<br />
-  - Extraction ESP<br />
-  - Player ESP<br />
-    - Name ESP<br />
-    - Distance ESP<br />
-    - Health ESP<br />
-    - 3D ESP Function (contribution from https://github.com/chadlrnsn)<br />
+  - Enemy ESP
+  - Item ESP
+  - Extraction ESP
+  - Player ESP
+    - Name ESP
+    - Distance ESP
+    - Health ESP
+    - 3D ESP Function (contribution from https://github.com/chadlrnsn)
+    
 - Combat
-  - Revive Any Player<br />
-  - Kill Any Player<br />
-  - Send Any Player To Void<br />
-  - Teleport to Player<br />
-  - Teleport Player to You <br />
+  - Revive Any Player
+  - Kill Any Player
+  - Send Any Player To Void
+  - Teleport to Player
+  - Teleport Player to You
+  
 - Misc
-  - Spawn MoneyBag (almost 100% working)<br />
-  - Player RGB Skin (partial contribution from https://github.com/svind1er)<br />
-  - Set Flashlight Intensity<br />
-  - Set Crouch Delay<br />
-  - Set Crouch Speed<br />
-  - Set Jump Force<br />
-  - Set Custom Extra Jumps<br />
-  - Set Custom Gravity<br />
-  - Set Grab Range<br />
-  - Throw Strength<br />
-  - Slide Decay<br />
+  - Spawn MoneyBag (almost 100% working)
+  - Player RGB Skin (partial contribution from https://github.com/svind1er)
+  - Set Flashlight Intensity
+  - Set Crouch Delay
+  - Set Crouch Speed
+  - Set Jump Force
+  - Set Custom Extra Jumps
+  - Set Custom Gravity
+  - Set Grab Range
+  - Throw Strength
+  - Slide Decay
+  
 - Enemies
-  - Enemy List<br />
-  - Kill Selected Enemy<br />
-  - Kill All Enemies<br />
+  - Enemy List
+  - Kill Selected Enemy
+  - Kill All Enemies
   - Teleport Enemy To You
+    
 - Items (host-only for now)
-  - Item List<br />
-  - Teleport Item to You<br />
-  - Teleport All Items To You<br />
-  - Change Item Value<br />
+  - Item List
+  - Teleport Item to You
+  - Teleport All Items To You
+  - Change Item Value
 
 # **TO-DO:**
 - Merge pull requests
 - Task tracker
 - Refactor
 
-- Enemy Health<br />
-- Change Damage<br />
-- Get All Upgrade Items<br />
-- Change Upgrades Numbers<br />
-- Complete Mission<br />
-- Bypass Extraction Lock<br />
-- Spawning Enemies<br />
-- No Item Damage<br />
+- Enemy Health
+- Change Damage
+- Get All Upgrade Items
+- Change Upgrades Numbers
+- Complete Mission
+- Bypass Extraction Lock
+- Spawn Enemies
+- No Item Damage
