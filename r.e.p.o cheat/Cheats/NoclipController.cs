@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Reflection;
@@ -22,25 +22,34 @@ public static class NoclipController
 
     private static void InitializePlayerController()
     {
+        Debug.Log("[Noclip] Initializing PlayerController...");
+
         if (playerControllerType == null)
         {
-            Debug.LogError("PlayerController type not found.");
+            Debug.LogWarning("[Noclip] PlayerController type is null, trying to refresh...");
+            playerControllerType = Type.GetType("PlayerController, Assembly-CSharp");
+            if (playerControllerType == null)
+            {
+                Debug.LogError("[Noclip] ERROR: PlayerController type STILL NULL!");
+                return;
+            }
+        }
+
+        playerControllerInstance = GameObject.FindObjectOfType(playerControllerType);
+        if (playerControllerInstance == null)
+        {
+            Debug.LogError("[Noclip] ERROR: PlayerController instance not found in current scene.");
             return;
         }
 
-        if (playerControllerInstance == null)
-        {
-            playerControllerInstance = GameObject.FindObjectOfType(playerControllerType);
-            if (playerControllerInstance == null)
-            {
-                Debug.LogError("PlayerController instance not found in current scene.");
-                return;
-            }
-            // store the field links
-            rbField = playerControllerType.GetField("rb", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            customGravityField = playerControllerType.GetField("CustomGravity", BindingFlags.Public | BindingFlags.Instance);
-            antiGravityMethod = playerControllerType.GetMethod("AntiGravity", BindingFlags.Public | BindingFlags.Instance);
-        }
+        Debug.Log("[Noclip] PlayerController instance found!");
+
+        // Store the field links
+        rbField = playerControllerType.GetField("rb", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        customGravityField = playerControllerType.GetField("CustomGravity", BindingFlags.Public | BindingFlags.Instance);
+        antiGravityMethod = playerControllerType.GetMethod("AntiGravity", BindingFlags.Public | BindingFlags.Instance);
+
+        Debug.Log("[Noclip] PlayerController fields linked successfully.");
     }
 
     private static void InitializeInputActions()
