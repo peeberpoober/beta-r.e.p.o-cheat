@@ -31,6 +31,7 @@ namespace r.e.p.o_cheat
         public static bool draw3DItemEspBool = false;
         public static bool draw3DPlayerEspBool = false;
         public static bool drawExtractionPointEspBool = false;
+        
         public static GUIStyle nameStyle;
         public static GUIStyle valueStyle;
         public static GUIStyle enemyStyle;
@@ -48,12 +49,50 @@ namespace r.e.p.o_cheat
         public static bool showPlayerNames = true;
         public static bool showPlayerDistance = true;
         public static bool showPlayerHP = true;
-
+        private static Camera cachedCamera;
+        private static Material visibleMaterial;
+        private static Material hiddenMaterial;
+        private static Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
+        private static bool cachedOriginalCamera = false;
+        private static float originalFarClipPlane = 0f;
+        private static DepthTextureMode originalDepthTextureMode = DepthTextureMode.None;
+        private static bool originalOcclusionCulling = false;
+        
         private static List<PlayerData> playerDataList = new List<PlayerData>();
         private static float lastPlayerUpdateTime = 0f;
         private static float playerUpdateInterval = 1f;
         private static Dictionary<int, int> playerHealthCache = new Dictionary<int, int>();
         private const float maxEspDistance = 100f;
+
+        private static bool _drawChamsBool = false;
+        public static bool drawChamsBool
+        {
+            get => _drawChamsBool;
+            set
+            {
+                if (value != _drawChamsBool)
+                {
+                    _drawChamsBool = value;
+                    if (!value)
+                    {
+                        foreach (var renderer in originalMaterials.Keys)
+                        {
+                            if (renderer != null)
+                            {
+                                renderer.materials = originalMaterials[renderer];
+                            }
+                        }
+
+                        if(cachedOriginalCamera)
+                        {
+                            cachedCamera.farClipPlane = originalFarClipPlane;
+                            cachedCamera.depthTextureMode = originalDepthTextureMode;
+                            cachedCamera.useOcclusionCulling = originalOcclusionCulling;
+                        }
+                    }
+                }
+            }
+        }
 
         public class PlayerData
         {
@@ -539,10 +578,10 @@ namespace r.e.p.o_cheat
             resultBounds.Expand(0.1f);
             return resultBounds;
         }
-        public static void DrawESP()
+public static void DrawESP()
         {
             InitializeStyles();
-            if (!drawEspBool && !drawItemEspBool && !drawExtractionPointEspBool && !drawPlayerEspBool && !draw3DPlayerEspBool && !draw3DItemEspBool) return;
+            if (!drawEspBool && !drawItemEspBool && !drawExtractionPointEspBool && !drawPlayerEspBool && !draw3DPlayerEspBool && !draw3DItemEspBool && !drawChamsBool) return;
             if (localPlayer == null)
             {
                 UpdateLocalPlayer();
@@ -550,7 +589,7 @@ namespace r.e.p.o_cheat
             if (Time.time - lastUpdateTime > updateInterval)
             {
                 UpdatePlayerDataList();
-                if (drawEspBool || drawItemEspBool || drawExtractionPointEspBool || drawPlayerEspBool || draw3DPlayerEspBool || draw3DItemEspBool)
+                if (drawEspBool || drawItemEspBool || drawExtractionPointEspBool || drawPlayerEspBool || draw3DPlayerEspBool || draw3DItemEspBool || drawChamsBool)
                 {
                     UpdateLists();
                 }
@@ -565,7 +604,7 @@ namespace r.e.p.o_cheat
                 cachedCamera = Camera.main;
                 if (cachedCamera == null)
                 {
-                    Hax2.Log1("Camera.main não encontrada!");
+                    Debug.Log("Camera.main not found!");
                     return;
                 }
             }
@@ -573,6 +612,106 @@ namespace r.e.p.o_cheat
             scaleX = (float)Screen.width / cachedCamera.pixelWidth;
             scaleY = (float)Screen.height / cachedCamera.pixelHeight;
 
+            if (drawChamsBool)
+            {
+                if (!visibleMaterial || !hiddenMaterial)
+                {
+                    Shader chamsShader = Shader.Find("Hidden/Internal-Colored"); // Credits to https://github.dev/IcyRelic/LethalMenu/tree/master/LethalMenu/Cheats
+                    if (chamsShader != null)
+                    {
+                        Debug.Log("Found ChamsShader, creating material");
+                        hiddenMaterial = new Material(chamsShader);
+                        hiddenMaterial.SetInt("_SrcBlend", 5);
+                        hiddenMaterial.SetInt("_DstBlend", 10);
+                        hiddenMaterial.SetInt("_Cull", 0);
+                        hiddenMaterial.SetInt("_ZTest", 8);
+                        hiddenMaterial.SetInt("_ZWrite", 0);
+                        hiddenMaterial.SetColor("_Color", new Color(1f, 0.08f, 0.58f, 1f));
+                        hiddenMaterial.renderQueue = 4000;
+                        hiddenMaterial.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                        hiddenMaterial.EnableKeyword("_EMISSION");
+
+                        visibleMaterial = new Material(chamsShader);
+                        visibleMaterial.SetInt("_SrcBlend", 5);
+                        visibleMaterial.SetInt("_DstBlend", 10);
+                        visibleMaterial.SetInt("_Cull", 0);
+                        visibleMaterial.SetInt("_ZTest", 4);
+                        visibleMaterial.SetInt("_ZWrite", 0);
+                        visibleMaterial.SetColor("_Color", new Color(0f, 1f, 0.2f, 1f));
+                        visibleMaterial.renderQueue = 4001;
+                        visibleMaterial.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                        visibleMaterial.EnableKeyword("_EMISSION");
+                    }
+                    else
+                    {
+                        Debug.Log("ChamsShader not found!");
+                    }
+                }
+
+
+                Camera mainCamera = Camera.main;
+                if (mainCamera != null)
+                {
+                    if (!cachedOriginalCamera)
+                    {
+                        originalFarClipPlane = mainCamera.farClipPlane;
+                        originalDepthTextureMode = mainCamera.depthTextureMode;
+                        originalOcclusionCulling = mainCamera.useOcclusionCulling;
+                        cachedOriginalCamera = true;
+                    }
+
+                    mainCamera.farClipPlane = 500f;
+
+                    mainCamera.depthTextureMode = DepthTextureMode.None;
+
+                    mainCamera.useOcclusionCulling = false;
+                }
+
+                foreach (var enemyInstance in enemyList)
+                {
+                    if (enemyInstance == null || !enemyInstance.gameObject.activeInHierarchy || enemyInstance.CenterTransform == null) continue;
+
+                    var allRenderers = new List<Renderer>();
+
+                    var enemyParent = enemyInstance.GetComponentInParent(Type.GetType("EnemyParent, Assembly-CSharp"));
+
+                    var standardRenderers = enemyParent.GetComponentsInChildren<Renderer>(true);
+                    if (standardRenderers != null && standardRenderers.Length > 0)
+                        allRenderers.AddRange(standardRenderers);
+
+                    var skinnedRenderers = enemyParent.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                    if (skinnedRenderers != null && skinnedRenderers.Length > 0)
+                        allRenderers.AddRange(skinnedRenderers);
+
+                    if (allRenderers.Count > 0)
+                    {
+                        //Debug.Log($"Found {allRenderers.Count} renderers for enemyInstance!");
+                        foreach (var renderer in allRenderers)
+                        {
+                            if (renderer == null || !renderer.gameObject.activeInHierarchy) continue;
+
+                            //renderer.enabled = true;
+
+                            if (!originalMaterials.ContainsKey(renderer))
+                            {
+                                originalMaterials[renderer] = renderer.materials;
+                            }
+
+                            Material[] newMats = new Material[2];
+                            newMats[0] = hiddenMaterial;
+                            newMats[1] = visibleMaterial;
+
+                            renderer.materials = newMats;
+
+                            //Debug.Log($"Applied chams shader to {renderer.gameObject.name}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log("No renderers found for enemyInstance!");
+                    }
+                }
+            }
             if (drawEspBool)
             {
                 foreach (var enemyInstance in enemyList)

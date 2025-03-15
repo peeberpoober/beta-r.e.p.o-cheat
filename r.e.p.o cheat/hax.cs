@@ -1283,9 +1283,7 @@ namespace r.e.p.o_cheat
                 initialized = true;
             }
 
-            if (DebugCheats.drawEspBool || DebugCheats.drawItemEspBool || DebugCheats.drawExtractionPointEspBool ||
-                DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool || DebugCheats.draw3DItemEspBool)
-                DebugCheats.DrawESP();
+            if (DebugCheats.drawEspBool || DebugCheats.drawItemEspBool || DebugCheats.drawExtractionPointEspBool || DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool || DebugCheats.draw3DItemEspBool || DebugCheats.drawChamsBool) DebugCheats.DrawESP();
 
             GUI.Label(new Rect(10, 10, 200, 30), $"D.A.R.K CHEAT | {menuToggleKey} - MENU");
             GUI.Label(new Rect(230, 10, 200, 30), "MADE BY Github/D4rkks");
@@ -1469,30 +1467,32 @@ namespace r.e.p.o_cheat
                             DebugCheats.showEnemyDistance = UIHelper.Checkbox("Show Enemy Distance", DebugCheats.showEnemyDistance, menuX + 50, menuY + 155);
                         }
 
-                        DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, menuX + 30, menuY + 185);
+                        DebugCheats.drawChamsBool = UIHelper.Checkbox("Enemy Chams", DebugCheats.drawChamsBool, menuX + 30, menuY + 175);
+
+                        DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, menuX + 30, menuY + 205);
                         if (DebugCheats.drawItemEspBool)
                         {
-                            DebugCheats.showItemNames = UIHelper.Checkbox("Show Item Names", DebugCheats.showItemNames, menuX + 50, menuY + 205);
-                            DebugCheats.showItemDistance = UIHelper.Checkbox("Show Item Distance", DebugCheats.showItemDistance, menuX + 50, menuY + 235);
-                            DebugCheats.showItemValue = UIHelper.Checkbox("Show Item Value", DebugCheats.showItemValue, menuX + 50, menuY + 265);
-                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Item ESP", DebugCheats.draw3DItemEspBool, menuX + 50, menuY + 295);
-                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Show Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, menuY + 325);
+                            DebugCheats.showItemNames = UIHelper.Checkbox("Show Item Names", DebugCheats.showItemNames, menuX + 50, menuY + 235);
+                            DebugCheats.showItemDistance = UIHelper.Checkbox("Show Item Distance", DebugCheats.showItemDistance, menuX + 50, menuY + 265);
+                            DebugCheats.showItemValue = UIHelper.Checkbox("Show Item Value", DebugCheats.showItemValue, menuX + 50, menuY + 295);
+                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Item ESP", DebugCheats.draw3DItemEspBool, menuX + 50, menuY + 325);
+                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Show Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, menuY + 355);
                         }
 
-                        DebugCheats.drawExtractionPointEspBool = UIHelper.Checkbox("Extraction ESP", DebugCheats.drawExtractionPointEspBool, menuX + 30, menuY + 355);
+                        DebugCheats.drawExtractionPointEspBool = UIHelper.Checkbox("Extraction ESP", DebugCheats.drawExtractionPointEspBool, menuX + 30, menuY + 385);
                         if (DebugCheats.drawExtractionPointEspBool)
                         {
-                            DebugCheats.showExtractionNames = UIHelper.Checkbox("Show Extraction Names", DebugCheats.showExtractionNames, menuX + 50, menuY + 385);
-                            DebugCheats.showExtractionDistance = UIHelper.Checkbox("Show Extraction Distance", DebugCheats.showExtractionDistance, menuX + 50, menuY + 420);
+                            DebugCheats.showExtractionNames = UIHelper.Checkbox("Show Extraction Names", DebugCheats.showExtractionNames, menuX + 50, menuY + 420);
+                            DebugCheats.showExtractionDistance = UIHelper.Checkbox("Show Extraction Distance", DebugCheats.showExtractionDistance, menuX + 50, menuY + 450);
                         }
 
-                        DebugCheats.drawPlayerEspBool = UIHelper.Checkbox("2D Player ESP", DebugCheats.drawPlayerEspBool, menuX + 30, menuY + 450);
-                        DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("3D Player ESP", DebugCheats.draw3DPlayerEspBool, menuX + 30, menuY + 480);
+                        DebugCheats.drawPlayerEspBool = UIHelper.Checkbox("2D Player ESP", DebugCheats.drawPlayerEspBool, menuX + 30, menuY + 480);
+                        DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("3D Player ESP", DebugCheats.draw3DPlayerEspBool, menuX + 30, menuY + 510);
                         if (DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool)
                         {
-                            DebugCheats.showPlayerNames = UIHelper.Checkbox("Show Player Names", DebugCheats.showPlayerNames, menuX + 50, menuY + 510);
-                            DebugCheats.showPlayerDistance = UIHelper.Checkbox("Show Player Distance", DebugCheats.showPlayerDistance, menuX + 50, menuY + 540);
-                            DebugCheats.showPlayerHP = UIHelper.Checkbox("Show Player HP", DebugCheats.showPlayerHP, menuX + 50, menuY + 570);
+                            DebugCheats.showPlayerNames = UIHelper.Checkbox("Show Player Names", DebugCheats.showPlayerNames, menuX + 50, menuY + 540);
+                            DebugCheats.showPlayerDistance = UIHelper.Checkbox("Show Player Distance", DebugCheats.showPlayerDistance, menuX + 50, menuY + 570);
+                            DebugCheats.showPlayerHP = UIHelper.Checkbox("Show Player HP", DebugCheats.showPlayerHP, menuX + 50, menuY + 600);
                         }
                         break;
 
