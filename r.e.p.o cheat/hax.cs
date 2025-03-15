@@ -1336,7 +1336,7 @@ namespace r.e.p.o_cheat
                 Rect titleRect = new Rect(menuX, menuY, 600, titleBarHeight);
 
                 GUI.Box(menuRect, "", menuStyle);
-                UIHelper.Begin("D.A.R.K. Menu 1.1.1.2", menuX, menuY, 600, 800, 30, 30, 10);
+                UIHelper.Begin("D.A.R.K. Menu 1.1.2", menuX, menuY, 600, 800, 30, 30, 10);
 
                 if (Event.current.type == EventType.MouseDown && titleRect.Contains(Event.current.mousePosition))
                 {
