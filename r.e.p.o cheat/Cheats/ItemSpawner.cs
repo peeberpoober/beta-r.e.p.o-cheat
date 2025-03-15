@@ -1,4 +1,10 @@
-﻿public static void SpawnItem(Vector3 position, int value = 45000)
+﻿using UnityEngine;
+ using Photon.Pun;
+ using System.Collections.Generic;
+ 
+ public class ItemSpawner : MonoBehaviourPunCallbacks
+ {
+     public static void SpawnItem(Vector3 position, int value = 45000)
     {
         try
         {
