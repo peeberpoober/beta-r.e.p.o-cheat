@@ -233,18 +233,22 @@ namespace r.e.p.o_cheat
         private List<HotkeyAction> availableActions = new List<HotkeyAction>();
         private int selectedHotkeySlot = 0;
         private bool configuringHotkey = false;
-        private KeyCode[] defaultHotkeys = new KeyCode[12];
-        private KeyCode pendingHotkey = KeyCode.None;
-        private Vector2 actionSelectorScroll = Vector2.zero;
+        private bool configuringSystemKey = false;
+        private bool waitingForAnyKey = false;
         private bool showingActionSelector = false;
+        private int systemKeyConfigIndex = -1; // 0=menu, 1=reload, 2=unload, 3=debug
+        private KeyCode[] defaultHotkeys = new KeyCode[12];
+        private Vector2 actionSelectorScroll = Vector2.zero;
+        private Vector2 hotkeyScrollPosition = Vector2.zero;
         private int currentHotkeySlot = -1;
+        private string keyAssignmentError = "";
+        private float errorMessageTime = 0f;
+        private const float ERROR_MESSAGE_DURATION = 3f; // how long to show duplicate hotkey error message
         private KeyCode currentHotkeyKey = KeyCode.None;
-        private HashSet<KeyCode> reservedKeys = new HashSet<KeyCode> {
-        KeyCode.Delete,
-        KeyCode.F5,
-        KeyCode.F10,
-        KeyCode.F12 
-    };
+        private KeyCode menuToggleKey = KeyCode.Delete;
+        private KeyCode reloadKey = KeyCode.F5;
+        private KeyCode unloadKey = KeyCode.F10;
+        private KeyCode debugMenuKey = KeyCode.F12;
 
         private float actionSelectorX = 300f;
         private float actionSelectorY = 200f;
@@ -252,6 +256,8 @@ namespace r.e.p.o_cheat
         private Vector2 dragOffsetActionSelector;
         private GUIStyle overlayDimStyle;
         private GUIStyle actionSelectorBoxStyle;
+        private static bool cursorStateInitialized = false;
+
 
         public void Start()
         {
@@ -278,6 +284,7 @@ namespace r.e.p.o_cheat
             UIHelper.InitSliderStyles();
             UpdateCursorState();
             InitializeHotkeyActions();
+            LoadHotkeySettings();
 
             DebugCheats.texture2 = new Texture2D(2, 2, TextureFormat.ARGB32, false);
             DebugCheats.texture2.SetPixels(new[] { Color.red, Color.red, Color.red, Color.red });
@@ -345,7 +352,7 @@ namespace r.e.p.o_cheat
                 lastItemListUpdateTime = Time.time;
             }
 
-            if (Input.GetKeyDown(KeyCode.Delete))
+            if (Input.GetKeyDown(menuToggleKey))
             {
                 showMenu = !showMenu;
                 Debug.Log("MENU " + showMenu);
@@ -353,9 +360,9 @@ namespace r.e.p.o_cheat
                 UpdateCursorState();
             }
 
-            if (Input.GetKeyDown(KeyCode.F5)) Start();
+            if (Input.GetKeyDown(reloadKey)) Start();
 
-            if (Input.GetKeyDown(KeyCode.F10))
+            if (Input.GetKeyDown(unloadKey))
             {
                 showMenu = false;
                 TryUnlockCamera();
@@ -363,12 +370,11 @@ namespace r.e.p.o_cheat
                 Loader.UnloadCheat();
             }
 
-            if (Input.GetKeyDown(KeyCode.F12))
+            if (Input.GetKeyDown(debugMenuKey))
             {
                 showDebugMenu = !showDebugMenu;
             }
 
-            // Remove outdated logs efficiently
             debugLogMessages.RemoveAll(msg => Time.time - msg.timestamp > 3f);
 
             if (configuringHotkey)
@@ -377,26 +383,112 @@ namespace r.e.p.o_cheat
                 {
                     if (Input.GetKeyDown(key) && key != KeyCode.Escape)
                     {
-                        if (reservedKeys.Contains(key))
+                        if (key == menuToggleKey || key == reloadKey || key == unloadKey || key == debugMenuKey)
                         {
-                            // key is reserved, show warning in the debug log as users already have a red forewarning in GUI
-                            Log1($"Cannot assign {key} as hotkey - it's reserved for cheat operation!");
+                            keyAssignmentError = $"Cannot assign {key} as hotkey - it's already used as a system key!";
+                            errorMessageTime = Time.time;
+                            Log1(keyAssignmentError);
                             configuringHotkey = false;
-                            pendingHotkey = KeyCode.None;
+                        }
+                        else if (hotkeyBindings.ContainsKey(key))
+                        {
+                            keyAssignmentError = $"Cannot assign {key} as hotkey - it's already used for another action!";
+                            errorMessageTime = Time.time;
+                            Log1(keyAssignmentError);
+                            configuringHotkey = false;
                         }
                         else
                         {
-                            pendingHotkey = key;
+                            KeyCode oldKey = defaultHotkeys[selectedHotkeySlot];
+                            if (oldKey != KeyCode.None && hotkeyBindings.ContainsKey(oldKey))
+                            {
+                                Action oldAction = hotkeyBindings[oldKey];
+                                hotkeyBindings.Remove(oldKey);
+
+                                hotkeyBindings[key] = oldAction;
+                            }
+                            else
+                            {
+                                hotkeyBindings[key] = null;
+                            }
+
+                            defaultHotkeys[selectedHotkeySlot] = key;
+
+                            Log1($"Hotkey set to: {key}");
                             configuringHotkey = false;
-                            Log1("hotkey set to: " + pendingHotkey);
                         }
                         break;
                     }
                     else if (Input.GetKeyDown(KeyCode.Escape))
                     {
                         configuringHotkey = false;
-                        pendingHotkey = KeyCode.None;
-                        Log1("hotkey configuration canceled");
+                        Log1("Hotkey configuration canceled");
+                        break;
+                    }
+                }
+            }
+            if (configuringSystemKey)
+            {
+                foreach (KeyCode key in Enum.GetValues(typeof(KeyCode)))
+                {
+                    if (Input.GetKeyDown(key) && key != KeyCode.Escape)
+                    {
+                        bool isUsed = false;
+                        string conflictType = "";
+                        waitingForAnyKey = false;
+
+                        if (key == menuToggleKey && systemKeyConfigIndex != 0)
+                        {
+                            isUsed = true;
+                            conflictType = "Menu Toggle";
+                        }
+                        else if (key == reloadKey && systemKeyConfigIndex != 1)
+                        {
+                            isUsed = true;
+                            conflictType = "Reload";
+                        }
+                        else if (key == unloadKey && systemKeyConfigIndex != 2)
+                        {
+                            isUsed = true;
+                            conflictType = "Unload";
+                        }
+                        else if (key == debugMenuKey && systemKeyConfigIndex != 3)
+                        {
+                            isUsed = true;
+                            conflictType = "Debug Menu";
+                        }
+                        else if (hotkeyBindings.ContainsKey(key))
+                        {
+                            isUsed = true;
+                            conflictType = "action hotkey";
+                        }
+
+                        if (isUsed)
+                        {
+                            keyAssignmentError = $"Cannot assign {key} - already used as {conflictType}!";
+                            errorMessageTime = Time.time;
+                            Log1(keyAssignmentError);
+                            configuringSystemKey = false;
+                        }
+                        else
+                        {
+                            switch (systemKeyConfigIndex)
+                            {
+                                case 0: menuToggleKey = key; break;
+                                case 1: reloadKey = key; break;
+                                case 2: unloadKey = key; break;
+                                case 3: debugMenuKey = key; break;
+                            }
+                            Log1($"{GetSystemKeyName(systemKeyConfigIndex)} key set to: {key}");
+                            configuringSystemKey = false;
+                            SaveHotkeySettings();
+                        }
+                        break;
+                    }
+                    else if (Input.GetKeyDown(KeyCode.Escape))
+                    {
+                        configuringSystemKey = false;
+                        Log1($"{GetSystemKeyName(systemKeyConfigIndex)} key configuration canceled");
                         break;
                     }
                 }
@@ -476,6 +568,16 @@ namespace r.e.p.o_cheat
                 DebugCheats.valuableObjects.AddRange(valuableArray);
             }
 
+
+            var playerDeathHeadArray = UnityEngine.Object.FindObjectsOfType(Type.GetType("PlayerDeathHead, Assembly-CSharp"));
+            if (playerDeathHeadArray != null)
+            {
+                DebugCheats.valuableObjects.AddRange(playerDeathHeadArray);
+            }
+
+            itemList = ItemTeleport.GetItemList();
+            Hax2.Log1($"Lista de itens atualizada: {itemList.Count} itens encontrados (incluindo ValuableObject e PlayerDeathHead).");
+
             var Array = UnityEngine.Object.FindObjectsOfType(Type.GetType(", Assembly-CSharp"));
             if (Array != null)
             {
@@ -484,6 +586,7 @@ namespace r.e.p.o_cheat
 
             itemList = ItemTeleport.GetItemList();
             Hax2.Log1($"Lista de itens atualizada: {itemList.Count} itens encontrados (incluindo ValuableObject e ).");
+
         }
 
         private void UpdateEnemyList()
@@ -689,6 +792,7 @@ namespace r.e.p.o_cheat
                     hotkeyBindings[currentHotkeyKey] = availableActions[i].Action;
                     Log1("assigned " + availableActions[i].Name + " to " + currentHotkeyKey);
                     showingActionSelector = false;
+                    SaveHotkeySettings();
                 }
 
                 if (actionRect.Contains(Event.current.mousePosition))
@@ -701,6 +805,62 @@ namespace r.e.p.o_cheat
             GUI.EndScrollView();
         }
 
+        private void SaveHotkeySettings()
+        {
+            PlayerPrefs.SetInt("MenuToggleKey", (int)menuToggleKey);
+            PlayerPrefs.SetInt("ReloadKey", (int)reloadKey);
+            PlayerPrefs.SetInt("UnloadKey", (int)unloadKey);
+            PlayerPrefs.SetInt("DebugMenuKey", (int)debugMenuKey);
+
+            for (int i = 0; i < defaultHotkeys.Length; i++)
+            {
+                PlayerPrefs.SetInt($"HotkeyKey_{i}", (int)defaultHotkeys[i]);
+
+                int actionIndex = -1;
+                if (defaultHotkeys[i] != KeyCode.None && hotkeyBindings.ContainsKey(defaultHotkeys[i]))
+                {
+                    var action = hotkeyBindings[defaultHotkeys[i]];
+                    if (action != null)
+                    {
+                        for (int j = 0; j < availableActions.Count; j++)
+                        {
+                            if (availableActions[j].Action == action)
+                            {
+                                actionIndex = j;
+                                break;
+                            }
+                        }
+                    }
+                }
+                PlayerPrefs.SetInt($"HotkeyAction_{i}", actionIndex);
+            }
+
+            PlayerPrefs.Save();
+            Log1("Hotkey settings saved");
+        }
+
+        private void LoadHotkeySettings()
+        {
+            menuToggleKey = (KeyCode)PlayerPrefs.GetInt("MenuToggleKey", (int)KeyCode.Delete);
+            reloadKey = (KeyCode)PlayerPrefs.GetInt("ReloadKey", (int)KeyCode.F5);
+            unloadKey = (KeyCode)PlayerPrefs.GetInt("UnloadKey", (int)KeyCode.F10);
+            debugMenuKey = (KeyCode)PlayerPrefs.GetInt("DebugMenuKey", (int)KeyCode.F12);
+
+            hotkeyBindings.Clear();
+
+            for (int i = 0; i < defaultHotkeys.Length; i++)
+            {
+                defaultHotkeys[i] = (KeyCode)PlayerPrefs.GetInt($"HotkeyKey_{i}", (int)KeyCode.None);
+                int actionIndex = PlayerPrefs.GetInt($"HotkeyAction_{i}", -1);
+
+                if (defaultHotkeys[i] != KeyCode.None && actionIndex >= 0 && actionIndex < availableActions.Count)
+                {
+                    hotkeyBindings[defaultHotkeys[i]] = availableActions[actionIndex].Action;
+                }
+            }
+
+            Log1("Hotkey settings loaded");
+        }
 
         private class HotkeyAction
         {
@@ -712,6 +872,26 @@ namespace r.e.p.o_cheat
                 Name = name;
                 Action = action;
                 Description = description;
+            }
+        }
+
+        private void StartConfigureSystemKey(int index)
+        {
+            configuringSystemKey = true;
+            systemKeyConfigIndex = index;
+            waitingForAnyKey = true;
+            Log1($"Press any key to set {GetSystemKeyName(index)}...");
+        }
+
+        private string GetSystemKeyName(int index)
+        {
+            switch (index)
+            {
+                case 0: return "Menu Toggle";
+                case 1: return "Reload";
+                case 2: return "Unload";
+                case 3: return "Debug Menu";
+                default: return "Unknown";
             }
         }
 
@@ -901,10 +1081,9 @@ namespace r.e.p.o_cheat
         {
             if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count)
             {
-                Log1("Invalid player index!");
+                Log1("Índice de jogador inválido!");
                 return;
             }
-
             var selectedPlayer = playerList[selectedPlayerIndex];
             if (selectedPlayer == null)
             {
@@ -926,6 +1105,7 @@ namespace r.e.p.o_cheat
                         if (inExtractionPointField != null)
                         {
                             inExtractionPointField.SetValue(playerDeathHeadInstance, true);
+                            Log1("Campo 'inExtractionPoint' definido como true.");
                             Log1("'inExtractionPoint' field set to true.");
                         }
                         if (reviveMethod != null)
@@ -951,7 +1131,6 @@ namespace r.e.p.o_cheat
 
                         int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
                         Log1($"Max health retrieved: {maxHealth}");
-
                         if (healthField != null)
                         {
                             healthField.SetValue(playerHealthInstance, maxHealth);
@@ -968,7 +1147,7 @@ namespace r.e.p.o_cheat
                     }
                     else Log1("PlayerHealth instance is null, health restoration failed.");
                 }
-                Log1("'playerHealth' field not found, healing not performed.");
+                else Log1("'playerHealth' field not found, healing not performed.");
             }
             catch (Exception e)
             {
@@ -1108,8 +1287,8 @@ namespace r.e.p.o_cheat
                 DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool || DebugCheats.draw3DItemEspBool)
                 DebugCheats.DrawESP();
 
-            GUI.Label(new Rect(10, 10, 200, 30), "D.A.R.K CHEAT | DEL - MENU");
-            GUI.Label(new Rect(198, 10, 200, 30), "MADE BY Github/D4rkks");
+            GUI.Label(new Rect(10, 10, 200, 30), $"D.A.R.K CHEAT | {menuToggleKey} - MENU");
+            GUI.Label(new Rect(230, 10, 200, 30), "MADE BY Github/D4rkks");
 
             // handle modal first
             if (showingActionSelector)
@@ -1513,27 +1692,95 @@ namespace r.e.p.o_cheat
                         break;
 
                     case MenuCategory.Hotkeys:
+                        Rect viewRect = new Rect(menuX + 20, menuY + 95, 560, 620);
+                        Rect contentRect = new Rect(0, 0, 540, 1200);
+
+                        if (!string.IsNullOrEmpty(keyAssignmentError) && Time.time - errorMessageTime < ERROR_MESSAGE_DURATION)
+                        {
+                            GUIStyle errorStyle = new GUIStyle(GUI.skin.label)
+                            {
+                                fontSize = 14,
+                                fontStyle = FontStyle.Bold,
+                                normal = { textColor = Color.red },
+                                alignment = TextAnchor.MiddleCenter
+                            };
+
+                            GUI.Label(new Rect(menuX + 20, menuY + 95, 560, 25), keyAssignmentError, errorStyle);
+
+                            viewRect.y += 30;
+                            viewRect.height -= 30;
+                        }
+
+                        hotkeyScrollPosition = GUI.BeginScrollView(viewRect, hotkeyScrollPosition, contentRect);
+
+                        float yPos = 10;
+
                         GUIStyle headerStyle = new GUIStyle(GUI.skin.label)
                         {
                             fontSize = 16,
                             fontStyle = FontStyle.Bold,
                             normal = { textColor = Color.white }
                         };
-                        GUI.Label(new Rect(menuX + 70, menuY + 95, 540, 25), "Hotkey Configuration", headerStyle);
 
-                        GUI.Label(new Rect(menuX + 70, menuY + 120, 540, 20), "How to set up a hotkey:", instructionStyle);
-                        GUI.Label(new Rect(menuX + 90, menuY + 140, 540, 20), "1. Click on a key field → press desired key", instructionStyle);
-                        GUI.Label(new Rect(menuX + 90, menuY + 160, 540, 20), "2. Click on action field → select function", instructionStyle);
+                        GUI.Label(new Rect(50, yPos, 540, 25), "Hotkey Configuration", headerStyle);
+                        yPos += 30;
+
+                        GUI.Label(new Rect(50, yPos, 540, 20), "How to set up a hotkey:", instructionStyle);
+                        yPos += 20;
+                        GUI.Label(new Rect(70, yPos, 540, 20), "1. Click on a key field → press desired key", instructionStyle);
+                        yPos += 20;
+                        GUI.Label(new Rect(70, yPos, 540, 20), "2. Click on action field → select function", instructionStyle);
+                        yPos += 25;
 
                         GUIStyle warningStyle = new GUIStyle(GUI.skin.label)
                         {
                             fontSize = 12,
-                            normal = { textColor = Color.red }
+                            normal = { textColor = Color.yellow }
                         };
-                        GUI.Label(new Rect(menuX + 70, menuY + 185, 540, 20),
-                            "System keys (DEL, F5, F10, F12) cannot be used as hotkeys", warningStyle);
+                        GUI.Label(new Rect(50, yPos, 540, 20), "Warning: Ensure each key is only assigned to one action", warningStyle);
+                        yPos += 30;
 
-                        float yPos = menuY + 215;
+                        GUI.Label(new Rect(10, yPos, 540, 25), "System Keys", headerStyle);
+                        yPos += 30;
+
+                        string menuToggleKeyText = (configuringSystemKey && systemKeyConfigIndex == 0 && waitingForAnyKey)
+                            ? "Press any key..." : menuToggleKey.ToString();
+                        GUI.Label(new Rect(10, yPos, 150, 30), "Menu Toggle:");
+                        if (GUI.Button(new Rect(170, yPos, 290, 30), menuToggleKeyText))
+                        {
+                            StartConfigureSystemKey(0);
+                        }
+                        yPos += 40;
+
+                        string reloadKeyText = (configuringSystemKey && systemKeyConfigIndex == 1 && waitingForAnyKey)
+                            ? "Press any key..." : reloadKey.ToString();
+                        GUI.Label(new Rect(10, yPos, 150, 30), "Reload:");
+                        if (GUI.Button(new Rect(170, yPos, 290, 30), reloadKeyText))
+                        {
+                            StartConfigureSystemKey(1);
+                        }
+                        yPos += 40;
+
+                        string unloadKeyText = (configuringSystemKey && systemKeyConfigIndex == 2 && waitingForAnyKey)
+                            ? "Press any key..." : unloadKey.ToString();
+                        GUI.Label(new Rect(10, yPos, 150, 30), "Unload:");
+                        if (GUI.Button(new Rect(170, yPos, 290, 30), unloadKeyText))
+                        {
+                            StartConfigureSystemKey(2);
+                        }
+                        yPos += 40;
+
+                        string debugMenuKeyText = (configuringSystemKey && systemKeyConfigIndex == 3 && waitingForAnyKey)
+                            ? "Press any key..." : debugMenuKey.ToString();
+                        GUI.Label(new Rect(10, yPos, 150, 30), "Debug Menu:");
+                        if (GUI.Button(new Rect(170, yPos, 290, 30), debugMenuKeyText))
+                        {
+                            StartConfigureSystemKey(3);
+                        }
+                        yPos += 50;
+
+                        GUI.Label(new Rect(10, yPos, 540, 25), "Action Hotkeys", headerStyle);
+                        yPos += 30;
 
                         for (int i = 0; i < 12; i++)
                         {
@@ -1557,18 +1804,18 @@ namespace r.e.p.o_cheat
                                 }
                             }
 
-                            Rect slotRect = new Rect(menuX + 30, yPos, 150, 30);
+                            Rect slotRect = new Rect(10, yPos, 150, 30);
                             bool isSelected = selectedHotkeySlot == i && configuringHotkey;
 
                             if (GUI.Button(slotRect, isSelected ? "Press any key..." : keyText))
                             {
                                 selectedHotkeySlot = i;
                                 configuringHotkey = true;
-                                pendingHotkey = KeyCode.None;
                                 Log1("configuring hotkey for slot " + (i + 1));
+                                SaveHotkeySettings();
                             }
 
-                            Rect actionRect = new Rect(menuX + 190, yPos, 290, 30);
+                            Rect actionRect = new Rect(170, yPos, 290, 30);
                             if (GUI.Button(actionRect, actionName))
                             {
                                 selectedHotkeySlot = i;
@@ -1582,7 +1829,7 @@ namespace r.e.p.o_cheat
                                 }
                             }
 
-                            Rect clearRect = new Rect(menuX + 490, yPos, 80, 30);
+                            Rect clearRect = new Rect(470, yPos, 60, 30);
                             if (GUI.Button(clearRect, "Clear") && currentKey != KeyCode.None)
                             {
                                 if (hotkeyBindings.ContainsKey(currentKey))
@@ -1591,54 +1838,13 @@ namespace r.e.p.o_cheat
                                 }
                                 defaultHotkeys[i] = KeyCode.None;
                                 Log1("cleared hotkey binding for slot " + (i + 1));
+                                SaveHotkeySettings();
                             }
 
                             yPos += 40;
                         }
 
-                        if (pendingHotkey != KeyCode.None)
-                        {
-                            KeyCode oldKey = defaultHotkeys[selectedHotkeySlot];
-                            Action currentAction = null;
-
-                            if (oldKey != KeyCode.None && hotkeyBindings.ContainsKey(oldKey))
-                            {
-                                currentAction = hotkeyBindings[oldKey];
-                                hotkeyBindings.Remove(oldKey);
-                            }
-
-                            defaultHotkeys[selectedHotkeySlot] = pendingHotkey;
-
-                            if (hotkeyBindings.ContainsKey(pendingHotkey))
-                            {
-                                Log1("Key already assigned. Reassigning.");
-
-                                if (currentAction != null)
-                                {
-                                    Action existingAction = hotkeyBindings[pendingHotkey];
-                                    hotkeyBindings[pendingHotkey] = currentAction;
-
-                                    for (int i = 0; i < defaultHotkeys.Length; i++)
-                                    {
-                                        if (i != selectedHotkeySlot && defaultHotkeys[i] == pendingHotkey)
-                                        {
-                                            defaultHotkeys[i] = KeyCode.None;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            else if (currentAction != null)
-                            {
-                                hotkeyBindings[pendingHotkey] = currentAction;
-                            }
-                            else
-                            {
-                                hotkeyBindings[pendingHotkey] = null;
-                            }
-
-                            pendingHotkey = KeyCode.None;
-                        }
+                        GUI.EndScrollView();
                         break;
                 }
             }
