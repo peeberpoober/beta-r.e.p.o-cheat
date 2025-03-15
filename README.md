@@ -1,5 +1,5 @@
 # beta-r.e.p.o-cheat
-<sub>*Made by D4rkks (and contributors)* | **v1.1.2**</sub>
+<sub>*Made by D4rkks (and contributors)* | **v1.1.2.1**</sub>
 
 # **FUNCTIONS:**
 
@@ -70,10 +70,7 @@
 
 # **TO-DO:**
 1. <ins>**Merge pull requests/local contributions**</ins>
-   - August's Chams
    - LustWare's Force Mute/Raise Player Volume
-   - Add Noclip as Applicable Hotkey
-   - SheratoD's Improved Spawn Money Function
    - August's Spawn Enemies
 2. **Task tracker**
 3. **Refactor**
