@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime; // Necessário para ReceiverGroup e RaiseEventOptions
@@ -877,66 +877,66 @@ namespace r.e.p.o_cheat
             }
         }
         private static int GetPlayerHealth(object player)
+        {
+            try
             {
+                var playerHealthField = player.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (playerHealthField == null) return 100;
+
+                var playerHealthInstance = playerHealthField.GetValue(player);
+                if (playerHealthInstance == null) return 100;
+
+                var healthField = playerHealthInstance.GetType().GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (healthField == null) return 100;
+
+                return (int)healthField.GetValue(playerHealthInstance);
+            }
+            catch (Exception e)
+            {
+                Hax2.Log1($"Erro ao obter vida do jogador: {e.Message}");
+                return 100;
+            }
+        }
+
+
+        public static void KillAllEnemies()
+        {
+            Hax2.Log1("Tentando matar todos os inimigos");
+
+            foreach (var enemyInstance in enemyList)
+            {
+                if (enemyInstance == null) continue;
+
                 try
                 {
-                    var playerHealthField = player.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (playerHealthField == null) return 100;
-
-                    var playerHealthInstance = playerHealthField.GetValue(player);
-                    if (playerHealthInstance == null) return 100;
-
-                    var healthField = playerHealthInstance.GetType().GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (healthField == null) return 100;
-
-                    return (int)healthField.GetValue(playerHealthInstance);
+                    var healthField = enemyInstance.GetType().GetField("Health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (healthField != null)
+                    {
+                        var healthComponent = healthField.GetValue(enemyInstance);
+                        if (healthComponent != null)
+                        {
+                            var healthType = healthComponent.GetType();
+                            var hurtMethod = healthType.GetMethod("Hurt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                            if (hurtMethod != null)
+                            {
+                                hurtMethod.Invoke(healthComponent, new object[] { 9999, Vector3.zero });
+                                Hax2.Log1($"Inimigo ferido com 9999 de dano via Hurt");
+                            }
+                            else
+                                Hax2.Log1("Método 'Hurt' não encontrado em EnemyHealth");
+                        }
+                        else
+                            Hax2.Log1("Componente EnemyHealth é nulo");
+                    }
+                    else
+                        Hax2.Log1("Campo 'Health' não encontrado em Enemy");
                 }
                 catch (Exception e)
                 {
-                    Hax2.Log1($"Erro ao obter vida do jogador: {e.Message}");
-                    return 100;
+                    Hax2.Log1($"Erro ao matar inimigo: {e.Message}");
                 }
             }
-
-
-            public static void KillAllEnemies()
-            {
-                Hax2.Log1("Tentando matar todos os inimigos");
-
-                foreach (var enemyInstance in enemyList)
-                {
-                    if (enemyInstance == null) continue;
-
-                    try
-                    {
-                        var healthField = enemyInstance.GetType().GetField("Health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                        if (healthField != null)
-                        {
-                            var healthComponent = healthField.GetValue(enemyInstance);
-                            if (healthComponent != null)
-                            {
-                                var healthType = healthComponent.GetType();
-                                var hurtMethod = healthType.GetMethod("Hurt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                                if (hurtMethod != null)
-                                {
-                                    hurtMethod.Invoke(healthComponent, new object[] { 9999, Vector3.zero });
-                                    Hax2.Log1($"Inimigo ferido com 9999 de dano via Hurt");
-                                }
-                                else
-                                    Hax2.Log1("Método 'Hurt' não encontrado em EnemyHealth");
-                            }
-                            else
-                                Hax2.Log1("Componente EnemyHealth é nulo");
-                        }
-                        else
-                            Hax2.Log1("Campo 'Health' não encontrado em Enemy");
-                    }
-                    catch (Exception e)
-                    {
-                        Hax2.Log1($"Erro ao matar inimigo: {e.Message}");
-                    }
-                }
-                UpdateEnemyList();
-            }
+            UpdateEnemyList();
         }
     }
+}
