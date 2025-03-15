@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Collections.Generic;
 using System.Reflection;
@@ -901,41 +901,43 @@ namespace r.e.p.o_cheat
         {
             if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count)
             {
-                Log1("Índice de jogador inválido!");
+                Log1("Invalid player index!");
                 return;
             }
+
             var selectedPlayer = playerList[selectedPlayerIndex];
             if (selectedPlayer == null)
             {
-                Log1("Jogador selecionado é nulo!");
+                Log1("Selected player is null!");
                 return;
             }
 
             try
             {
-                var Field = selectedPlayer.GetType().GetField("", BindingFlags.Public | BindingFlags.Instance);
-                if (Field != null)
+                var playerDeathHeadField = selectedPlayer.GetType().GetField("playerDeathHead", BindingFlags.Public | BindingFlags.Instance);
+                if (playerDeathHeadField != null)
                 {
-                    var Instance = Field.GetValue(selectedPlayer);
-                    if (Instance != null)
+                    var playerDeathHeadInstance = playerDeathHeadField.GetValue(selectedPlayer);
+                    if (playerDeathHeadInstance != null)
                     {
-                        var inExtractionPointField = Instance.GetType().GetField("inExtractionPoint", BindingFlags.NonPublic | BindingFlags.Instance);
-                        var reviveMethod = Instance.GetType().GetMethod("Revive", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        // Retrieve and modify 'inExtractionPoint' to allow revival
+                        var inExtractionPointField = playerDeathHeadInstance.GetType().GetField("inExtractionPoint", BindingFlags.NonPublic | BindingFlags.Instance);
+                        var reviveMethod = playerDeathHeadInstance.GetType().GetMethod("Revive", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         if (inExtractionPointField != null)
                         {
-                            inExtractionPointField.SetValue(Instance, true);
-                            Log1("Campo 'inExtractionPoint' definido como true.");
+                            inExtractionPointField.SetValue(playerDeathHeadInstance, true);
+                            Log1("'inExtractionPoint' field set to true.");
                         }
                         if (reviveMethod != null)
                         {
-                            reviveMethod.Invoke(Instance, null);
-                            Log1("Método 'Revive' chamado com sucesso para: " + playerNames[selectedPlayerIndex]);
+                            reviveMethod.Invoke(playerDeathHeadInstance, null);
+                            Log1("'Revive' method successfully called for: " + playerNames[selectedPlayerIndex]);
                         }
-                        else Log1("Método 'Revive' não encontrado!");
+                        else Log1("'Revive' method not found!");
                     }
-                    else Log1("Instância de  não encontrada.");
+                    else Log1("'playerDeathHead' instance not found.");
                 }
-                else Log1("Campo '' não encontrado.");
+                else Log1("'playerDeathHead' field not found.");
 
                 var playerHealthField = selectedPlayer.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (playerHealthField != null)
@@ -948,29 +950,29 @@ namespace r.e.p.o_cheat
                         var healthField = healthType.GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
                         int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
-                        Log1($"maxHealth obtido: {maxHealth}");
+                        Log1($"Max health retrieved: {maxHealth}");
 
                         if (healthField != null)
                         {
                             healthField.SetValue(playerHealthInstance, maxHealth);
-                            Log1($"Saúde definida diretamente para {maxHealth} via healthField.");
+                            Log1($"Health set directly to {maxHealth} via 'health' field.");
                         }
                         else
                         {
-                            Log1("Campo 'health' não encontrado, tentando HealPlayer.");
+                            Log1("'health' field not found, attempting HealPlayer as fallback.");
                             Health_Player.HealPlayer(selectedPlayer, maxHealth, playerNames[selectedPlayerIndex]);
                         }
 
                         int currentHealth = healthField != null ? (int)healthField.GetValue(playerHealthInstance) : -1;
-                        Log1($"Saúde atual após revive: {currentHealth}");
+                        Log1($"Current health after revive: {currentHealth}");
+                    }
+                    else Log1("PlayerHealth instance is null, health restoration failed.");
                 }
-                    else Log1("Instância de playerHealth é nula, não foi possível restaurar saúde.");
-                }
-                Log1("Campo 'health' não encontrado, tentando HealPlayer como fallback.");
+                Log1("'playerHealth' field not found, healing not performed.");
             }
             catch (Exception e)
             {
-                Log1($"Erro ao reviver e curar {playerNames[selectedPlayerIndex]}: {e.Message}");
+                Log1($"Error reviving and healing {playerNames[selectedPlayerIndex]}: {e.Message}");
             }
         }
 
