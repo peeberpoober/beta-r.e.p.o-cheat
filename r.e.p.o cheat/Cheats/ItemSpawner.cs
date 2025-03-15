@@ -108,10 +108,12 @@
                         var photonView = valuableComponent.GetComponent<PhotonView>();
                         if (photonView != null)
                         {
-                            photonView.RPC("DollarValueSetRPC", RpcTarget.Others, (float)value);
-                            photonView.RPC("DiscoverRPC", RpcTarget.All, Array.Empty<object>());
-                            photonView.RPC("AddToDollarHaulListRPC", RpcTarget.All, Array.Empty<object>());
+                            photonView.RequestOwnership();
+                            Debug.Log($"Requested ownership for spawned item: {spawnedItem.name}");
                         }
+                        photonView.RPC("DollarValueSetRPC", RpcTarget.Others, (float)value);
+                        photonView.RPC("DiscoverRPC", RpcTarget.All, Array.Empty<object>());
+                        photonView.RPC("AddToDollarHaulListRPC", RpcTarget.All, Array.Empty<object>());
                     }
                 }
                 else
