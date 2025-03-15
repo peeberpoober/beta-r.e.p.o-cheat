@@ -15,7 +15,6 @@ namespace r.e.p.o_cheat
         public static List<Enemy> enemyList = new List<Enemy>();
         public static List<object> valuableObjects = new List<object>();
         private static List<object> playerList = new List<object>();
-        private static Camera cachedCamera;
         private static float scaleX, scaleY;
         public static Texture2D texture2;
         private static float lastUpdateTime = 0f;
