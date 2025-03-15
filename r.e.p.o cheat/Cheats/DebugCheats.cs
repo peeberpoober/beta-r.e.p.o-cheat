@@ -31,6 +31,7 @@ namespace r.e.p.o_cheat
         public static bool draw3DItemEspBool = false;
         public static bool draw3DPlayerEspBool = false;
         public static bool drawExtractionPointEspBool = false;
+        
         public static GUIStyle nameStyle;
         public static GUIStyle valueStyle;
         public static GUIStyle enemyStyle;
@@ -48,12 +49,50 @@ namespace r.e.p.o_cheat
         public static bool showPlayerNames = true;
         public static bool showPlayerDistance = true;
         public static bool showPlayerHP = true;
-
+        private static Camera cachedCamera;
+        private static Material visibleMaterial;
+        private static Material hiddenMaterial;
+        private static Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
+        private static bool cachedOriginalCamera = false;
+        private static float originalFarClipPlane = 0f;
+        private static DepthTextureMode originalDepthTextureMode = DepthTextureMode.None;
+        private static bool originalOcclusionCulling = false;
+        
         private static List<PlayerData> playerDataList = new List<PlayerData>();
         private static float lastPlayerUpdateTime = 0f;
         private static float playerUpdateInterval = 1f;
         private static Dictionary<int, int> playerHealthCache = new Dictionary<int, int>();
         private const float maxEspDistance = 100f;
+
+        private static bool _drawChamsBool = false;
+        public static bool drawChamsBool
+        {
+            get => _drawChamsBool;
+            set
+            {
+                if (value != _drawChamsBool)
+                {
+                    _drawChamsBool = value;
+                    if (!value)
+                    {
+                        foreach (var renderer in originalMaterials.Keys)
+                        {
+                            if (renderer != null)
+                            {
+                                renderer.materials = originalMaterials[renderer];
+                            }
+                        }
+
+                        if(cachedOriginalCamera)
+                        {
+                            cachedCamera.farClipPlane = originalFarClipPlane;
+                            cachedCamera.depthTextureMode = originalDepthTextureMode;
+                            cachedCamera.useOcclusionCulling = originalOcclusionCulling;
+                        }
+                    }
+                }
+            }
+        }
 
         public class PlayerData
         {
