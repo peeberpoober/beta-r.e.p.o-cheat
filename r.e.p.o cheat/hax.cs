@@ -1465,8 +1465,9 @@ namespace r.e.p.o_cheat
                         {
                             DebugCheats.showEnemyNames = UIHelper.Checkbox("Show Enemy Names", DebugCheats.showEnemyNames, menuX + 50, menuY + 125);
                             DebugCheats.showEnemyDistance = UIHelper.Checkbox("Show Enemy Distance", DebugCheats.showEnemyDistance, menuX + 50, menuY + 155);
-                            DebugCheats.drawChamsBool = UIHelper.Checkbox("Show Enemy Chams", DebugCheats.drawChamsBool, menuX + 50, menuY + 185);
                         }
+
+                        DebugCheats.drawChamsBool = UIHelper.Checkbox("Enemy Chams", DebugCheats.drawChamsBool, menuX + 30, menuY + 175);
 
                         DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, menuX + 30, menuY + 205);
                         if (DebugCheats.drawItemEspBool)
