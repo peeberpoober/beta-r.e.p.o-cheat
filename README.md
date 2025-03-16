@@ -53,6 +53,7 @@
 - Set Grab Range
 - Throw Strength
 - Slide Decay
+- No Fog
 
 ### Enemies
 - Enemy List
