@@ -145,6 +145,8 @@ namespace r.e.p.o_cheat
         private Vector2 playerScrollPosition = Vector2.zero;
         private Vector2 enemyScrollPosition = Vector2.zero;
 
+        public static string[] levelsToSearchItems = { "Level - Manor", "Level - Wizard", "Level - Arctic" };
+
         private GUIStyle menuStyle;
         private bool initialized = false;
         private static Dictionary<Color, Texture2D> solidTextures = new Dictionary<Color, Texture2D>();
@@ -219,27 +221,6 @@ namespace r.e.p.o_cheat
 
         public void Start()
         {
-            menuStyle = new GUIStyle(GUI.skin.box)
-            {
-                normal = { background = MakeSolidBackground(new Color(0.21f, 0.21f, 0.21f), 0.7f) },
-                fontSize = 16,
-                alignment = TextAnchor.MiddleCenter,
-                padding = new RectOffset(10, 10, 10, 10),
-                border = new RectOffset(5, 5, 5, 5)
-            };
-
-            overlayDimStyle = new GUIStyle();
-            overlayDimStyle.normal.background = MakeSolidBackground(new Color(0f, 0f, 0f, 0.5f), 0.5f);
-
-            actionSelectorBoxStyle = new GUIStyle(GUI.skin.box)
-            {
-                normal = { background = MakeSolidBackground(new Color(0.25f, 0.25f, 0.25f), 0.95f) },
-                fontSize = 14,
-                alignment = TextAnchor.MiddleCenter,
-                padding = new RectOffset(10, 10, 10, 10)
-            };
-
-            UIHelper.InitSliderStyles();
             UpdateCursorState();
             InitializeHotkeyActions();
             LoadHotkeySettings();
@@ -270,20 +251,22 @@ namespace r.e.p.o_cheat
         {
             Strength.UpdateStrength();
 
-            // Limit update frequency to prevent lag
-            if (Time.time >= nextUpdateTime)
+            if (RunManager.instance.levelCurrent != null && levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name))
             {
-                DebugCheats.UpdateEnemyList();
-                DLog.Log("Lista de inimigos atualizada!");
-                nextUpdateTime = Time.time + updateInterval;
-            }
+                // Limit update frequency to prevent lag
+                if (Time.time >= nextUpdateTime)
+                {
+                    DebugCheats.UpdateEnemyList();
+                    nextUpdateTime = Time.time + updateInterval;
+                }
 
-            // Reduce item list updates from every frame to every 5 seconds
-            if (Time.time - lastItemListUpdateTime > 5f)
-            {
-                UpdateItemList();
-                itemList = ItemTeleport.GetItemList();
-                lastItemListUpdateTime = Time.time;
+                // Reduce item list updates from every frame to every 5 seconds
+                if (Time.time - lastItemListUpdateTime > 5f)
+                {
+                    UpdateItemList();
+                    itemList = ItemTeleport.GetItemList();
+                    lastItemListUpdateTime = Time.time;
+                }
             }
 
             if (oldSliderValue != sliderValue)
@@ -327,7 +310,7 @@ namespace r.e.p.o_cheat
                 UpdateCursorState();
                 Loader.UnloadCheat();
             }
-            
+
 
             if (configuringHotkey)
             {
@@ -501,7 +484,7 @@ namespace r.e.p.o_cheat
             Cursor.visible = showMenu;
             Cursor.lockState = showMenu ? CursorLockMode.None : CursorLockMode.Locked;
         }
-        
+
         private void UpdateItemList()
         {
             DebugCheats.valuableObjects.Clear();
@@ -511,7 +494,6 @@ namespace r.e.p.o_cheat
             {
                 DebugCheats.valuableObjects.AddRange(valuableArray);
             }
-
 
             var playerDeathHeadArray = UnityEngine.Object.FindObjectsOfType(Type.GetType("PlayerDeathHead, Assembly-CSharp"));
             if (playerDeathHeadArray != null)
@@ -688,13 +670,13 @@ namespace r.e.p.o_cheat
                             hurtMethod.Invoke(healthComponent, new object[] { 9999, Vector3.zero });
                             DLog.Log($"Inimigo {enemyNames[selectedEnemyIndex]} ferido com 9999 de dano via Hurt");
                         }
-                        else 
+                        else
                             DLog.Log("Método 'Hurt' não encontrado em EnemyHealth");
                     }
-                    else 
+                    else
                         DLog.Log("Componente EnemyHealth é nulo");
                 }
-                else 
+                else
                     DLog.Log("Campo 'Health' não encontrado em Enemy");
 
                 UpdateEnemyList();
@@ -835,40 +817,46 @@ namespace r.e.p.o_cheat
 
         private void InitializeHotkeyActions()
         {
-            availableActions.Add(new HotkeyAction("God Mode", () => {
+            availableActions.Add(new HotkeyAction("God Mode", () =>
+            {
                 bool newGodModeState = !godModeActive;
                 PlayerController.GodMode();
                 godModeActive = newGodModeState;
                 DLog.Log("god mode toggled: " + godModeActive);
             }, "toggles god mode on/off"));
 
-            availableActions.Add(new HotkeyAction("Noclip Toggle", () => {
+            availableActions.Add(new HotkeyAction("Noclip Toggle", () =>
+            {
                 bool newNoclipState = !NoclipController.noclipActive;
                 NoclipController.ToggleNoclip();
                 NoclipController.noclipActive = newNoclipState;
                 DLog.Log("Noclip toggled: " + NoclipController.noclipActive);
             }, "Toggles noclip on/off"));
 
-            availableActions.Add(new HotkeyAction("Infinite Health", () => {
+            availableActions.Add(new HotkeyAction("Infinite Health", () =>
+            {
                 bool newHealState = !infiniteHealthActive;
                 infiniteHealthActive = newHealState;
                 Health_Player.MaxHealth();
                 DLog.Log("infinite health toggled: " + infiniteHealthActive);
             }, "toggles infinite health on/off"));
 
-            availableActions.Add(new HotkeyAction("Infinite Stamina", () => {
+            availableActions.Add(new HotkeyAction("Infinite Stamina", () =>
+            {
                 bool newStaminaState = !stamineState;
                 stamineState = newStaminaState;
                 PlayerController.MaxStamina();
                 DLog.Log("infinite stamina toggled: " + stamineState);
             }, "toggles infinite stamina on/off"));
 
-            availableActions.Add(new HotkeyAction("RGB Player", () => {
+            availableActions.Add(new HotkeyAction("RGB Player", () =>
+            {
                 playerColor.isRandomizing = !playerColor.isRandomizing;
                 DLog.Log("rgb player toggled: " + playerColor.isRandomizing);
             }, "toggles rgb player effect"));
 
-            availableActions.Add(new HotkeyAction("Spawn Money", () => {
+            availableActions.Add(new HotkeyAction("Spawn Money", () =>
+            {
                 GameObject localPlayer = DebugCheats.GetLocalPlayer();
                 if (localPlayer != null)
                 {
@@ -883,27 +871,32 @@ namespace r.e.p.o_cheat
                 }
             }, "spawns money at your position"));
 
-            availableActions.Add(new HotkeyAction("Kill All Enemies", () => {
+            availableActions.Add(new HotkeyAction("Kill All Enemies", () =>
+            {
                 DebugCheats.KillAllEnemies();
                 DLog.Log("all enemies killed.");
             }, "kills all enemies on the map"));
 
-            availableActions.Add(new HotkeyAction("Enemy ESP Toggle", () => {
+            availableActions.Add(new HotkeyAction("Enemy ESP Toggle", () =>
+            {
                 DebugCheats.drawEspBool = !DebugCheats.drawEspBool;
                 DLog.Log("enemy esp toggled: " + DebugCheats.drawEspBool);
             }, "toggles enemy esp on/off"));
 
-            availableActions.Add(new HotkeyAction("Item ESP Toggle", () => {
+            availableActions.Add(new HotkeyAction("Item ESP Toggle", () =>
+            {
                 DebugCheats.drawItemEspBool = !DebugCheats.drawItemEspBool;
                 DLog.Log("item esp toggled: " + DebugCheats.drawItemEspBool);
             }, "toggles item esp on/off"));
 
-            availableActions.Add(new HotkeyAction("Player ESP Toggle", () => {
+            availableActions.Add(new HotkeyAction("Player ESP Toggle", () =>
+            {
                 DebugCheats.drawPlayerEspBool = !DebugCheats.drawPlayerEspBool;
                 DLog.Log("player esp toggled: " + DebugCheats.drawPlayerEspBool);
             }, "toggles player esp on/off"));
 
-            availableActions.Add(new HotkeyAction("Heal Self", () => {
+            availableActions.Add(new HotkeyAction("Heal Self", () =>
+            {
                 GameObject localPlayer = DebugCheats.GetLocalPlayer();
                 if (localPlayer != null)
                 {
@@ -916,13 +909,15 @@ namespace r.e.p.o_cheat
                 }
             }, "heals yourself by 100 hp"));
 
-            availableActions.Add(new HotkeyAction("Max Speed", () => {
+            availableActions.Add(new HotkeyAction("Max Speed", () =>
+            {
                 sliderValue = 30f;
                 PlayerController.RemoveSpeed(sliderValue);
                 DLog.Log("speed set to maximum (30)");
             }, "sets speed to maximum value"));
 
-            availableActions.Add(new HotkeyAction("Normal Speed", () => {
+            availableActions.Add(new HotkeyAction("Normal Speed", () =>
+            {
                 sliderValue = 5f;
                 PlayerController.RemoveSpeed(sliderValue);
                 DLog.Log("speed set to normal (5)");
@@ -1213,11 +1208,36 @@ namespace r.e.p.o_cheat
             }
         }
 
+        private void InitializeGUIStyles()
+        {
+            menuStyle = new GUIStyle(GUI.skin.box)
+            {
+                normal = { background = MakeSolidBackground(new Color(0.21f, 0.21f, 0.21f), 0.7f) },
+                fontSize = 16,
+                alignment = TextAnchor.MiddleCenter,
+                padding = new RectOffset(10, 10, 10, 10),
+                border = new RectOffset(5, 5, 5, 5)
+            };
+
+            overlayDimStyle = new GUIStyle();
+            overlayDimStyle.normal.background = MakeSolidBackground(new Color(0f, 0f, 0f, 0.5f), 0.5f);
+
+            actionSelectorBoxStyle = new GUIStyle(GUI.skin.box)
+            {
+                normal = { background = MakeSolidBackground(new Color(0.25f, 0.25f, 0.25f), 0.95f) },
+                fontSize = 14,
+                alignment = TextAnchor.MiddleCenter,
+                padding = new RectOffset(10, 10, 10, 10)
+            };
+
+            UIHelper.InitSliderStyles();
+        }
+
         public void OnGUI()
         {
             if (!initialized)
             {
-                Start();
+                InitializeGUIStyles();
                 initialized = true;
             }
 
@@ -1248,12 +1268,12 @@ namespace r.e.p.o_cheat
                     }
 
 
-                modalRect = GUI.Window(12345, modalRect, ActionSelectorWindow, "", actionSelectorBoxStyle);
-                actionSelectorX = modalRect.x;
-                actionSelectorY = modalRect.y;
-            }
+                    modalRect = GUI.Window(12345, modalRect, ActionSelectorWindow, "", actionSelectorBoxStyle);
+                    actionSelectorX = modalRect.x;
+                    actionSelectorY = modalRect.y;
+                }
 
-            GUI.depth = 0;
+                GUI.depth = 0;
 
                 if (Event.current.type != EventType.Repaint && Event.current.type != EventType.Layout)
                 {
@@ -1373,7 +1393,7 @@ namespace r.e.p.o_cheat
                         if (newGodModeState != godModeActive) { PlayerController.GodMode(); godModeActive = newGodModeState; DLog.Log("God mode toggled: " + godModeActive); }
 
                         bool newNoclipActive = UIHelper.ButtonBool("Toggle Noclip", NoclipController.noclipActive, menuX + 30, menuY + 475);
-                        if (newNoclipActive != NoclipController.noclipActive) { NoclipController.ToggleNoclip(); NoclipController.noclipActive = newNoclipActive; }
+                        if (newNoclipActive != NoclipController.noclipActive) { NoclipController.ToggleNoclip(); }
 
                         UIHelper.Label("Speed Value " + sliderValue, menuX + 30, menuY + 515);
 

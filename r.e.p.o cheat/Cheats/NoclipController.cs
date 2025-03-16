@@ -128,7 +128,11 @@ namespace r.e.p.o_cheat
         public static void ToggleNoclip()
         {
             InitializePlayerController();
-            if (playerControllerInstance == null) return;
+            if (playerControllerInstance == null)
+            {
+                noclipActive = false;
+                return;
+            }
 
             noclipActive = !noclipActive;
             if (rbField != null)

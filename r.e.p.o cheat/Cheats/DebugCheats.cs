@@ -30,7 +30,7 @@ namespace r.e.p.o_cheat
         public static bool draw3DItemEspBool = false;
         public static bool draw3DPlayerEspBool = false;
         public static bool drawExtractionPointEspBool = false;
-        
+
         public static GUIStyle nameStyle;
         public static GUIStyle valueStyle;
         public static GUIStyle enemyStyle;
@@ -56,12 +56,15 @@ namespace r.e.p.o_cheat
         private static float originalFarClipPlane = 0f;
         private static DepthTextureMode originalDepthTextureMode = DepthTextureMode.None;
         private static bool originalOcclusionCulling = false;
-        
+
         private static List<PlayerData> playerDataList = new List<PlayerData>();
         private static float lastPlayerUpdateTime = 0f;
         private static float playerUpdateInterval = 1f;
         private static Dictionary<int, int> playerHealthCache = new Dictionary<int, int>();
         private const float maxEspDistance = 100f;
+
+        private static FieldInfo _levelAnimationStartedField =
+            typeof(LoadingUI).GetField("levelAnimationStarted", BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static bool _drawChamsBool = false;
         public static bool drawChamsBool
@@ -82,7 +85,7 @@ namespace r.e.p.o_cheat
                             }
                         }
 
-                        if(cachedOriginalCamera)
+                        if (cachedOriginalCamera)
                         {
                             cachedCamera.farClipPlane = originalFarClipPlane;
                             cachedCamera.depthTextureMode = originalDepthTextureMode;
@@ -577,8 +580,15 @@ namespace r.e.p.o_cheat
             resultBounds.Expand(0.1f);
             return resultBounds;
         }
-public static void DrawESP()
+        public static void DrawESP()
         {
+            bool isLevelAnimationStarted = _levelAnimationStartedField != null && (bool)_levelAnimationStartedField.GetValue(LoadingUI.instance);
+            if (RunManager.instance.levelCurrent != null && !Hax2.levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name) 
+                || !Hax2.levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name) 
+                && isLevelAnimationStarted)
+            {
+                return;
+            }
             InitializeStyles();
             if (!drawEspBool && !drawItemEspBool && !drawExtractionPointEspBool && !drawPlayerEspBool && !draw3DPlayerEspBool && !draw3DItemEspBool && !drawChamsBool) return;
             if (localPlayer == null)
