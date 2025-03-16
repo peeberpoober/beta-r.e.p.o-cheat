@@ -521,16 +521,6 @@ namespace r.e.p.o_cheat
 
             itemList = ItemTeleport.GetItemList();
             DLog.Log($"Lista de itens atualizada: {itemList.Count} itens encontrados (incluindo ValuableObject e PlayerDeathHead).");
-
-            var Array = UnityEngine.Object.FindObjectsOfType(Type.GetType(", Assembly-CSharp"));
-            if (Array != null)
-            {
-                DebugCheats.valuableObjects.AddRange(Array);
-            }
-
-            itemList = ItemTeleport.GetItemList();
-            DLog.Log($"Lista de itens atualizada: {itemList.Count} itens encontrados (incluindo ValuableObject e ).");
-
         }
 
         private void UpdateEnemyList()
