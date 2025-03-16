@@ -11,6 +11,7 @@ namespace r.e.p.o_cheat
 {
     public static class UIHelper
     {
+        private static Dictionary<Color, Texture2D> solidTextures = new Dictionary<Color, Texture2D>();
         private static float x, y, width, height, margin, controlHeight, controlDist, nextControlY;
         private static int columns = 1;
         private static int currentColumn = 0;
@@ -143,10 +144,16 @@ namespace r.e.p.o_cheat
         }
         private static Texture2D MakeSolidBackground(Color color, float alpha)
         {
-            Texture2D texture = new Texture2D(1, 1);
-            texture.SetPixel(0, 0, new Color(color.r, color.g, color.b, alpha));
-            texture.Apply();
-            return texture;
+            Color key = new Color(color.r, color.g, color.b, alpha);
+
+            if (!solidTextures.ContainsKey(key))
+            {
+                Texture2D texture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
+                texture.SetPixel(0, 0, key);
+                texture.Apply();
+                solidTextures[key] = texture;
+            }
+            return solidTextures[key];
         }
         public static void DebugLabel(string text)
         {
@@ -911,6 +918,13 @@ namespace r.e.p.o_cheat
                 Log1("god mode toggled: " + godModeActive);
             }, "toggles god mode on/off"));
 
+            availableActions.Add(new HotkeyAction("Noclip Toggle", () => {
+                bool newNoclipState = !NoclipController.noclipActive;
+                NoclipController.ToggleNoclip();
+                NoclipController.noclipActive = newNoclipState;
+                Debug.Log("Noclip toggled: " + NoclipController.noclipActive);
+            }, "Toggles noclip on/off"));
+
             availableActions.Add(new HotkeyAction("Infinite Health", () => {
                 bool newHealState = !infiniteHealthActive;
                 infiniteHealthActive = newHealState;
@@ -1283,6 +1297,8 @@ namespace r.e.p.o_cheat
                 initialized = true;
             }
 
+            UIHelper.InitSliderStyles();
+
             if (DebugCheats.drawEspBool || DebugCheats.drawItemEspBool || DebugCheats.drawExtractionPointEspBool || DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool || DebugCheats.draw3DItemEspBool || DebugCheats.drawChamsBool) DebugCheats.DrawESP();
 
             GUI.Label(new Rect(10, 10, 200, 30), $"D.A.R.K CHEAT | {menuToggleKey} - MENU");
@@ -1334,7 +1350,7 @@ namespace r.e.p.o_cheat
                 Rect titleRect = new Rect(menuX, menuY, 600, titleBarHeight);
 
                 GUI.Box(menuRect, "", menuStyle);
-                UIHelper.Begin("D.A.R.K. Menu 1.1.2.1", menuX, menuY, 600, 800, 30, 30, 10);
+                UIHelper.Begin("D.A.R.K. Menu 1.1.2.2", menuX, menuY, 600, 800, 30, 30, 10);
 
                 if (Event.current.type == EventType.MouseDown && titleRect.Contains(Event.current.mousePosition))
                 {
@@ -1883,7 +1899,7 @@ namespace r.e.p.o_cheat
         private static Texture2D MakeSolidBackground(Color color, float alpha)//fix
         {
             Color key = new Color(color.r, color.g, color.b, alpha);
-            if (!solidTextures.ContainsKey(color))
+            if (!solidTextures.ContainsKey(key))
             {
                 Texture2D texture = new Texture2D(1, 1);
                 texture.SetPixel(0, 0, key);
