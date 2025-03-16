@@ -23,18 +23,18 @@ namespace r.e.p.o_cheat
         {
             if (playerControllerType == null)
             {
-                Hax2.Log1("PlayerController type not found.");
+                DLog.Log("PlayerController type not found.");
                 return;
             }
 
             playerControllerInstance = GameHelper.FindObjectOfType(playerControllerType);
             if (playerControllerInstance == null)
             {
-                Hax2.Log1("PlayerController instance not found in current scene.");
+                DLog.Log("PlayerController instance not found in current scene.");
             }
             else
             {
-                Hax2.Log1("PlayerController instance updated successfully.");
+                DLog.Log("PlayerController instance updated successfully.");
             }
         }
 
@@ -43,7 +43,7 @@ namespace r.e.p.o_cheat
             var playerControllerType = Type.GetType("PlayerController, Assembly-CSharp");
             if (playerControllerType != null)
             {
-                Hax2.Log1("PlayerController found.");
+                DLog.Log("PlayerController found.");
 
                 var playerControllerInstance = GameHelper.FindObjectOfType(playerControllerType);
                 if (playerControllerInstance != null)
@@ -68,31 +68,31 @@ namespace r.e.p.o_cheat
 
                                 Hax2.godModeActive = !newGodModeState;
 
-                                Hax2.Log1("God Mode " + (newGodModeState ? "enabled" : "disabled"));
+                                DLog.Log("God Mode " + (newGodModeState ? "enabled" : "disabled"));
                             }
                             else
                             {
-                                Hax2.Log1("godMode field not found in playerHealth.");
+                                DLog.Log("godMode field not found in playerHealth.");
                             }
                         }
                         else
                         {
-                            Hax2.Log1("playerHealth field not found in playerAvatarScript.");
+                            DLog.Log("playerHealth field not found in playerAvatarScript.");
                         }
                     }
                     else
                     {
-                        Hax2.Log1("playerAvatarScript field not found in PlayerController.");
+                        DLog.Log("playerAvatarScript field not found in PlayerController.");
                     }
                 }
                 else
                 {
-                    Hax2.Log1("playerControllerInstance not found.");
+                    DLog.Log("playerControllerInstance not found.");
                 }
             }
             else
             {
-                Hax2.Log1("PlayerController type not found.");
+                DLog.Log("PlayerController type not found.");
             }
         }
 
@@ -101,24 +101,24 @@ namespace r.e.p.o_cheat
             var playerInSpeedType = Type.GetType("PlayerController, Assembly-CSharp");
             if (playerInSpeedType != null)
             {
-                Hax2.Log1("playerInSpeedType n é null");
+                DLog.Log("playerInSpeedType n é null");
                 playerSpeedInstance = GameHelper.FindObjectOfType(playerInSpeedType);
                 if (playerSpeedInstance != null)
                 {
-                    Hax2.Log1("playerSpeedInstance n é null");
+                    DLog.Log("playerSpeedInstance n é null");
                 }
                 else
                 {
-                    Hax2.Log1("playerSpeedInstance null");
+                    DLog.Log("playerSpeedInstance null");
                 }
             }
             else
             {
-                Hax2.Log1("playerInSpeedType null");
+                DLog.Log("playerInSpeedType null");
             }
             if (playerSpeedInstance != null)
             {
-                Hax2.Log1("playerSpeedInstance n é null");
+                DLog.Log("playerSpeedInstance n é null");
 
                 var playerControllerType = playerSpeedInstance.GetType();
 
@@ -127,11 +127,11 @@ namespace r.e.p.o_cheat
                 if (moveSpeedField1 != null)
                 {
                     moveSpeedField1.SetValue(playerSpeedInstance, sliderValue);
-                    Hax2.Log1("MoveSpeed value set to " + sliderValue);
+                    DLog.Log("MoveSpeed value set to " + sliderValue);
                 }
                 else
                 {
-                    Hax2.Log1("MoveSpeed field not found in PlayerController.");
+                    DLog.Log("MoveSpeed field not found in PlayerController.");
                 }
             }
         }
@@ -141,7 +141,7 @@ namespace r.e.p.o_cheat
             var playerControllerType = Type.GetType("PlayerController, Assembly-CSharp");
             if (playerControllerType != null)
             {
-                Hax2.Log1("PlayerController found.");
+                DLog.Log("PlayerController found.");
 
                 var playerControllerInstance = GameHelper.FindObjectOfType(playerControllerType);
                 if (playerControllerInstance != null)
@@ -158,21 +158,21 @@ namespace r.e.p.o_cheat
                             energyCurrentField.SetValue(playerControllerInstance, 40);
                         }
 
-                        Hax2.Log1("EnergyCurrent set to " + (Hax2.stamineState ? 999999 : 40));
+                        DLog.Log("EnergyCurrent set to " + (Hax2.stamineState ? 999999 : 40));
                     }
                     else
                     {
-                        Hax2.Log1("EnergyCurrent field not found in playerAvatarScript.");
+                        DLog.Log("EnergyCurrent field not found in playerAvatarScript.");
                     }
                 }
                 else
                 {
-                    Hax2.Log1("playerControllerInstance not found.");
+                    DLog.Log("playerControllerInstance not found.");
                 }
             }
             else
             {
-                Hax2.Log1("PlayerController type not found.");
+                DLog.Log("PlayerController type not found.");
             }
         }
 
@@ -184,7 +184,7 @@ namespace r.e.p.o_cheat
             desiredDelayMultiplier = delayMultiplier;
             desiredRateMultiplier = rateMultiplier;
 
-            Hax2.Log1("Attempting to decrease stamina recharge delay.");
+            DLog.Log("Attempting to decrease stamina recharge delay.");
 
             var sprintRechargeTimeField = playerControllerType.GetField("sprintRechargeTime", BindingFlags.NonPublic | BindingFlags.Instance);
             if (sprintRechargeTimeField != null)
@@ -192,11 +192,11 @@ namespace r.e.p.o_cheat
                 float defaultRechargeTime = 1f;
                 float newRechargeTime = defaultRechargeTime * delayMultiplier;
                 sprintRechargeTimeField.SetValue(playerControllerInstance, newRechargeTime);
-                Hax2.Log1($"sprintRechargeTime set to {newRechargeTime} (multiplier: {delayMultiplier})");
+                DLog.Log($"sprintRechargeTime set to {newRechargeTime} (multiplier: {delayMultiplier})");
             }
             else
             {
-                Hax2.Log1("sprintRechargeTime field not found in PlayerController.");
+                DLog.Log("sprintRechargeTime field not found in PlayerController.");
             }
 
             var sprintRechargeAmountField = playerControllerType.GetField("sprintRechargeAmount", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -205,11 +205,11 @@ namespace r.e.p.o_cheat
                 float defaultRechargeAmount = 2f;
                 float newRechargeAmount = defaultRechargeAmount * rateMultiplier;
                 sprintRechargeAmountField.SetValue(playerControllerInstance, newRechargeAmount);
-                Hax2.Log1($"sprintRechargeAmount set to {newRechargeAmount} (multiplier: {rateMultiplier})");
+                DLog.Log($"sprintRechargeAmount set to {newRechargeAmount} (multiplier: {rateMultiplier})");
             }
             else
             {
-                Hax2.Log1("sprintRechargeAmount field not found in PlayerController.");
+                DLog.Log("sprintRechargeAmount field not found in PlayerController.");
             }
         }
 
@@ -219,7 +219,7 @@ namespace r.e.p.o_cheat
             if (playerControllerInstance != null)
             {
                 DecreaseStaminaRechargeDelay(desiredDelayMultiplier, desiredRateMultiplier);
-                Hax2.Log1("Reapplied stamina settings after scene change.");
+                DLog.Log("Reapplied stamina settings after scene change.");
             }
         }
 
@@ -244,7 +244,7 @@ namespace r.e.p.o_cheat
                             if (baseIntensityField != null)
                             {
                                 baseIntensityField.SetValue(flashlightControllerInstance, value);
-                                Hax2.Log1($"Flashlight BaseIntensity set to {value}");
+                                DLog.Log($"Flashlight BaseIntensity set to {value}");
                             }
                         }
                     }
@@ -261,11 +261,11 @@ namespace r.e.p.o_cheat
             if (crouchTimeMinField != null)
             {
                 crouchTimeMinField.SetValue(playerControllerInstance, value);
-                Hax2.Log1($"CrouchTimeMin set to {value}");
+                DLog.Log($"CrouchTimeMin set to {value}");
             }
             else
             {
-                Hax2.Log1("CrouchTimeMin field not found in PlayerController.");
+                DLog.Log("CrouchTimeMin field not found in PlayerController.");
             }
         }
         public static void SetCrouchSpeed(float value)
@@ -277,11 +277,11 @@ namespace r.e.p.o_cheat
             if (crouchTimeMinField != null)
             {
                 crouchTimeMinField.SetValue(playerControllerInstance, value);
-                Hax2.Log1($"CrouchSpeed set to {value}");
+                DLog.Log($"CrouchSpeed set to {value}");
             }
             else
             {
-                Hax2.Log1("CrouchSpeed field not found in PlayerController.");
+                DLog.Log("CrouchSpeed field not found in PlayerController.");
             }
         }
 
@@ -294,11 +294,11 @@ namespace r.e.p.o_cheat
             if (jumpForceField != null)
             {
                 jumpForceField.SetValue(playerControllerInstance, value);
-                Hax2.Log1($"JumpForce set to {value}");
+                DLog.Log($"JumpForce set to {value}");
             }
             else
             {
-                Hax2.Log1("JumpForce field not found in PlayerController.");
+                DLog.Log("JumpForce field not found in PlayerController.");
             }
         }
 
@@ -311,11 +311,11 @@ namespace r.e.p.o_cheat
             if (jumpExtraField != null)
             {
                 jumpExtraField.SetValue(playerControllerInstance, value);
-                Hax2.Log1($"JumpExtra set to {value}");
+                DLog.Log($"JumpExtra set to {value}");
             }
             else
             {
-                Hax2.Log1("JumpExtra field not found in PlayerController.");
+                DLog.Log("JumpExtra field not found in PlayerController.");
             }
         }
 
@@ -328,11 +328,11 @@ namespace r.e.p.o_cheat
             if (customGravityField != null)
             {
                 customGravityField.SetValue(playerControllerInstance, value);
-                Hax2.Log1($"CustomGravity set to {value}");
+                DLog.Log($"CustomGravity set to {value}");
             }
             else
             {
-                Hax2.Log1("CustomGravity field not found in PlayerController.");
+                DLog.Log("CustomGravity field not found in PlayerController.");
             }
         }
 
@@ -346,11 +346,11 @@ namespace r.e.p.o_cheat
             if (crouchTimeMinField != null)
             {
                 crouchTimeMinField.SetValue(playerControllerInstance, crawlDelay);
-                Hax2.Log1($"CrouchTimeMin set locally to {crawlDelay}");
+                DLog.Log($"CrouchTimeMin set locally to {crawlDelay}");
             }
             else
             {
-                Hax2.Log1("CrouchTimeMin field not found in PlayerController.");
+                DLog.Log("CrouchTimeMin field not found in PlayerController.");
                 return;
             }
 
@@ -374,22 +374,22 @@ namespace r.e.p.o_cheat
                     if (PhotonNetwork.IsMasterClient)
                     {
                         photonView.RPC("SetCrawlDelayRPC", RpcTarget.AllBuffered, crawlDelay);
-                        Hax2.Log1($"Master Client set crawl delay to {crawlDelay} and synced via RPC.");
+                        DLog.Log($"Master Client set crawl delay to {crawlDelay} and synced via RPC.");
                     }
                     else
                     {
                         photonView.RPC("SetCrawlDelayRPC", RpcTarget.MasterClient, crawlDelay);
-                        Hax2.Log1($"Requested Master Client to set crawl delay to {crawlDelay} via RPC.");
+                        DLog.Log($"Requested Master Client to set crawl delay to {crawlDelay} via RPC.");
                     }
                 }
                 else
                 {
-                    Hax2.Log1("PhotonView not found for crawl delay synchronization.");
+                    DLog.Log("PhotonView not found for crawl delay synchronization.");
                 }
             }
             else
             {
-                Hax2.Log1("Not connected to Photon, crawl delay applied only locally.");
+                DLog.Log("Not connected to Photon, crawl delay applied only locally.");
             }
         }
 
@@ -408,11 +408,11 @@ namespace r.e.p.o_cheat
             if (grabRangeField != null)
             {
                 grabRangeField.SetValue(physGrabber, value);
-                Hax2.Log1($"GrabRange set to {value}");
+                DLog.Log($"GrabRange set to {value}");
             }
             else
             {
-                Hax2.Log1("GrabRange field not found in PhysGrabber.");
+                DLog.Log("GrabRange field not found in PhysGrabber.");
             }
         }
 
@@ -431,11 +431,11 @@ namespace r.e.p.o_cheat
             if (throwStrengthField != null)
             {
                 throwStrengthField.SetValue(physGrabber, value);
-                Hax2.Log1($"ThrowStrength set to {value}");
+                DLog.Log($"ThrowStrength set to {value}");
             }
             else
             {
-                Hax2.Log1("ThrowStrength field not found in PhysGrabber.");
+                DLog.Log("ThrowStrength field not found in PhysGrabber.");
             }
         }
 
@@ -448,11 +448,11 @@ namespace r.e.p.o_cheat
             if (slideDecayField != null)
             {
                 slideDecayField.SetValue(playerControllerInstance, value);
-                Hax2.Log1($"SlideDecay set to {value}");
+                DLog.Log($"SlideDecay set to {value}");
             }
             else
             {
-                Hax2.Log1("SlideDecay field not found in PlayerController.");
+                DLog.Log("SlideDecay field not found in PlayerController.");
             }
         }
     }

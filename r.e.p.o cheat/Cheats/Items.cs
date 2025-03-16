@@ -27,7 +27,7 @@ namespace r.e.p.o_cheat
         {
             if (selectedItem == null || selectedItem.ItemObject == null)
             {
-                Hax2.Log1("Error: Selected item or ItemObject is null!");
+                DLog.Log("Error: Selected item or ItemObject is null!");
                 return;
             }
 
@@ -40,18 +40,18 @@ namespace r.e.p.o_cheat
 
                 if (valueField == null)
                 {
-                    Hax2.Log1($"Error: Could not find 'dollarValueCurrent' field in {selectedItem.Name}");
+                    DLog.Log($"Error: Could not find 'dollarValueCurrent' field in {selectedItem.Name}");
                     return;
                 }
 
                 valueField.SetValue(selectedItem.ItemObject, newValue);
                 selectedItem.Value = newValue;
 
-                Hax2.Log1($"Successfully set '{selectedItem.Name}' value to ${newValue}");
+                DLog.Log($"Successfully set '{selectedItem.Name}' value to ${newValue}");
             }
             catch (Exception e)
             {
-                Hax2.Log1($"Error setting value for '{selectedItem.Name}': {e.Message}");
+                DLog.Log($"Error setting value for '{selectedItem.Name}': {e.Message}");
             }
         }
         private static PhotonView punManagerPhotonView;
@@ -65,9 +65,9 @@ namespace r.e.p.o_cheat
                 if (punManagerInstance != null)
                 {
                     punManagerPhotonView = (PhotonView)punManagerType.GetField("photonView", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(punManagerInstance);
-                    if (punManagerPhotonView == null) { Hax2.Log1("PhotonView not found in PunManager."); }
+                    if (punManagerPhotonView == null) { DLog.Log("PhotonView not found in PunManager."); }
                 }
-                else { Hax2.Log1("PunManager instance not found."); }
+                else { DLog.Log("PunManager instance not found."); }
             }
         }
 
@@ -82,14 +82,14 @@ namespace r.e.p.o_cheat
                 var transformProperty = valuableObject.GetType().GetProperty("transform", BindingFlags.Public | BindingFlags.Instance);
                 if (transformProperty == null)
                 {
-                    Hax2.Log1($"Warning: Object '{valuableObject.GetType().Name}' does not have a 'transform' property. Skipping.");
+                    DLog.Log($"Warning: Object '{valuableObject.GetType().Name}' does not have a 'transform' property. Skipping.");
                     continue;
                 }
 
                 var transform = transformProperty.GetValue(valuableObject) as Transform;
                 if (transform == null || !transform.gameObject.activeInHierarchy)
                 {
-                    Hax2.Log1($"Warning: Object '{valuableObject.GetType().Name}' has an inactive or null transform. Skipping.");
+                    DLog.Log($"Warning: Object '{valuableObject.GetType().Name}' has an inactive or null transform. Skipping.");
                     continue;
                 }
 
@@ -105,7 +105,7 @@ namespace r.e.p.o_cheat
                 catch (Exception e)
                 {
                     itemName = (valuableObject as UnityEngine.Object)?.name ?? "Unknown";
-                    Hax2.Log1($"Error accessing 'name' of item: {e.Message}. Using GameObject name: {itemName}");
+                    DLog.Log($"Error accessing 'name' of item: {e.Message}. Using GameObject name: {itemName}");
                 }
 
                 if (itemName.StartsWith("Valuable", StringComparison.OrdinalIgnoreCase))
@@ -131,12 +131,12 @@ namespace r.e.p.o_cheat
                         }
                         catch (Exception e)
                         {
-                            Hax2.Log1($"Error reading 'dollarValueCurrent' for '{itemName}': {e.Message}. Defaulting to 0.");
+                            DLog.Log($"Error reading 'dollarValueCurrent' for '{itemName}': {e.Message}. Defaulting to 0.");
                         }
                     }
                     else
                     {
-                        Hax2.Log1($"Info: '{itemName}' does not have 'dollarValueCurrent', assuming value 0.");
+                        DLog.Log($"Info: '{itemName}' does not have 'dollarValueCurrent', assuming value 0.");
                     }
                 }
 
@@ -157,7 +157,7 @@ namespace r.e.p.o_cheat
         {
             if (selectedItem == null || selectedItem.ItemObject == null)
             {
-                Hax2.Log1("Item selecionado ou ItemObject é nulo!");
+                DLog.Log("Item selecionado ou ItemObject é nulo!");
                 return;
             }
 
@@ -171,12 +171,12 @@ namespace r.e.p.o_cheat
                 GameObject player = DebugCheats.GetLocalPlayer();
                 if (player == null)
                 {
-                    Hax2.Log1("Jogador local não encontrado!");
+                    DLog.Log("Jogador local não encontrado!");
                     return;
                 }
 
                 Vector3 targetPosition = player.transform.position + player.transform.forward * 1f + Vector3.up * 1.5f;
-                Hax2.Log1($"Target position for teleporting all items: {targetPosition}");
+                DLog.Log($"Target position for teleporting all items: {targetPosition}");
 
                 List<GameItem> itemList = GetItemList();
                 int itemsTeleported = 0;
@@ -188,11 +188,11 @@ namespace r.e.p.o_cheat
                     itemsTeleported++;
                 }
 
-                Hax2.Log1($"Teleporte de todos os itens concluído. Total de itens teleportados: {itemsTeleported}");
+                DLog.Log($"Teleporte de todos os itens concluído. Total de itens teleportados: {itemsTeleported}");
             }
             catch (Exception e)
             {
-                Hax2.Log1($"Erro ao teleportar todos os itens: {e.Message}");
+                DLog.Log($"Erro ao teleportar todos os itens: {e.Message}");
             }
         }
 
@@ -200,7 +200,7 @@ namespace r.e.p.o_cheat
         {
             if (selectedItem == null || selectedItem.ItemObject == null)
             {
-                Hax2.Log1("Item selecionado ou ItemObject é nulo!");
+                DLog.Log("Item selecionado ou ItemObject é nulo!");
                 return;
             }
 
@@ -213,12 +213,12 @@ namespace r.e.p.o_cheat
                 GameObject player = DebugCheats.GetLocalPlayer();
                 if (player == null)
                 {
-                    Hax2.Log1("Jogador local não encontrado!");
+                    DLog.Log("Jogador local não encontrado!");
                     return;
                 }
 
                 Vector3 targetPosition = player.transform.position + player.transform.forward * 1f + Vector3.up * 1.5f;
-                Hax2.Log1($"Target position for teleport of '{item.Name}': {targetPosition}");
+                DLog.Log($"Target position for teleport of '{item.Name}': {targetPosition}");
 
                 Transform itemTransform = null;
                 var itemObjectType = item.ItemObject.GetType();
@@ -238,14 +238,14 @@ namespace r.e.p.o_cheat
 
                 if (itemTransform == null)
                 {
-                    Hax2.Log1($"Não foi possível obter o Transform do item '{item.Name}'!");
+                    DLog.Log($"Não foi possível obter o Transform do item '{item.Name}'!");
                     return;
                 }
 
                 PhotonView itemPhotonView = itemTransform.GetComponent<PhotonView>();
                 if (itemPhotonView == null)
                 {
-                    Hax2.Log1($"Item '{item.Name}' não tem PhotonView, teleporte apenas local.");
+                    DLog.Log($"Item '{item.Name}' não tem PhotonView, teleporte apenas local.");
                     itemTransform.position = targetPosition;
                     return;
                 }
@@ -253,7 +253,7 @@ namespace r.e.p.o_cheat
                 if (PhotonNetwork.IsConnected && !itemPhotonView.IsMine)
                 {
                     itemPhotonView.RequestOwnership();
-                    Hax2.Log1($"Solicitada posse do item '{item.Name}' (ViewID: {itemPhotonView.ViewID})");
+                    DLog.Log($"Solicitada posse do item '{item.Name}' (ViewID: {itemPhotonView.ViewID})");
                 }
 
                 var transformView = itemTransform.GetComponent<PhotonTransformView>();
@@ -263,7 +263,7 @@ namespace r.e.p.o_cheat
                 {
                     wasTransformViewActive = true;
                     transformView.enabled = false;
-                    Hax2.Log1($"PhotonTransformView desativado temporariamente no item '{item.Name}'");
+                    DLog.Log($"PhotonTransformView desativado temporariamente no item '{item.Name}'");
                 }
 
                 Rigidbody rb = itemTransform.GetComponent<Rigidbody>();
@@ -272,17 +272,17 @@ namespace r.e.p.o_cheat
                 {
                     wasRbActive = !rb.isKinematic;
                     rb.isKinematic = true;
-                    Hax2.Log1($"Rigidbody do item '{item.Name}' desativado temporariamente");
+                    DLog.Log($"Rigidbody do item '{item.Name}' desativado temporariamente");
                 }
 
                 itemTransform.position = targetPosition;
-                Hax2.Log1($"Item '{item.Name}' teleportado localmente para {targetPosition}");
+                DLog.Log($"Item '{item.Name}' teleportado localmente para {targetPosition}");
                 Vector3 currentPosition = itemTransform.position;
-                Hax2.Log1($"Posição atual do item '{item.Name}' após teleporte: {currentPosition}");
+                DLog.Log($"Posição atual do item '{item.Name}' após teleporte: {currentPosition}");
                 if (PhotonNetwork.IsConnected && itemPhotonView != null)
                 {
                     itemPhotonView.RPC("TeleportItemRPC", RpcTarget.AllBuffered, targetPosition);
-                    Hax2.Log1($"Enviado RPC 'TeleportItemRPC' para todos para item '{item.Name}'");
+                    DLog.Log($"Enviado RPC 'TeleportItemRPC' para todos para item '{item.Name}'");
                 }
                 if (wasTransformViewActive || wasRbActive)
                 {
@@ -293,14 +293,14 @@ namespace r.e.p.o_cheat
                 {
                     itemGO.SetActive(false);
                     itemGO.SetActive(true);
-                    Hax2.Log1($"Item '{item.Name}' reativado para forçar renderização.");
+                    DLog.Log($"Item '{item.Name}' reativado para forçar renderização.");
                 }
 
-                Hax2.Log1($"Teleporte do item '{item.Name}' concluído.");
+                DLog.Log($"Teleporte do item '{item.Name}' concluído.");
             }
             catch (Exception e)
             {
-                Hax2.Log1($"Erro ao teleportar item '{item.Name}': {e.Message}");
+                DLog.Log($"Erro ao teleportar item '{item.Name}': {e.Message}");
             }
         }
     }
@@ -313,7 +313,7 @@ namespace r.e.p.o_cheat
             photonView = GetComponent<PhotonView>();
             if (photonView == null)
             {
-                Hax2.Log1($"PhotonView não encontrado no item '{gameObject.name}', adicionando um novo.");
+                DLog.Log($"PhotonView não encontrado no item '{gameObject.name}', adicionando um novo.");
                 photonView = gameObject.AddComponent<PhotonView>();
             }
             PhotonNetwork.AddCallbackTarget(this);
@@ -328,14 +328,14 @@ namespace r.e.p.o_cheat
         private void TeleportItemRPC(Vector3 targetPosition)
         {
             transform.position = targetPosition;
-            Hax2.Log1($"Item '{gameObject.name}' sincronizado para {targetPosition} via RPC");
+            DLog.Log($"Item '{gameObject.name}' sincronizado para {targetPosition} via RPC");
         }
 
         public void OnOwnershipRequest(PhotonView targetView, Player requestingPlayer)
         {
             if (targetView == photonView)
             {
-                Hax2.Log1($"Ownership requested for '{gameObject.name}' by player {requestingPlayer.ActorNumber}");
+                DLog.Log($"Ownership requested for '{gameObject.name}' by player {requestingPlayer.ActorNumber}");
             }
         }
 
@@ -343,7 +343,7 @@ namespace r.e.p.o_cheat
         {
             if (targetView == photonView)
             {
-                Hax2.Log1($"Ownership of '{gameObject.name}' transferred from {previousOwner?.ActorNumber} to {targetView.OwnerActorNr}");
+                DLog.Log($"Ownership of '{gameObject.name}' transferred from {previousOwner?.ActorNumber} to {targetView.OwnerActorNr}");
             }
         }
 
@@ -351,7 +351,7 @@ namespace r.e.p.o_cheat
         {
             if (targetView == photonView)
             {
-                Hax2.Log1($"Ownership transfer failed for '{gameObject.name}' by player {senderOfFailedRequest.ActorNumber}");
+                DLog.Log($"Ownership transfer failed for '{gameObject.name}' by player {senderOfFailedRequest.ActorNumber}");
             }
         }
     }
@@ -373,12 +373,12 @@ namespace r.e.p.o_cheat
             if (rb != null)
             {
                 rb.isKinematic = false;
-                Hax2.Log1($"Physics reativada para '{gameObject.name}' após teleporte");
+                DLog.Log($"Physics reativada para '{gameObject.name}' após teleporte");
             }
             if (transformView != null)
             {
                 transformView.enabled = true;
-                Hax2.Log1($"PhotonTransformView reativado para '{gameObject.name}' após teleporte");
+                DLog.Log($"PhotonTransformView reativado para '{gameObject.name}' após teleporte");
             }
             Destroy(this);
         }

@@ -16,5 +16,11 @@ namespace r.e.p.o_cheat
         {
             UnityEngine.Debug.LogError(message);
         }
+
+        [Conditional("DEBUG")]
+        public static void LogWarning(string message)
+        {
+            UnityEngine.Debug.LogWarning(message);
+        }
     }
 }

@@ -15,18 +15,18 @@ namespace r.e.p.o_cheat
         {
             if (playerTumbleType == null)
             {
-                Hax2.Log1("PlayerTumble type not found.");
+                DLog.Log("PlayerTumble type not found.");
                 return;
             }
 
             playerTumbleInstance = GameHelper.FindObjectOfType(playerTumbleType);
             if (playerTumbleInstance == null)
             {
-                Hax2.Log1("PlayerTumble instance not found in the scene.");
+                DLog.Log("PlayerTumble instance not found in the scene.");
             }
             else
             {
-                Hax2.Log1("PlayerTumble instance updated successfully.");
+                DLog.Log("PlayerTumble instance updated successfully.");
             }
         }
 
@@ -34,7 +34,7 @@ namespace r.e.p.o_cheat
         {
             if (methodName == "Update" || methodName == "Setup")
             {
-                Hax2.Log1($"Skipping disable for critical method: {methodName}");
+                DLog.Log($"Skipping disable for critical method: {methodName}");
                 return;
             }
             ModifyMethod(methodName, disableBytes);
@@ -51,7 +51,7 @@ namespace r.e.p.o_cheat
                 Initialize();
                 if (playerTumbleInstance == null)
                 {
-                    Hax2.Log1($"Cannot modify method {methodName} because PlayerTumble instance is null.");
+                    DLog.Log($"Cannot modify method {methodName} because PlayerTumble instance is null.");
                     return;
                 }
             }
@@ -59,7 +59,7 @@ namespace r.e.p.o_cheat
             MethodInfo method = playerTumbleType.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             if (method == null)
             {
-                Hax2.Log1($"Method {methodName} not found in PlayerTumble.");
+                DLog.Log($"Method {methodName} not found in PlayerTumble.");
                 return;
             }
 
@@ -74,7 +74,7 @@ namespace r.e.p.o_cheat
                 }
             }
 
-            Hax2.Log1($"Modified method: {methodName} (Patched with {BitConverter.ToString(patch)})");
+            DLog.Log($"Modified method: {methodName} (Patched with {BitConverter.ToString(patch)})");
         }
 
         public static void DisableAll()

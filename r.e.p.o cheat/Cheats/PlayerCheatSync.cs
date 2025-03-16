@@ -10,7 +10,7 @@ namespace r.e.p.o_cheat
         {
             if (PhotonNetwork.IsMasterClient)
             {
-                Hax2.Log1("Master Client received RPC and spawned item at: " + spawnPosition);
+                DLog.Log("Master Client received RPC and spawned item at: " + spawnPosition);
             }
         }
     }

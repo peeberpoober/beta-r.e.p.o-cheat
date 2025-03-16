@@ -17,12 +17,6 @@ namespace r.e.p.o_cheat
         private static int currentColumn = 0;
         private static int currentRow = 0;
 
-        private static float debugX, debugY, debugWidth, debugHeight, debugMargin, debugControlHeight, debugControlDist, debugNextControlY;
-        private static int debugCurrentColumn = 0;
-        private static int debugCurrentRow = 0;
-        private static int debugColumns = 1;
-
-        private static GUIStyle debugLabelStyle = null;
         private static GUIStyle sliderStyle;
         private static GUIStyle thumbStyle;
 
@@ -47,23 +41,6 @@ namespace r.e.p.o_cheat
             ResetGrid();
         }
 
-        public static void BeginDebugMenu(string text, float _x, float _y, float _width, float _height, float _margin, float _controlHeight, float _controlDist)
-        {
-            debugX = _x; debugY = _y; debugWidth = _width; debugHeight = _height; debugMargin = _margin; debugControlHeight = _controlHeight; debugControlDist = _controlDist;
-            debugNextControlY = debugY + debugMargin + 30;
-            GUI.Box(new Rect(debugX, debugY, debugWidth, debugHeight), text);
-            if (debugLabelStyle == null)
-            {
-                debugLabelStyle = new GUIStyle(GUI.skin.label)
-                {
-                    wordWrap = true,
-                    clipping = TextClipping.Clip,
-                    fontSize = 12,
-                    padding = new RectOffset(2, 2, 2, 2)
-                };
-            }
-        }
-
         private static Rect NextControlRect(float? customX = null, float? customY = null)
         {
             float controlX = customX ?? (x + margin + currentColumn * ((width - (columns + 1) * margin) / columns));
@@ -83,20 +60,6 @@ namespace r.e.p.o_cheat
                 }
             }
 
-            return rect;
-        }
-
-        private static Rect NextDebugControlRect()
-        {
-            float controlX = debugX + debugMargin + debugCurrentColumn * (debugWidth / debugColumns);
-            float controlY = debugNextControlY;
-            Rect rect = new Rect(controlX, controlY, debugWidth - debugMargin * 2, debugControlHeight);
-            debugCurrentColumn++;
-            if (debugCurrentColumn >= debugColumns)
-            {
-                debugCurrentColumn = 0;
-                debugCurrentRow++;
-            }
             return rect;
         }
 
@@ -155,17 +118,8 @@ namespace r.e.p.o_cheat
             }
             return solidTextures[key];
         }
-        public static void DebugLabel(string text)
-        {
-            Rect rect = NextDebugControlRect();
-            float textHeight = debugLabelStyle.CalcHeight(new GUIContent(text), rect.width);
-            rect.height = Mathf.Max(textHeight, debugControlHeight);
-            GUI.Label(rect, text, debugLabelStyle);
-            debugNextControlY = rect.y + rect.height + 5;
-        }
 
         public static void ResetGrid() { currentColumn = 0; currentRow = 0; nextControlY = y + margin + 60; }
-        public static void ResetDebugGrid() { debugCurrentColumn = 0; debugCurrentRow = 0; debugNextControlY = debugY + debugMargin; }
     }
 
     public class Hax2 : MonoBehaviour
@@ -188,8 +142,6 @@ namespace r.e.p.o_cheat
         public static bool godModeActive = false;
         public static bool infiniteHealthActive = false;
         public static bool stamineState = false;
-        public static List<DebugLogMessage> debugLogMessages = new List<DebugLogMessage>();
-        private bool showDebugMenu = false;
         private Vector2 playerScrollPosition = Vector2.zero;
         private Vector2 enemyScrollPosition = Vector2.zero;
 
@@ -243,7 +195,7 @@ namespace r.e.p.o_cheat
         private bool configuringSystemKey = false;
         private bool waitingForAnyKey = false;
         private bool showingActionSelector = false;
-        private int systemKeyConfigIndex = -1; // 0=menu, 1=reload, 2=unload, 3=debug
+        private int systemKeyConfigIndex = -1; // 0=menu, 1=reload, 2=unload
         private KeyCode[] defaultHotkeys = new KeyCode[12];
         private Vector2 actionSelectorScroll = Vector2.zero;
         private Vector2 hotkeyScrollPosition = Vector2.zero;
@@ -255,7 +207,6 @@ namespace r.e.p.o_cheat
         private KeyCode menuToggleKey = KeyCode.Delete;
         private KeyCode reloadKey = KeyCode.F5;
         private KeyCode unloadKey = KeyCode.F10;
-        private KeyCode debugMenuKey = KeyCode.F12;
 
         private float actionSelectorX = 300f;
         private float actionSelectorY = 200f;
@@ -300,19 +251,19 @@ namespace r.e.p.o_cheat
             var playerHealthType = Type.GetType("PlayerHealth, Assembly-CSharp");
             if (playerHealthType != null)
             {
-                Log1("playerHealthType não é null");
+                DLog.Log("playerHealthType não é null");
                 Health_Player.playerHealthInstance = FindObjectOfType(playerHealthType);
-                Log1(Health_Player.playerHealthInstance != null ? "playerHealthInstance não é null" : "playerHealthInstance null");
+                DLog.Log(Health_Player.playerHealthInstance != null ? "playerHealthInstance não é null" : "playerHealthInstance null");
             }
-            else Log1("playerHealthType null");
+            else DLog.Log("playerHealthType null");
 
             var playerMaxHealth = Type.GetType("ItemUpgradePlayerHealth, Assembly-CSharp");
             if (playerMaxHealth != null)
             {
                 Health_Player.playerMaxHealthInstance = FindObjectOfType(playerMaxHealth);
-                Log1("playerMaxHealth não é null");
+                DLog.Log("playerMaxHealth não é null");
             }
-            else Log1("playerMaxHealth null");
+            else DLog.Log("playerMaxHealth null");
         }
 
         public void Update()
@@ -323,7 +274,7 @@ namespace r.e.p.o_cheat
             if (Time.time >= nextUpdateTime)
             {
                 DebugCheats.UpdateEnemyList();
-                Log1("Lista de inimigos atualizada!");
+                DLog.Log("Lista de inimigos atualizada!");
                 nextUpdateTime = Time.time + updateInterval;
             }
 
@@ -355,14 +306,14 @@ namespace r.e.p.o_cheat
             // Prevent excessive logging by adding a cooldown
             if (Time.time - lastItemListUpdateTime > 10f)
             {
-                Log1($"Item list contains {itemList.Count} items.");
+                DLog.Log($"Item list contains {itemList.Count} items.");
                 lastItemListUpdateTime = Time.time;
             }
 
             if (Input.GetKeyDown(menuToggleKey))
             {
                 showMenu = !showMenu;
-                Debug.Log("MENU " + showMenu);
+                DLog.Log("MENU " + showMenu);
                 if (!showMenu) TryUnlockCamera();
                 UpdateCursorState();
             }
@@ -376,13 +327,7 @@ namespace r.e.p.o_cheat
                 UpdateCursorState();
                 Loader.UnloadCheat();
             }
-
-            if (Input.GetKeyDown(debugMenuKey))
-            {
-                showDebugMenu = !showDebugMenu;
-            }
-
-            debugLogMessages.RemoveAll(msg => Time.time - msg.timestamp > 3f);
+            
 
             if (configuringHotkey)
             {
@@ -390,18 +335,18 @@ namespace r.e.p.o_cheat
                 {
                     if (Input.GetKeyDown(key) && key != KeyCode.Escape)
                     {
-                        if (key == menuToggleKey || key == reloadKey || key == unloadKey || key == debugMenuKey)
+                        if (key == menuToggleKey || key == reloadKey || key == unloadKey)
                         {
                             keyAssignmentError = $"Cannot assign {key} as hotkey - it's already used as a system key!";
                             errorMessageTime = Time.time;
-                            Log1(keyAssignmentError);
+                            DLog.Log(keyAssignmentError);
                             configuringHotkey = false;
                         }
                         else if (hotkeyBindings.ContainsKey(key))
                         {
                             keyAssignmentError = $"Cannot assign {key} as hotkey - it's already used for another action!";
                             errorMessageTime = Time.time;
-                            Log1(keyAssignmentError);
+                            DLog.Log(keyAssignmentError);
                             configuringHotkey = false;
                         }
                         else
@@ -421,7 +366,7 @@ namespace r.e.p.o_cheat
 
                             defaultHotkeys[selectedHotkeySlot] = key;
 
-                            Log1($"Hotkey set to: {key}");
+                            DLog.Log($"Hotkey set to: {key}");
                             configuringHotkey = false;
                         }
                         break;
@@ -429,7 +374,7 @@ namespace r.e.p.o_cheat
                     else if (Input.GetKeyDown(KeyCode.Escape))
                     {
                         configuringHotkey = false;
-                        Log1("Hotkey configuration canceled");
+                        DLog.Log("Hotkey configuration canceled");
                         break;
                     }
                 }
@@ -459,11 +404,6 @@ namespace r.e.p.o_cheat
                             isUsed = true;
                             conflictType = "Unload";
                         }
-                        else if (key == debugMenuKey && systemKeyConfigIndex != 3)
-                        {
-                            isUsed = true;
-                            conflictType = "Debug Menu";
-                        }
                         else if (hotkeyBindings.ContainsKey(key))
                         {
                             isUsed = true;
@@ -474,7 +414,7 @@ namespace r.e.p.o_cheat
                         {
                             keyAssignmentError = $"Cannot assign {key} - already used as {conflictType}!";
                             errorMessageTime = Time.time;
-                            Log1(keyAssignmentError);
+                            DLog.Log(keyAssignmentError);
                             configuringSystemKey = false;
                         }
                         else
@@ -484,9 +424,8 @@ namespace r.e.p.o_cheat
                                 case 0: menuToggleKey = key; break;
                                 case 1: reloadKey = key; break;
                                 case 2: unloadKey = key; break;
-                                case 3: debugMenuKey = key; break;
                             }
-                            Log1($"{GetSystemKeyName(systemKeyConfigIndex)} key set to: {key}");
+                            DLog.Log($"{GetSystemKeyName(systemKeyConfigIndex)} key set to: {key}");
                             configuringSystemKey = false;
                             SaveHotkeySettings();
                         }
@@ -495,7 +434,7 @@ namespace r.e.p.o_cheat
                     else if (Input.GetKeyDown(KeyCode.Escape))
                     {
                         configuringSystemKey = false;
-                        Log1($"{GetSystemKeyName(systemKeyConfigIndex)} key configuration canceled");
+                        DLog.Log($"{GetSystemKeyName(systemKeyConfigIndex)} key configuration canceled");
                         break;
                     }
                 }
@@ -511,8 +450,6 @@ namespace r.e.p.o_cheat
                     }
                 }
             }
-
-            debugLogMessages.RemoveAll(msg => Time.time - msg.timestamp > 3f);
 
             if (showMenu) TryLockCamera();
 
@@ -537,9 +474,9 @@ namespace r.e.p.o_cheat
                         field.SetValue(InputManager.instance, clampedValue);
                     }
                 }
-                else Debug.LogError("Failed to find field disableAimingTimer.");
+                else DLog.LogError("Failed to find field disableAimingTimer.");
             }
-            else Debug.LogWarning("InputManager.instance not found!");
+            else DLog.LogWarning("InputManager.instance not found!");
         }
 
         private void TryUnlockCamera()
@@ -552,11 +489,11 @@ namespace r.e.p.o_cheat
                 {
                     float currentValue = (float)field.GetValue(InputManager.instance);
                     field.SetValue(InputManager.instance, 0f);
-                    Debug.Log("disableAimingTimer reset to 0 (menu closed).");
+                    DLog.Log("disableAimingTimer reset to 0 (menu closed).");
                 }
-                else Debug.LogError("Failed to find field disableAimingTimer.");
+                else DLog.LogError("Failed to find field disableAimingTimer.");
             }
-            else Debug.LogWarning("InputManager.instance not found!");
+            else DLog.LogWarning("InputManager.instance not found!");
         }
 
         private void UpdateCursorState()
@@ -583,7 +520,7 @@ namespace r.e.p.o_cheat
             }
 
             itemList = ItemTeleport.GetItemList();
-            Hax2.Log1($"Lista de itens atualizada: {itemList.Count} itens encontrados (incluindo ValuableObject e PlayerDeathHead).");
+            DLog.Log($"Lista de itens atualizada: {itemList.Count} itens encontrados (incluindo ValuableObject e PlayerDeathHead).");
 
             var Array = UnityEngine.Object.FindObjectsOfType(Type.GetType(", Assembly-CSharp"));
             if (Array != null)
@@ -592,7 +529,7 @@ namespace r.e.p.o_cheat
             }
 
             itemList = ItemTeleport.GetItemList();
-            Hax2.Log1($"Lista de itens atualizada: {itemList.Count} itens encontrados (incluindo ValuableObject e ).");
+            DLog.Log($"Lista de itens atualizada: {itemList.Count} itens encontrados (incluindo ValuableObject e ).");
 
         }
 
@@ -629,14 +566,14 @@ namespace r.e.p.o_cheat
         {
             if (selectedEnemyIndex < 0 || selectedEnemyIndex >= enemyList.Count)
             {
-                Log1($"Índice de inimigo inválido! selectedEnemyIndex={selectedEnemyIndex}, enemyList.Count={enemyList.Count}");
+                DLog.Log($"Índice de inimigo inválido! selectedEnemyIndex={selectedEnemyIndex}, enemyList.Count={enemyList.Count}");
                 return;
             }
 
             var selectedEnemy = enemyList[selectedEnemyIndex];
             if (selectedEnemy == null)
             {
-                Log1("Inimigo selecionado é nulo!");
+                DLog.Log("Inimigo selecionado é nulo!");
                 return;
             }
 
@@ -645,7 +582,7 @@ namespace r.e.p.o_cheat
                 GameObject localPlayer = DebugCheats.GetLocalPlayer();
                 if (localPlayer == null)
                 {
-                    Log1("Jogador local não encontrado!");
+                    DLog.Log("Jogador local não encontrado!");
                     return;
                 }
 
@@ -656,7 +593,7 @@ namespace r.e.p.o_cheat
                 if (PhotonNetwork.IsConnected && photonView != null && !photonView.IsMine)
                 {
                     photonView.RequestOwnership();
-                    Log1($"Solicitada posse do inimigo {enemyNames[selectedEnemyIndex]} para garantir controle local.");
+                    DLog.Log($"Solicitada posse do inimigo {enemyNames[selectedEnemyIndex]} para garantir controle local.");
                 }
 
                 var navMeshAgentField = selectedEnemy.GetType().GetField("NavMeshAgent", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -670,16 +607,16 @@ namespace r.e.p.o_cheat
                         if (enabledProperty != null)
                         {
                             enabledProperty.SetValue(navMeshAgent, false);
-                            Log1($"NavMeshAgent de {enemyNames[selectedEnemyIndex]} desativado para evitar movimento imediato.");
+                            DLog.Log($"NavMeshAgent de {enemyNames[selectedEnemyIndex]} desativado para evitar movimento imediato.");
                         }
                     }
                 }
 
                 selectedEnemy.transform.position = targetPosition;
-                Log1($"Inimigo {enemyNames[selectedEnemyIndex]} teleportado localmente para {targetPosition}");
+                DLog.Log($"Inimigo {enemyNames[selectedEnemyIndex]} teleportado localmente para {targetPosition}");
 
                 Vector3 currentPosition = selectedEnemy.transform.position;
-                Log1($"Posição atual do inimigo após teleporte: {currentPosition}");
+                DLog.Log($"Posição atual do inimigo após teleporte: {currentPosition}");
 
                 if (PhotonNetwork.IsConnected && photonView != null)
                 {
@@ -688,11 +625,11 @@ namespace r.e.p.o_cheat
                     if (teleportMethod != null)
                     {
                         teleportMethod.Invoke(selectedEnemy, new object[] { targetPosition });
-                        Log1($"Inimigo {enemyNames[selectedEnemyIndex]} teleportado via EnemyTeleported para sincronização multiplayer.");
+                        DLog.Log($"Inimigo {enemyNames[selectedEnemyIndex]} teleportado via EnemyTeleported para sincronização multiplayer.");
                     }
                     else
                     {
-                        Log1("Método 'EnemyTeleported' não encontrado, sincronização pode não ocorrer.");
+                        DLog.Log("Método 'EnemyTeleported' não encontrado, sincronização pode não ocorrer.");
                     }
                 }
 
@@ -704,19 +641,19 @@ namespace r.e.p.o_cheat
                 {
                     enemyGameObject.SetActive(false);
                     enemyGameObject.SetActive(true);
-                    Log1($"Inimigo {enemyNames[selectedEnemyIndex]} reativado para forçar renderização.");
+                    DLog.Log($"Inimigo {enemyNames[selectedEnemyIndex]} reativado para forçar renderização.");
                 }
                 else
                 {
-                    Log1($"GameObject do inimigo {enemyNames[selectedEnemyIndex]} não encontrado para re-renderização.");
+                    DLog.Log($"GameObject do inimigo {enemyNames[selectedEnemyIndex]} não encontrado para re-renderização.");
                 }
 
                 UpdateEnemyList();
-                Log1($"Teleporte de {enemyNames[selectedEnemyIndex]} concluído.");
+                DLog.Log($"Teleporte de {enemyNames[selectedEnemyIndex]} concluído.");
             }
             catch (Exception e)
             {
-                Log1($"Erro ao teleportar inimigo {enemyNames[selectedEnemyIndex]}: {e.Message}");
+                DLog.Log($"Erro ao teleportar inimigo {enemyNames[selectedEnemyIndex]}: {e.Message}");
             }
         }
 
@@ -727,7 +664,7 @@ namespace r.e.p.o_cheat
             if (enabledProperty != null)
             {
                 enabledProperty.SetValue(navMeshAgent, true);
-                Log1("NavMeshAgent reativado após teleporte.");
+                DLog.Log("NavMeshAgent reativado após teleporte.");
             }
         }
 
@@ -735,14 +672,14 @@ namespace r.e.p.o_cheat
         {
             if (selectedEnemyIndex < 0 || selectedEnemyIndex >= enemyList.Count)
             {
-                Log1("Índice de inimigo inválido!");
+                DLog.Log("Índice de inimigo inválido!");
                 return;
             }
 
             var selectedEnemy = enemyList[selectedEnemyIndex];
             if (selectedEnemy == null)
             {
-                Log1("Inimigo selecionado é nulo!");
+                DLog.Log("Inimigo selecionado é nulo!");
                 return;
             }
 
@@ -759,22 +696,22 @@ namespace r.e.p.o_cheat
                         if (hurtMethod != null)
                         {
                             hurtMethod.Invoke(healthComponent, new object[] { 9999, Vector3.zero });
-                            Log1($"Inimigo {enemyNames[selectedEnemyIndex]} ferido com 9999 de dano via Hurt");
+                            DLog.Log($"Inimigo {enemyNames[selectedEnemyIndex]} ferido com 9999 de dano via Hurt");
                         }
                         else 
-                            Log1("Método 'Hurt' não encontrado em EnemyHealth");
+                            DLog.Log("Método 'Hurt' não encontrado em EnemyHealth");
                     }
                     else 
-                        Log1("Componente EnemyHealth é nulo");
+                        DLog.Log("Componente EnemyHealth é nulo");
                 }
                 else 
-                    Log1("Campo 'Health' não encontrado em Enemy");
+                    DLog.Log("Campo 'Health' não encontrado em Enemy");
 
                 UpdateEnemyList();
             }
             catch (Exception e)
             {
-                Log1($"Erro ao matar inimigo {enemyNames[selectedEnemyIndex]}: {e.Message}");
+                DLog.Log($"Erro ao matar inimigo {enemyNames[selectedEnemyIndex]}: {e.Message}");
             }
         }
 
@@ -797,7 +734,7 @@ namespace r.e.p.o_cheat
                 if (GUI.Button(actionRect, availableActions[i].Name))
                 {
                     hotkeyBindings[currentHotkeyKey] = availableActions[i].Action;
-                    Log1("assigned " + availableActions[i].Name + " to " + currentHotkeyKey);
+                    DLog.Log("assigned " + availableActions[i].Name + " to " + currentHotkeyKey);
                     showingActionSelector = false;
                     SaveHotkeySettings();
                 }
@@ -817,7 +754,6 @@ namespace r.e.p.o_cheat
             PlayerPrefs.SetInt("MenuToggleKey", (int)menuToggleKey);
             PlayerPrefs.SetInt("ReloadKey", (int)reloadKey);
             PlayerPrefs.SetInt("UnloadKey", (int)unloadKey);
-            PlayerPrefs.SetInt("DebugMenuKey", (int)debugMenuKey);
 
             for (int i = 0; i < defaultHotkeys.Length; i++)
             {
@@ -843,7 +779,7 @@ namespace r.e.p.o_cheat
             }
 
             PlayerPrefs.Save();
-            Log1("Hotkey settings saved");
+            DLog.Log("Hotkey settings saved");
         }
 
         private void LoadHotkeySettings()
@@ -851,7 +787,6 @@ namespace r.e.p.o_cheat
             menuToggleKey = (KeyCode)PlayerPrefs.GetInt("MenuToggleKey", (int)KeyCode.Delete);
             reloadKey = (KeyCode)PlayerPrefs.GetInt("ReloadKey", (int)KeyCode.F5);
             unloadKey = (KeyCode)PlayerPrefs.GetInt("UnloadKey", (int)KeyCode.F10);
-            debugMenuKey = (KeyCode)PlayerPrefs.GetInt("DebugMenuKey", (int)KeyCode.F12);
 
             hotkeyBindings.Clear();
 
@@ -866,7 +801,7 @@ namespace r.e.p.o_cheat
                 }
             }
 
-            Log1("Hotkey settings loaded");
+            DLog.Log("Hotkey settings loaded");
         }
 
         private class HotkeyAction
@@ -887,7 +822,7 @@ namespace r.e.p.o_cheat
             configuringSystemKey = true;
             systemKeyConfigIndex = index;
             waitingForAnyKey = true;
-            Log1($"Press any key to set {GetSystemKeyName(index)}...");
+            DLog.Log($"Press any key to set {GetSystemKeyName(index)}...");
         }
 
         private string GetSystemKeyName(int index)
@@ -897,7 +832,6 @@ namespace r.e.p.o_cheat
                 case 0: return "Menu Toggle";
                 case 1: return "Reload";
                 case 2: return "Unload";
-                case 3: return "Debug Menu";
                 default: return "Unknown";
             }
         }
@@ -915,33 +849,33 @@ namespace r.e.p.o_cheat
                 bool newGodModeState = !godModeActive;
                 PlayerController.GodMode();
                 godModeActive = newGodModeState;
-                Log1("god mode toggled: " + godModeActive);
+                DLog.Log("god mode toggled: " + godModeActive);
             }, "toggles god mode on/off"));
 
             availableActions.Add(new HotkeyAction("Noclip Toggle", () => {
                 bool newNoclipState = !NoclipController.noclipActive;
                 NoclipController.ToggleNoclip();
                 NoclipController.noclipActive = newNoclipState;
-                Debug.Log("Noclip toggled: " + NoclipController.noclipActive);
+                DLog.Log("Noclip toggled: " + NoclipController.noclipActive);
             }, "Toggles noclip on/off"));
 
             availableActions.Add(new HotkeyAction("Infinite Health", () => {
                 bool newHealState = !infiniteHealthActive;
                 infiniteHealthActive = newHealState;
                 Health_Player.MaxHealth();
-                Log1("infinite health toggled: " + infiniteHealthActive);
+                DLog.Log("infinite health toggled: " + infiniteHealthActive);
             }, "toggles infinite health on/off"));
 
             availableActions.Add(new HotkeyAction("Infinite Stamina", () => {
                 bool newStaminaState = !stamineState;
                 stamineState = newStaminaState;
                 PlayerController.MaxStamina();
-                Log1("infinite stamina toggled: " + stamineState);
+                DLog.Log("infinite stamina toggled: " + stamineState);
             }, "toggles infinite stamina on/off"));
 
             availableActions.Add(new HotkeyAction("RGB Player", () => {
                 playerColor.isRandomizing = !playerColor.isRandomizing;
-                Log1("rgb player toggled: " + playerColor.isRandomizing);
+                DLog.Log("rgb player toggled: " + playerColor.isRandomizing);
             }, "toggles rgb player effect"));
 
             availableActions.Add(new HotkeyAction("Spawn Money", () => {
@@ -951,32 +885,32 @@ namespace r.e.p.o_cheat
                     Vector3 targetPosition = localPlayer.transform.position + Vector3.up * 1.5f;
                     transform.position = targetPosition;
                     ItemSpawner.SpawnItem(targetPosition);
-                    Log1("money spawned.");
+                    DLog.Log("money spawned.");
                 }
                 else
                 {
-                    Log1("local player not found!");
+                    DLog.Log("local player not found!");
                 }
             }, "spawns money at your position"));
 
             availableActions.Add(new HotkeyAction("Kill All Enemies", () => {
                 DebugCheats.KillAllEnemies();
-                Log1("all enemies killed.");
+                DLog.Log("all enemies killed.");
             }, "kills all enemies on the map"));
 
             availableActions.Add(new HotkeyAction("Enemy ESP Toggle", () => {
                 DebugCheats.drawEspBool = !DebugCheats.drawEspBool;
-                Log1("enemy esp toggled: " + DebugCheats.drawEspBool);
+                DLog.Log("enemy esp toggled: " + DebugCheats.drawEspBool);
             }, "toggles enemy esp on/off"));
 
             availableActions.Add(new HotkeyAction("Item ESP Toggle", () => {
                 DebugCheats.drawItemEspBool = !DebugCheats.drawItemEspBool;
-                Log1("item esp toggled: " + DebugCheats.drawItemEspBool);
+                DLog.Log("item esp toggled: " + DebugCheats.drawItemEspBool);
             }, "toggles item esp on/off"));
 
             availableActions.Add(new HotkeyAction("Player ESP Toggle", () => {
                 DebugCheats.drawPlayerEspBool = !DebugCheats.drawPlayerEspBool;
-                Log1("player esp toggled: " + DebugCheats.drawPlayerEspBool);
+                DLog.Log("player esp toggled: " + DebugCheats.drawPlayerEspBool);
             }, "toggles player esp on/off"));
 
             availableActions.Add(new HotkeyAction("Heal Self", () => {
@@ -984,24 +918,24 @@ namespace r.e.p.o_cheat
                 if (localPlayer != null)
                 {
                     Health_Player.HealPlayer(localPlayer, 100, "Self");
-                    Log1("healed self by 100 hp.");
+                    DLog.Log("healed self by 100 hp.");
                 }
                 else
                 {
-                    Log1("local player not found!");
+                    DLog.Log("local player not found!");
                 }
             }, "heals yourself by 100 hp"));
 
             availableActions.Add(new HotkeyAction("Max Speed", () => {
                 sliderValue = 30f;
                 PlayerController.RemoveSpeed(sliderValue);
-                Log1("speed set to maximum (30)");
+                DLog.Log("speed set to maximum (30)");
             }, "sets speed to maximum value"));
 
             availableActions.Add(new HotkeyAction("Normal Speed", () => {
                 sliderValue = 5f;
                 PlayerController.RemoveSpeed(sliderValue);
-                Log1("speed set to normal (5)");
+                DLog.Log("speed set to normal (5)");
             }, "sets speed to normal value"));
 
             for (int i = 0; i < defaultHotkeys.Length; i++)
@@ -1027,7 +961,7 @@ namespace r.e.p.o_cheat
             }
             catch (Exception e)
             {
-                Hax2.Log1($"Erro ao obter vida do inimigo: {e.Message}");
+                DLog.Log($"Erro ao obter vida do inimigo: {e.Message}");
                 return -1;
             }
         }
@@ -1065,7 +999,7 @@ namespace r.e.p.o_cheat
             string fakeName = $"<color=green>[LIVE]</color> FakePlayer{fakePlayerId}";
             playerNames.Add(fakeName);
             playerList.Add(null);
-            Log1($"Added fake player: {fakeName}");
+            DLog.Log($"Added fake player: {fakeName}");
         }
 
         private bool IsPlayerAlive(object player, string playerName)
@@ -1086,7 +1020,7 @@ namespace r.e.p.o_cheat
             }
             catch (Exception e)
             {
-                Hax2.Log1($"Erro ao verificar vida de {playerName}: {e.Message}");
+                DLog.Log($"Erro ao verificar vida de {playerName}: {e.Message}");
                 return true;
             }
         }
@@ -1095,13 +1029,13 @@ namespace r.e.p.o_cheat
         {
             if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count)
             {
-                Log1("Índice de jogador inválido!");
+                DLog.Log("Índice de jogador inválido!");
                 return;
             }
             var selectedPlayer = playerList[selectedPlayerIndex];
             if (selectedPlayer == null)
             {
-                Log1("Selected player is null!");
+                DLog.Log("Selected player is null!");
                 return;
             }
 
@@ -1119,19 +1053,19 @@ namespace r.e.p.o_cheat
                         if (inExtractionPointField != null)
                         {
                             inExtractionPointField.SetValue(playerDeathHeadInstance, true);
-                            Log1("Campo 'inExtractionPoint' definido como true.");
-                            Log1("'inExtractionPoint' field set to true.");
+                            DLog.Log("Campo 'inExtractionPoint' definido como true.");
+                            DLog.Log("'inExtractionPoint' field set to true.");
                         }
                         if (reviveMethod != null)
                         {
                             reviveMethod.Invoke(playerDeathHeadInstance, null);
-                            Log1("'Revive' method successfully called for: " + playerNames[selectedPlayerIndex]);
+                            DLog.Log("'Revive' method successfully called for: " + playerNames[selectedPlayerIndex]);
                         }
-                        else Log1("'Revive' method not found!");
+                        else DLog.Log("'Revive' method not found!");
                     }
-                    else Log1("'playerDeathHead' instance not found.");
+                    else DLog.Log("'playerDeathHead' instance not found.");
                 }
-                else Log1("'playerDeathHead' field not found.");
+                else DLog.Log("'playerDeathHead' field not found.");
 
                 var playerHealthField = selectedPlayer.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (playerHealthField != null)
@@ -1144,52 +1078,52 @@ namespace r.e.p.o_cheat
                         var healthField = healthType.GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
                         int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
-                        Log1($"Max health retrieved: {maxHealth}");
+                        DLog.Log($"Max health retrieved: {maxHealth}");
                         if (healthField != null)
                         {
                             healthField.SetValue(playerHealthInstance, maxHealth);
-                            Log1($"Health set directly to {maxHealth} via 'health' field.");
+                            DLog.Log($"Health set directly to {maxHealth} via 'health' field.");
                         }
                         else
                         {
-                            Log1("'health' field not found, attempting HealPlayer as fallback.");
+                            DLog.Log("'health' field not found, attempting HealPlayer as fallback.");
                             Health_Player.HealPlayer(selectedPlayer, maxHealth, playerNames[selectedPlayerIndex]);
                         }
 
                         int currentHealth = healthField != null ? (int)healthField.GetValue(playerHealthInstance) : -1;
-                        Log1($"Current health after revive: {currentHealth}");
+                        DLog.Log($"Current health after revive: {currentHealth}");
                     }
-                    else Log1("PlayerHealth instance is null, health restoration failed.");
+                    else DLog.Log("PlayerHealth instance is null, health restoration failed.");
                 }
-                else Log1("'playerHealth' field not found, healing not performed.");
+                else DLog.Log("'playerHealth' field not found, healing not performed.");
             }
             catch (Exception e)
             {
-                Log1($"Error reviving and healing {playerNames[selectedPlayerIndex]}: {e.Message}");
+                DLog.Log($"Error reviving and healing {playerNames[selectedPlayerIndex]}: {e.Message}");
             }
         }
 
         private void KillSelectedPlayer()
         {
-            if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count) { Log1("Índice de jogador inválido!"); return; }
+            if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count) { DLog.Log("Índice de jogador inválido!"); return; }
             var selectedPlayer = playerList[selectedPlayerIndex];
-            if (selectedPlayer == null) { Log1("Jogador selecionado é nulo!"); return; }
+            if (selectedPlayer == null) { DLog.Log("Jogador selecionado é nulo!"); return; }
             try
             {
-                Log1($"Tentando matar: {playerNames[selectedPlayerIndex]} | MasterClient: {PhotonNetwork.IsMasterClient}");
+                DLog.Log($"Tentando matar: {playerNames[selectedPlayerIndex]} | MasterClient: {PhotonNetwork.IsMasterClient}");
                 var photonViewField = selectedPlayer.GetType().GetField("photonView", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (photonViewField == null) { Log1("PhotonViewField não encontrado!"); return; }
+                if (photonViewField == null) { DLog.Log("PhotonViewField não encontrado!"); return; }
                 var photonView = photonViewField.GetValue(selectedPlayer) as PhotonView;
-                if (photonView == null) { Log1("PhotonView não é válido!"); return; }
+                if (photonView == null) { DLog.Log("PhotonView não é válido!"); return; }
                 var playerHealthField = selectedPlayer.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (playerHealthField == null) { Log1("Campo 'playerHealth' não encontrado!"); return; }
+                if (playerHealthField == null) { DLog.Log("Campo 'playerHealth' não encontrado!"); return; }
                 var playerHealthInstance = playerHealthField.GetValue(selectedPlayer);
-                if (playerHealthInstance == null) { Log1("Instância de playerHealth é nula!"); return; }
+                if (playerHealthInstance == null) { DLog.Log("Instância de playerHealth é nula!"); return; }
                 var healthType = playerHealthInstance.GetType();
                 var deathMethod = healthType.GetMethod("Death", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (deathMethod == null) { Log1("Método 'Death' não encontrado!"); return; }
+                if (deathMethod == null) { DLog.Log("Método 'Death' não encontrado!"); return; }
                 deathMethod.Invoke(playerHealthInstance, null);
-                Log1($"Método 'Death' chamado localmente para {playerNames[selectedPlayerIndex]}.");
+                DLog.Log($"Método 'Death' chamado localmente para {playerNames[selectedPlayerIndex]}.");
 
                 var playerAvatarField = healthType.GetField("playerAvatar", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (playerAvatarField != null)
@@ -1199,93 +1133,93 @@ namespace r.e.p.o_cheat
                     {
                         var playerAvatarType = playerAvatarInstance.GetType();
                         var playerDeathMethod = playerAvatarType.GetMethod("PlayerDeath", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                        if (playerDeathMethod != null) { playerDeathMethod.Invoke(playerAvatarInstance, new object[] { -1 }); Log1($"Método 'PlayerDeath' chamado localmente para {playerNames[selectedPlayerIndex]}."); }
-                        else Log1("Método 'PlayerDeath' não encontrado em PlayerAvatar!");
+                        if (playerDeathMethod != null) { playerDeathMethod.Invoke(playerAvatarInstance, new object[] { -1 }); DLog.Log($"Método 'PlayerDeath' chamado localmente para {playerNames[selectedPlayerIndex]}."); }
+                        else DLog.Log("Método 'PlayerDeath' não encontrado em PlayerAvatar!");
                     }
-                    else Log1("Instância de PlayerAvatar é nula!");
+                    else DLog.Log("Instância de PlayerAvatar é nula!");
                 }
-                else Log1("Campo 'playerAvatar' não encontrado em PlayerHealth!");
+                else DLog.Log("Campo 'playerAvatar' não encontrado em PlayerHealth!");
 
                 if (PhotonNetwork.IsConnected && photonView != null)
                 {
                     var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
-                    Log1(maxHealthField != null ? $"maxHealth encontrado: {maxHealth}" : "Campo 'maxHealth' não encontrado, usando valor padrão: 100");
+                    DLog.Log(maxHealthField != null ? $"maxHealth encontrado: {maxHealth}" : "Campo 'maxHealth' não encontrado, usando valor padrão: 100");
                     photonView.RPC("UpdateHealthRPC", RpcTarget.AllBuffered, new object[] { 0, maxHealth, true });
-                    Log1($"RPC 'UpdateHealthRPC' enviado para todos com saúde=0, maxHealth={maxHealth}, effect=true.");
-                    try { photonView.RPC("PlayerDeathRPC", RpcTarget.AllBuffered, new object[] { -1 }); Log1("Tentando RPC 'PlayerDeathRPC' para forçar morte..."); }
-                    catch { Log1("RPC 'PlayerDeathRPC' não registrado, tentando alternativa..."); }
+                    DLog.Log($"RPC 'UpdateHealthRPC' enviado para todos com saúde=0, maxHealth={maxHealth}, effect=true.");
+                    try { photonView.RPC("PlayerDeathRPC", RpcTarget.AllBuffered, new object[] { -1 }); DLog.Log("Tentando RPC 'PlayerDeathRPC' para forçar morte..."); }
+                    catch { DLog.Log("RPC 'PlayerDeathRPC' não registrado, tentando alternativa..."); }
                     photonView.RPC("HurtOtherRPC", RpcTarget.AllBuffered, new object[] { 9999, Vector3.zero, false, -1 });
-                    Log1("RPC 'HurtOtherRPC' enviado com 9999 de dano para garantir morte.");
+                    DLog.Log("RPC 'HurtOtherRPC' enviado com 9999 de dano para garantir morte.");
                 }
-                else Log1("Não conectado ao Photon, morte apenas local.");
-                Log1($"Tentativa de matar {playerNames[selectedPlayerIndex]} concluída.");
+                else DLog.Log("Não conectado ao Photon, morte apenas local.");
+                DLog.Log($"Tentativa de matar {playerNames[selectedPlayerIndex]} concluída.");
             }
-            catch (Exception e) { Log1($"Erro ao tentar matar {playerNames[selectedPlayerIndex]}: {e.Message}"); }
+            catch (Exception e) { DLog.Log($"Erro ao tentar matar {playerNames[selectedPlayerIndex]}: {e.Message}"); }
         }
 
         private void SendSelectedPlayerToVoid()
         {
             if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count)
             {
-                Log1("Índice de jogador inválido!");
+                DLog.Log("Índice de jogador inválido!");
                 return;
             }
             var selectedPlayer = playerList[selectedPlayerIndex];
             if (selectedPlayer == null)
             {
-                Log1("Jogador selecionado é nulo!");
+                DLog.Log("Jogador selecionado é nulo!");
                 return;
             }
 
             try
             {
-                Log1($"Tentando enviar {playerNames[selectedPlayerIndex]} para o void | MasterClient: {PhotonNetwork.IsMasterClient}");
+                DLog.Log($"Tentando enviar {playerNames[selectedPlayerIndex]} para o void | MasterClient: {PhotonNetwork.IsMasterClient}");
 
                 var photonViewField = selectedPlayer.GetType().GetField("photonView", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (photonViewField == null)
                 {
-                    Log1("PhotonViewField não encontrado!");
+                    DLog.Log("PhotonViewField não encontrado!");
                     return;
                 }
                 var photonView = photonViewField.GetValue(selectedPlayer) as PhotonView;
                 if (photonView == null)
                 {
-                    Log1("PhotonView não é válido!");
+                    DLog.Log("PhotonView não é válido!");
                     return;
                 }
 
                 var playerMono = selectedPlayer as MonoBehaviour;
                 if (playerMono == null)
                 {
-                    Log1("selectedPlayer não é um MonoBehaviour!");
+                    DLog.Log("selectedPlayer não é um MonoBehaviour!");
                     return;
                 }
 
                 var transform = playerMono.transform;
                 if (transform == null)
                 {
-                    Log1("Transform é nulo!");
+                    DLog.Log("Transform é nulo!");
                     return;
                 }
 
                 Vector3 voidPosition = new Vector3(0, -10, 0);
                 transform.position = voidPosition;
-                Log1($"Jogador {playerNames[selectedPlayerIndex]} enviado localmente para o void: {voidPosition}");
+                DLog.Log($"Jogador {playerNames[selectedPlayerIndex]} enviado localmente para o void: {voidPosition}");
 
                 if (PhotonNetwork.IsConnected && photonView != null)
                 {
                     photonView.RPC("SpawnRPC", RpcTarget.AllBuffered, new object[] { voidPosition, transform.rotation });
-                    Log1($"RPC 'SpawnRPC' enviado para todos com posição: {voidPosition}");
+                    DLog.Log($"RPC 'SpawnRPC' enviado para todos com posição: {voidPosition}");
                 }
                 else
                 {
-                    Log1("Não conectado ao Photon, teleporte apenas local.");
+                    DLog.Log("Não conectado ao Photon, teleporte apenas local.");
                 }
             }
             catch (Exception e)
             {
-                Log1($"Erro ao enviar {playerNames[selectedPlayerIndex]} para o void: {e.Message}");
+                DLog.Log($"Erro ao enviar {playerNames[selectedPlayerIndex]} para o void: {e.Message}");
             }
         }
 
@@ -1422,11 +1356,11 @@ namespace r.e.p.o_cheat
                             if (selectedPlayerIndex >= 0 && selectedPlayerIndex < playerList.Count)
                             {
                                 Health_Player.HealPlayer(playerList[selectedPlayerIndex], 50, playerNames[selectedPlayerIndex]);
-                                Hax2.Log1($"Player {playerNames[selectedPlayerIndex]} healed.");
+                                DLog.Log($"Player {playerNames[selectedPlayerIndex]} healed.");
                             }
                             else
                             {
-                                Hax2.Log1("Nenhum jogador válido selecionado para curar!");
+                                DLog.Log("Nenhum jogador válido selecionado para curar!");
                             }
                         }
                         if (UIHelper.Button("Damage Player", menuX + 30, menuY + 315))
@@ -1434,19 +1368,19 @@ namespace r.e.p.o_cheat
                             if (selectedPlayerIndex >= 0 && selectedPlayerIndex < playerList.Count)
                             {
                                 Health_Player.DamagePlayer(playerList[selectedPlayerIndex], 1, playerNames[selectedPlayerIndex]);
-                                Hax2.Log1($"Player {playerNames[selectedPlayerIndex]} damaged.");
+                                DLog.Log($"Player {playerNames[selectedPlayerIndex]} damaged.");
                             }
                             else
                             {
-                                Hax2.Log1("Nenhum jogador válido selecionado para causar dano!");
+                                DLog.Log("Nenhum jogador válido selecionado para causar dano!");
                             }
                         }
                         bool newHealState = UIHelper.ButtonBool("Toggle Infinite Health", infiniteHealthActive, menuX + 30, menuY + 355);
                         if (newHealState != infiniteHealthActive) { infiniteHealthActive = newHealState; Health_Player.MaxHealth(); }
                         bool newStaminaState = UIHelper.ButtonBool("Toggle Infinite Stamina", stamineState, menuX + 30, menuY + 395);
-                        if (newStaminaState != stamineState) { stamineState = newStaminaState; PlayerController.MaxStamina(); Hax2.Log1("God mode toggled: " + stamineState); }
+                        if (newStaminaState != stamineState) { stamineState = newStaminaState; PlayerController.MaxStamina(); DLog.Log("God mode toggled: " + stamineState); }
                         bool newGodModeState = UIHelper.ButtonBool("Toggle God Mode", godModeActive, menuX + 30, menuY + 435);
-                        if (newGodModeState != godModeActive) { PlayerController.GodMode(); godModeActive = newGodModeState; Hax2.Log1("God mode toggled: " + godModeActive); }
+                        if (newGodModeState != godModeActive) { PlayerController.GodMode(); godModeActive = newGodModeState; DLog.Log("God mode toggled: " + godModeActive); }
 
                         bool newNoclipActive = UIHelper.ButtonBool("Toggle Noclip", NoclipController.noclipActive, menuX + 30, menuY + 475);
                         if (newNoclipActive != NoclipController.noclipActive) { NoclipController.ToggleNoclip(); NoclipController.noclipActive = newNoclipActive; }
@@ -1469,7 +1403,7 @@ namespace r.e.p.o_cheat
                         if (Hax2.staminaRechargeDelay != oldStaminaRechargeDelay || Hax2.staminaRechargeRate != oldStaminaRechargeRate)
                         {
                             PlayerController.DecreaseStaminaRechargeDelay(Hax2.staminaRechargeDelay, Hax2.staminaRechargeRate);
-                            Hax2.Log1($"Stamina recharge updated: Delay={Hax2.staminaRechargeDelay}x, Rate={Hax2.staminaRechargeRate}x");
+                            DLog.Log($"Stamina recharge updated: Delay={Hax2.staminaRechargeDelay}x, Rate={Hax2.staminaRechargeRate}x");
                             oldStaminaRechargeDelay = Hax2.staminaRechargeDelay;
                             oldStaminaRechargeRate = Hax2.staminaRechargeRate;
                         }
@@ -1525,33 +1459,33 @@ namespace r.e.p.o_cheat
                         }
                         GUI.EndScrollView();
 
-                        if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { ReviveSelectedPlayer(); Hax2.Log1("Player revived: " + playerNames[selectedPlayerIndex]); }
-                        if (UIHelper.Button("Kill Selected Player", menuX + 30, menuY + 370)) { KillSelectedPlayer(); Hax2.Log1("Tentativa de matar o jogador selecionado realizada."); }
+                        if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { ReviveSelectedPlayer(); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
+                        if (UIHelper.Button("Kill Selected Player", menuX + 30, menuY + 370)) { KillSelectedPlayer(); DLog.Log("Tentativa de matar o jogador selecionado realizada."); }
                         if (UIHelper.Button("Send Player To Void", menuX + 30, menuY + 410)) SendSelectedPlayerToVoid();
-                        if (UIHelper.Button("Teleport Player To Me", menuX + 30, menuY + 450)) { Teleport.TeleportPlayerToMe(selectedPlayerIndex, playerList, playerNames); Hax2.Log1($"Teleportado {playerNames[selectedPlayerIndex]} até você."); }
-                        if (UIHelper.Button("Teleport Me To Player", menuX + 30, menuY + 490)) { Teleport.TeleportMeToPlayer(selectedPlayerIndex, playerList, playerNames); Hax2.Log1($"Teleportado você até {playerNames[selectedPlayerIndex]}."); }
+                        if (UIHelper.Button("Teleport Player To Me", menuX + 30, menuY + 450)) { Teleport.TeleportPlayerToMe(selectedPlayerIndex, playerList, playerNames); DLog.Log($"Teleportado {playerNames[selectedPlayerIndex]} até você."); }
+                        if (UIHelper.Button("Teleport Me To Player", menuX + 30, menuY + 490)) { Teleport.TeleportMeToPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log($"Teleportado você até {playerNames[selectedPlayerIndex]}."); }
                         break;
 
                     case MenuCategory.Misc:
                         if (UIHelper.Button("Spawn Money", menuX + 30, menuY + 105))
                         {
-                            Hax2.Log1("Botão 'Spawn Money' clicado!");
+                            DLog.Log("Botão 'Spawn Money' clicado!");
                             GameObject localPlayer = DebugCheats.GetLocalPlayer();
                             if (localPlayer == null)
                             {
-                                Hax2.Log1("Jogador local não encontrado!");
+                                DLog.Log("Jogador local não encontrado!");
                                 return;
                             }
                             Vector3 targetPosition = localPlayer.transform.position + Vector3.up * 1.5f;
                             transform.position = targetPosition;
                             ItemSpawner.SpawnItem(targetPosition);
-                            Hax2.Log1("Money spawned.");
+                            DLog.Log("Money spawned.");
                         }
                         bool newPlayerColorState = UIHelper.ButtonBool("RGB Player", playerColor.isRandomizing, menuX + 30, menuY + 145);
                         if (newPlayerColorState != playerColor.isRandomizing)
                         {
                             playerColor.isRandomizing = newPlayerColorState;
-                            Hax2.Log1("Randomize toggled: " + playerColor.isRandomizing);
+                            DLog.Log("Randomize toggled: " + playerColor.isRandomizing);
                         }
 
                         UIHelper.Label("Flashlight Intensity: " + Hax2.flashlightIntensity, menuX + 30, menuY + 185);
@@ -1652,17 +1586,17 @@ namespace r.e.p.o_cheat
                         if (UIHelper.Button("Kill Selected Enemy", menuX + 30, menuY + 330))
                         {
                             KillSelectedEnemy();
-                            Hax2.Log1($"Tentativa de matar o inimigo selecionado realizada: {enemyNames[selectedEnemyIndex]}");
+                            DLog.Log($"Tentativa de matar o inimigo selecionado realizada: {enemyNames[selectedEnemyIndex]}");
                         }
                         if (UIHelper.Button("Kill All Enemies", menuX + 30, menuY + 370))
                         {
                             DebugCheats.KillAllEnemies();
-                            Hax2.Log1("Tentativa de matar todos os inimigos realizada.");
+                            DLog.Log("Tentativa de matar todos os inimigos realizada.");
                         }
                         if (UIHelper.Button("Teleport Enemy to Me", menuX + 30, menuY + 410))
                         {
                             TeleportEnemyToMe();
-                            Hax2.Log1($"Tentativa de teleportar {enemyNames[selectedEnemyIndex]} até você realizada.");
+                            DLog.Log($"Tentativa de teleportar {enemyNames[selectedEnemyIndex]} até você realizada.");
                         }
                         break;
 
@@ -1687,28 +1621,28 @@ namespace r.e.p.o_cheat
                             if (selectedItemIndex >= 0 && selectedItemIndex < itemList.Count)
                             {
                                 ItemTeleport.TeleportItemToMe(itemList[selectedItemIndex]);
-                                Hax2.Log1($"Teleported item: {itemList[selectedItemIndex].Name}");
+                                DLog.Log($"Teleported item: {itemList[selectedItemIndex].Name}");
                             }
                             else
                             {
-                                Hax2.Log1("Nenhum item válido selecionado para teleporte!");
+                                DLog.Log("Nenhum item válido selecionado para teleporte!");
                             }
                         }
                         if (UIHelper.Button("Teleport All Items to Me", menuX + 30, menuY + 370))
                         {
                             ItemTeleport.TeleportAllItemsToMe();
-                            Hax2.Log1("Teleporting all items initiated.");
+                            DLog.Log("Teleporting all items initiated.");
                         }
                         if (UIHelper.Button("Change Item Value to 10K", menuX + 30, menuY + 410))
                         {
                             if (selectedItemIndex >= 0 && selectedItemIndex < itemList.Count)
                             {
                                 ItemTeleport.SetItemValue(itemList[selectedItemIndex], 10000);
-                                Hax2.Log1($"Updated value: {itemList[selectedItemIndex].Value}");
+                                DLog.Log($"Updated value: {itemList[selectedItemIndex].Value}");
                             }
                             else
                             {
-                                Hax2.Log1("Nenhum item válido selecionado para alterar valor!");
+                                DLog.Log("Nenhum item válido selecionado para alterar valor!");
                             }
                         }
                         break;
@@ -1790,15 +1724,6 @@ namespace r.e.p.o_cheat
                         {
                             StartConfigureSystemKey(2);
                         }
-                        yPos += 40;
-
-                        string debugMenuKeyText = (configuringSystemKey && systemKeyConfigIndex == 3 && waitingForAnyKey)
-                            ? "Press any key..." : debugMenuKey.ToString();
-                        GUI.Label(new Rect(10, yPos, 150, 30), "Debug Menu:");
-                        if (GUI.Button(new Rect(170, yPos, 290, 30), debugMenuKeyText))
-                        {
-                            StartConfigureSystemKey(3);
-                        }
                         yPos += 50;
 
                         GUI.Label(new Rect(10, yPos, 540, 25), "Action Hotkeys", headerStyle);
@@ -1833,7 +1758,7 @@ namespace r.e.p.o_cheat
                             {
                                 selectedHotkeySlot = i;
                                 configuringHotkey = true;
-                                Log1("configuring hotkey for slot " + (i + 1));
+                                DLog.Log("configuring hotkey for slot " + (i + 1));
                                 SaveHotkeySettings();
                             }
 
@@ -1847,7 +1772,7 @@ namespace r.e.p.o_cheat
                                 }
                                 else
                                 {
-                                    Log1("Please assign a key to this slot first");
+                                    DLog.Log("Please assign a key to this slot first");
                                 }
                             }
 
@@ -1859,7 +1784,7 @@ namespace r.e.p.o_cheat
                                     hotkeyBindings.Remove(currentKey);
                                 }
                                 defaultHotkeys[i] = KeyCode.None;
-                                Log1("cleared hotkey binding for slot " + (i + 1));
+                                DLog.Log("cleared hotkey binding for slot " + (i + 1));
                                 SaveHotkeySettings();
                             }
 
@@ -1868,17 +1793,6 @@ namespace r.e.p.o_cheat
 
                         GUI.EndScrollView();
                         break;
-                }
-            }
-
-            if (showDebugMenu)
-            {
-                UIHelper.ResetDebugGrid();
-                UIHelper.BeginDebugMenu("Debug Log", 800, 50, 500, 500, 30, 30, 10);
-                UIHelper.Label("Press F12 to close debug log", 830, 70);
-                foreach (var logMessage in debugLogMessages)
-                {
-                    if (!string.IsNullOrEmpty(logMessage.message)) UIHelper.DebugLabel(logMessage.message);
                 }
             }
 
@@ -1915,13 +1829,5 @@ namespace r.e.p.o_cheat
             return solidTextures[color];
         }
 
-        public static void Log1(string message) => debugLogMessages.Add(new DebugLogMessage(message, Time.time));
-
-        public class DebugLogMessage
-        {
-            public string message;
-            public float timestamp;
-            public DebugLogMessage(string msg, float time) { message = msg; timestamp = time; }
-        }
     }
 }

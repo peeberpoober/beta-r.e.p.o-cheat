@@ -145,7 +145,7 @@ namespace r.e.p.o_cheat
                 }
             }
             lastPlayerUpdateTime = Time.time;
-            Hax2.Log1($"Lista de dados de jogadores atualizada: {playerDataList.Count} jogadores.");
+            DLog.Log($"Lista de dados de jogadores atualizada: {playerDataList.Count} jogadores.");
         }
         private static void UpdateExtractionPointList()
         {
@@ -167,10 +167,10 @@ namespace r.e.p.o_cheat
                         }
                         Vector3 cachedPosition = extractionPoint.transform.position;
                         extractionPointList.Add(new ExtractionPointData(extractionPoint, cachedState, cachedPosition));
-                        Hax2.Log1($"Extraction Point cacheado na posição: {cachedPosition}");
+                        DLog.Log($"Extraction Point cacheado na posição: {cachedPosition}");
                     }
                 }
-                Hax2.Log1($"Lista de Extraction Points atualizada: {extractionPointList.Count} pontos encontrados.");
+                DLog.Log($"Lista de Extraction Points atualizada: {extractionPointList.Count} pontos encontrados.");
             }
         }
 
@@ -240,7 +240,7 @@ namespace r.e.p.o_cheat
             }
 
             lastUpdateTime = Time.time;
-            Hax2.Log1($"Listas atualizadas: {enemyList.Count} inimigos, {valuableObjects.Count} itens, {playerList.Count} jogadores.");
+            DLog.Log($"Listas atualizadas: {enemyList.Count} inimigos, {valuableObjects.Count} itens, {playerList.Count} jogadores.");
         }
 
         private static void UpdateLocalPlayer()
@@ -248,11 +248,11 @@ namespace r.e.p.o_cheat
             localPlayer = GetLocalPlayer();
             if (localPlayer != null)
             {
-                Hax2.Log1("Jogador local atualizado com sucesso: " + localPlayer.name);
+                DLog.Log("Jogador local atualizado com sucesso: " + localPlayer.name);
             }
             else
             {
-                Hax2.Log1("Falha ao atualizar jogador local!");
+                DLog.Log("Falha ao atualizar jogador local!");
             }
         }
 
@@ -277,10 +277,10 @@ namespace r.e.p.o_cheat
                                 if (gameObjectProperty != null)
                                 {
                                     GameObject foundPlayer = gameObjectProperty.GetValue(player) as GameObject;
-                                    Hax2.Log1("Local player encontrado via Photon: " + foundPlayer.name);
+                                    DLog.Log("Local player encontrado via Photon: " + foundPlayer.name);
                                     return foundPlayer;
                                 }
-                                Hax2.Log1("Local player encontrado via PhotonView: " + photonView.gameObject.name);
+                                DLog.Log("Local player encontrado via PhotonView: " + photonView.gameObject.name);
                                 return photonView.gameObject;
                             }
                         }
@@ -293,7 +293,7 @@ namespace r.e.p.o_cheat
                     {
                         if (photonView.Owner == PhotonNetwork.LocalPlayer && photonView.IsMine)
                         {
-                            Hax2.Log1("Local player encontrado via Photon fallback: " + photonView.gameObject.name);
+                            DLog.Log("Local player encontrado via Photon fallback: " + photonView.gameObject.name);
                             return photonView.gameObject;
                         }
                     }
@@ -309,7 +309,7 @@ namespace r.e.p.o_cheat
                     if (gameObjectProperty != null)
                     {
                         GameObject foundPlayer = gameObjectProperty.GetValue(player) as GameObject;
-                        Hax2.Log1("Local player encontrado em singleplayer via PlayerGetList: " + foundPlayer.name);
+                        DLog.Log("Local player encontrado em singleplayer via PlayerGetList: " + foundPlayer.name);
                         return foundPlayer;
                     }
                 }
@@ -320,7 +320,7 @@ namespace r.e.p.o_cheat
                     var playerAvatar = UnityEngine.Object.FindObjectOfType(playerAvatarType) as MonoBehaviour;
                     if (playerAvatar != null)
                     {
-                        Hax2.Log1("Local player encontrado em singleplayer via PlayerAvatar: " + playerAvatar.gameObject.name);
+                        DLog.Log("Local player encontrado em singleplayer via PlayerAvatar: " + playerAvatar.gameObject.name);
                         return playerAvatar.gameObject;
                     }
                 }
@@ -328,7 +328,7 @@ namespace r.e.p.o_cheat
                 var playerByTag = GameObject.FindWithTag("Player");
                 if (playerByTag != null)
                 {
-                    Hax2.Log1("Local player encontrado em singleplayer via tag 'Player': " + playerByTag.name);
+                    DLog.Log("Local player encontrado em singleplayer via tag 'Player': " + playerByTag.name);
                     return playerByTag;
                 }
 
@@ -337,16 +337,16 @@ namespace r.e.p.o_cheat
                 {
                     if (obj.name.Contains("Player") && obj.activeInHierarchy)
                     {
-                        Hax2.Log1("Local player encontrado em singleplayer via nome genérico: " + obj.name);
+                        DLog.Log("Local player encontrado em singleplayer via nome genérico: " + obj.name);
                         return obj;
                     }
                 }
 
-                Hax2.Log1("Nenhum jogador local encontrado no singleplayer após todas as tentativas!");
+                DLog.Log("Nenhum jogador local encontrado no singleplayer após todas as tentativas!");
                 return null;
             }
 
-            Hax2.Log1("Nenhum jogador local encontrado!");
+            DLog.Log("Nenhum jogador local encontrado!");
             return null;
         }
 
@@ -386,22 +386,22 @@ namespace r.e.p.o_cheat
                         }
                         else
                         {
-                            Hax2.Log1("Nenhum inimigo encontrado em enemiesSpawned");
+                            DLog.Log("Nenhum inimigo encontrado em enemiesSpawned");
                         }
                     }
                     else
                     {
-                        Hax2.Log1("Campo 'enemiesSpawned' não encontrado");
+                        DLog.Log("Campo 'enemiesSpawned' não encontrado");
                     }
                 }
                 else
                 {
-                    Hax2.Log1("Instância de EnemyDirector é nula");
+                    DLog.Log("Instância de EnemyDirector é nula");
                 }
             }
             else
             {
-                Hax2.Log1("EnemyDirector não encontrado");
+                DLog.Log("EnemyDirector não encontrado");
             }
         }
 
@@ -603,7 +603,7 @@ public static void DrawESP()
                 cachedCamera = Camera.main;
                 if (cachedCamera == null)
                 {
-                    Debug.Log("Camera.main not found!");
+                    DLog.Log("Camera.main not found!");
                     return;
                 }
             }
@@ -618,7 +618,7 @@ public static void DrawESP()
                     Shader chamsShader = Shader.Find("Hidden/Internal-Colored"); // Credits to https://github.dev/IcyRelic/LethalMenu/tree/master/LethalMenu/Cheats
                     if (chamsShader != null)
                     {
-                        Debug.Log("Found ChamsShader, creating material");
+                        DLog.Log("Found ChamsShader, creating material");
                         hiddenMaterial = new Material(chamsShader);
                         hiddenMaterial.SetInt("_SrcBlend", 5);
                         hiddenMaterial.SetInt("_DstBlend", 10);
@@ -643,7 +643,7 @@ public static void DrawESP()
                     }
                     else
                     {
-                        Debug.Log("ChamsShader not found!");
+                        DLog.Log("ChamsShader not found!");
                     }
                 }
 
@@ -684,7 +684,7 @@ public static void DrawESP()
 
                     if (allRenderers.Count > 0)
                     {
-                        //Debug.Log($"Found {allRenderers.Count} renderers for enemyInstance!");
+                        //DLog.Log($"Found {allRenderers.Count} renderers for enemyInstance!");
                         foreach (var renderer in allRenderers)
                         {
                             if (renderer == null || !renderer.gameObject.activeInHierarchy) continue;
@@ -702,12 +702,12 @@ public static void DrawESP()
 
                             renderer.materials = newMats;
 
-                            //Debug.Log($"Applied chams shader to {renderer.gameObject.name}");
+                            //DLog.Log($"Applied chams shader to {renderer.gameObject.name}");
                         }
                     }
                     else
                     {
-                        Debug.Log("No renderers found for enemyInstance!");
+                        DLog.Log("No renderers found for enemyInstance!");
                     }
                 }
             }
@@ -817,7 +817,7 @@ public static void DrawESP()
                             catch (Exception e)
                             {
                                 itemName = (valuableObject as UnityEngine.Object)?.name ?? "Unknown";
-                                Hax2.Log1($"Erro ao acessar 'name' do item: {e.Message}. Usando nome do GameObject: {itemName}");
+                                DLog.Log($"Erro ao acessar 'name' do item: {e.Message}. Usando nome do GameObject: {itemName}");
                             }
 
                             if (itemName.StartsWith("Valuable", StringComparison.OrdinalIgnoreCase))
@@ -842,7 +842,7 @@ public static void DrawESP()
                                 }
                                 catch (Exception e)
                                 {
-                                    Hax2.Log1($"Error reading 'dollarValueCurrent' for '{itemName}': {e.Message}. Defaulting to 0.");
+                                    DLog.Log($"Error reading 'dollarValueCurrent' for '{itemName}': {e.Message}. Defaulting to 0.");
                                 }
                             }
                         }
@@ -1031,7 +1031,7 @@ public static void DrawESP()
             }
             catch (Exception e)
             {
-                Hax2.Log1($"Erro ao obter vida do jogador: {e.Message}");
+                DLog.Log($"Erro ao obter vida do jogador: {e.Message}");
                 return 100;
             }
         }
@@ -1039,7 +1039,7 @@ public static void DrawESP()
 
         public static void KillAllEnemies()
         {
-            Hax2.Log1("Tentando matar todos os inimigos");
+            DLog.Log("Tentando matar todos os inimigos");
 
             foreach (var enemyInstance in enemyList)
             {
@@ -1058,20 +1058,20 @@ public static void DrawESP()
                             if (hurtMethod != null)
                             {
                                 hurtMethod.Invoke(healthComponent, new object[] { 9999, Vector3.zero });
-                                Hax2.Log1($"Inimigo ferido com 9999 de dano via Hurt");
+                                DLog.Log($"Inimigo ferido com 9999 de dano via Hurt");
                             }
                             else
-                                Hax2.Log1("Método 'Hurt' não encontrado em EnemyHealth");
+                                DLog.Log("Método 'Hurt' não encontrado em EnemyHealth");
                         }
                         else
-                            Hax2.Log1("Componente EnemyHealth é nulo");
+                            DLog.Log("Componente EnemyHealth é nulo");
                     }
                     else
-                        Hax2.Log1("Campo 'Health' não encontrado em Enemy");
+                        DLog.Log("Campo 'Health' não encontrado em Enemy");
                 }
                 catch (Exception e)
                 {
-                    Hax2.Log1($"Erro ao matar inimigo: {e.Message}");
+                    DLog.Log($"Erro ao matar inimigo: {e.Message}");
                 }
             }
             UpdateEnemyList();

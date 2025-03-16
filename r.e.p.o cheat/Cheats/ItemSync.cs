@@ -2,68 +2,71 @@
 using Photon.Pun;
 using Photon.Realtime;
 
-public class ItemSync : MonoBehaviour, IPunInstantiateMagicCallback, IPunObservable
+namespace r.e.p.o_cheat
 {
-    private Rigidbody rb;
-
-    private void Awake()
+    public class ItemSync : MonoBehaviour, IPunInstantiateMagicCallback, IPunObservable
     {
-        rb = GetComponent<Rigidbody>();
-    }
+        private Rigidbody rb;
 
-    public void OnPhotonInstantiate(PhotonMessageInfo info)
-    {
-        object[] data = info.photonView.InstantiationData;
-        if (data != null && data.Length == 3)
+        private void Awake()
         {
-            Vector3 initialPosition = new Vector3((float)data[0], (float)data[1], (float)data[2]);
-            transform.position = initialPosition;
-            Debug.Log("Posição inicial definida para: " + initialPosition);
-        }
-        else
-        {
-            Debug.LogWarning("Dados de instanciação ausentes ou inválidos!");
+            rb = GetComponent<Rigidbody>();
         }
 
-        if (!info.photonView.IsMine)
+        public void OnPhotonInstantiate(PhotonMessageInfo info)
         {
-            if (rb != null)
+            object[] data = info.photonView.InstantiationData;
+            if (data != null && data.Length == 3)
             {
-                rb.isKinematic = true;
-                Debug.Log("Rigidbody definido como kinematic no cliente");
+                Vector3 initialPosition = new Vector3((float)data[0], (float)data[1], (float)data[2]);
+                transform.position = initialPosition;
+                DLog.Log("Posição inicial definida para: " + initialPosition);
+            }
+            else
+            {
+                DLog.LogWarning("Dados de instanciação ausentes ou inválidos!");
+            }
+
+            if (!info.photonView.IsMine)
+            {
+                if (rb != null)
+                {
+                    rb.isKinematic = true;
+                    DLog.Log("Rigidbody definido como kinematic no cliente");
+                }
             }
         }
-    }
 
-    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
-    {
-        if (stream.IsWriting)
+        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
         {
-            stream.SendNext(transform.position);
-            stream.SendNext(transform.rotation);
-            if (rb != null)
+            if (stream.IsWriting)
             {
-                stream.SendNext(rb.velocity);
-                stream.SendNext(rb.angularVelocity);
+                stream.SendNext(transform.position);
+                stream.SendNext(transform.rotation);
+                if (rb != null)
+                {
+                    stream.SendNext(rb.velocity);
+                    stream.SendNext(rb.angularVelocity);
+                }
+            }
+            else
+            {
+                transform.position = (Vector3)stream.ReceiveNext();
+                transform.rotation = (Quaternion)stream.ReceiveNext();
+                if (rb != null)
+                {
+                    rb.velocity = (Vector3)stream.ReceiveNext();
+                    rb.angularVelocity = (Vector3)stream.ReceiveNext();
+                }
             }
         }
-        else
-        {
-            transform.position = (Vector3)stream.ReceiveNext();
-            transform.rotation = (Quaternion)stream.ReceiveNext();
-            if (rb != null)
-            {
-                rb.velocity = (Vector3)stream.ReceiveNext();
-                rb.angularVelocity = (Vector3)stream.ReceiveNext();
-            }
-        }
-    }
 
-    void Update()
-    {
-        if (!PhotonNetwork.IsMasterClient)
+        void Update()
         {
-            Debug.Log("Posição atual no cliente: " + transform.position);
+            if (!PhotonNetwork.IsMasterClient)
+            {
+                DLog.Log("Posição atual no cliente: " + transform.position);
+            }
         }
     }
 }
