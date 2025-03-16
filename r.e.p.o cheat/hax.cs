@@ -1627,6 +1627,12 @@ namespace r.e.p.o_cheat
                             PlayerController.SetSlideDecay(Hax2.slideDecay);
                             OldslideDecay = Hax2.slideDecay;
                         }
+
+                        bool newNoFogState = UIHelper.ButtonBool("Toggle No Fog", MiscFeatures.NoFogEnabled, menuX + 30, menuY + 565);
+                        if (newNoFogState != MiscFeatures.NoFogEnabled)
+                        {
+                            MiscFeatures.ToggleNoFog(newNoFogState);
+                        }
                         break;
 
                     case MenuCategory.Enemies:
