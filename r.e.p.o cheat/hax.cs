@@ -812,11 +812,9 @@ namespace r.e.p.o_cheat
                         float parentSpacing = 30f;    // Space between main parent options when children are hidden
                         float childIndent = 20f;      // Indentation for child options
                         float childSpacing = 30f;     // Space between child options
-
                         // Enemy ESP section
                         DebugCheats.drawEspBool = UIHelper.Checkbox("Enemy ESP", DebugCheats.drawEspBool, menuX + 30, currentY);
                         currentY += DebugCheats.drawEspBool ? childIndent : parentSpacing;
-
                         if (DebugCheats.drawEspBool)
                         {
                             DebugCheats.showEnemyBox = UIHelper.Checkbox("Toggle Box", DebugCheats.showEnemyBox, menuX + 50, currentY);
@@ -831,7 +829,6 @@ namespace r.e.p.o_cheat
                         // Item ESP section
                         DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, menuX + 30, currentY);
                         currentY += DebugCheats.drawItemEspBool ? childIndent : parentSpacing;
-
                         if (DebugCheats.drawItemEspBool)
                         {
                             DebugCheats.showItemNames = UIHelper.Checkbox("Show Item Names", DebugCheats.showItemNames, menuX + 50, currentY);
@@ -843,6 +840,12 @@ namespace r.e.p.o_cheat
                             DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Item ESP", DebugCheats.draw3DItemEspBool, menuX + 50, currentY);
                             currentY += childSpacing;
                             DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Show Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, currentY);
+                            currentY += childSpacing;
+        
+                            // Max Distance Slider
+                            GUI.Label(new Rect(menuX + 50, currentY, 200, 20), $"Max Item Distance: {DebugCheats.maxItemEspDistance:F0}m");
+                            currentY += 20;
+                            DebugCheats.maxItemEspDistance = GUI.HorizontalSlider(new Rect(menuX + 50, currentY, 200, 20), DebugCheats.maxItemEspDistance, 0f, 1000f);
                             currentY += parentSpacing;
                         }
                         // Extraction ESP section
