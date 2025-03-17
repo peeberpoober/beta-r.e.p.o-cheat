@@ -11,6 +11,7 @@ namespace r.e.p.o_cheat
 {
     static class DebugCheats
     {
+        public static bool showEnemyBox = true; // Default to true since it was previously always on
         private static int frameCounter = 0;
         public static List<Enemy> enemyList = new List<Enemy>();
         public static List<object> valuableObjects = new List<object>();
@@ -752,7 +753,11 @@ namespace r.e.p.o_cheat
                         float x = footX;
                         float y = footY;
 
-                        Box(x, y, width, height, texture2, 1f);
+                        // Only draw the box if showEnemyBox is true
+                        if (showEnemyBox)
+                        {
+                            Box(x, y, width, height, texture2, 1f);
+                        }
 
                         float labelWidth = 100f;
                         float labelX = x - labelWidth / 2f;
