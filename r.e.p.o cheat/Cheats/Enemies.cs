@@ -159,9 +159,9 @@ namespace r.e.p.o_cheat
                     }
                 }
 
-                var enemyGameObject = selectedEnemy.GetComponent<GameObject>();
-                if (enemyGameObject == null) enemyGameObject = ((MonoBehaviour)selectedEnemy).gameObject;
-                if (enemyGameObject != null)
+                // Get the GameObject directly from the Enemy (which is a MonoBehaviour)
+                GameObject enemyGameObject = selectedEnemy is MonoBehaviour ? ((MonoBehaviour)selectedEnemy).gameObject : null;
+                if (enemyGameObject != null && enemyGameObject.activeInHierarchy)
                 {
                     enemyGameObject.SetActive(false);
                     enemyGameObject.SetActive(true);
@@ -169,7 +169,7 @@ namespace r.e.p.o_cheat
                 }
                 else
                 {
-                    DLog.Log($"Enemy GameObject {enemyNames[selectedEnemyIndex]} not found for re-rendering.");
+                    DLog.Log($"Enemy GameObject {enemyNames[selectedEnemyIndex]} not found or not active for re-rendering.");
                 }
 
                 DLog.Log($"Teleport of {enemyNames[selectedEnemyIndex]} completed.");
@@ -308,9 +308,9 @@ namespace r.e.p.o_cheat
                     }
                 }
 
-                var enemyGameObject = selectedEnemy.GetComponent<GameObject>();
-                if (enemyGameObject == null) enemyGameObject = ((MonoBehaviour)selectedEnemy).gameObject;
-                if (enemyGameObject != null)
+                // Get the GameObject directly from the Enemy (which is a MonoBehaviour)
+                GameObject enemyGameObject = selectedEnemy is MonoBehaviour ? ((MonoBehaviour)selectedEnemy).gameObject : null;
+                if (enemyGameObject != null && enemyGameObject.activeInHierarchy)
                 {
                     enemyGameObject.SetActive(false);
                     enemyGameObject.SetActive(true);
@@ -318,7 +318,7 @@ namespace r.e.p.o_cheat
                 }
                 else
                 {
-                    DLog.Log($"Enemy GameObject {enemyNames[selectedEnemyIndex]} not found for re-rendering.");
+                    DLog.Log($"Enemy GameObject {enemyNames[selectedEnemyIndex]} not found or not active for re-rendering.");
                 }
 
                 DLog.Log($"Teleport of {enemyNames[selectedEnemyIndex]} to {playerNames[targetPlayerIndex]} completed.");
