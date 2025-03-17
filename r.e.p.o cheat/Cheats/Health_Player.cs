@@ -1,7 +1,8 @@
-﻿using System;
+﻿﻿using System;
 using System.Reflection;
 using UnityEngine;
 using Photon.Pun;
+using Photon.Realtime;
 
 namespace r.e.p.o_cheat
 {
@@ -14,33 +15,33 @@ namespace r.e.p.o_cheat
         {
             if (targetPlayer == null)
             {
-                DLog.Log("Jogador alvo é nulo!");
+                DLog.Log("Target player is null!");
                 return;
             }
 
             try
             {
-                DLog.Log($"Tentando curar: {playerName} | MasterClient: {PhotonNetwork.IsMasterClient}");
+                DLog.Log($"Attempting to heal: {playerName} | MasterClient: {PhotonNetwork.IsMasterClient}");
                 var photonViewField = targetPlayer.GetType().GetField("photonView", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (photonViewField == null) { DLog.Log("PhotonViewField não encontrado!"); return; }
+                if (photonViewField == null) { DLog.Log("PhotonViewField not found!"); return; }
                 var photonView = photonViewField.GetValue(targetPlayer) as PhotonView;
-                if (photonView == null) { DLog.Log("PhotonView não é válido!"); return; }
+                if (photonView == null) { DLog.Log("PhotonView is not valid!"); return; }
 
                 var playerHealthField = targetPlayer.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (playerHealthField == null) { DLog.Log("Campo 'playerHealth' não encontrado!"); return; }
+                if (playerHealthField == null) { DLog.Log("'playerHealth' field not found!"); return; }
                 var playerHealthInstance = playerHealthField.GetValue(targetPlayer);
-                if (playerHealthInstance == null) { DLog.Log("Instância de playerHealth é nula!"); return; }
+                if (playerHealthInstance == null) { DLog.Log("playerHealth instance is null!"); return; }
 
                 var healthType = playerHealthInstance.GetType();
                 var healMethod = healthType.GetMethod("Heal", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (healMethod != null)
                 {
                     healMethod.Invoke(playerHealthInstance, new object[] { healAmount, true });
-                    DLog.Log($"Método 'Heal' chamado localmente com {healAmount} HP.");
+                    DLog.Log($"'Heal' method called locally with {healAmount} HP.");
                 }
                 else
                 {
-                    DLog.Log("Método 'Heal' não encontrado!");
+                    DLog.Log("'Heal' method not found!");
                 }
 
                 if (PhotonNetwork.IsConnected && photonView != null)
@@ -49,30 +50,30 @@ namespace r.e.p.o_cheat
                     var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     int currentHealth = currentHealthField != null ? (int)currentHealthField.GetValue(playerHealthInstance) : 0;
                     int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
-                    DLog.Log(maxHealthField != null ? $"maxHealth encontrado: {maxHealth}" : "Campo 'maxHealth' não encontrado, usando valor padrão: 100");
+                    DLog.Log(maxHealthField != null ? $"maxHealth found: {maxHealth}" : "'maxHealth' field not found, using default value: 100");
 
                     photonView.RPC("UpdateHealthRPC", RpcTarget.AllBuffered, new object[] {maxHealth, maxHealth, true });
-                    DLog.Log($"RPC 'UpdateHealthRPC' enviado para todos com saúde={currentHealth + maxHealth}, maxHealth={maxHealth}, effect=true.");
+                    DLog.Log($"RPC 'UpdateHealthRPC' sent to all with health={currentHealth + maxHealth}, maxHealth={maxHealth}, effect=true.");
 
                     try
                     {
                         photonView.RPC("HealRPC", RpcTarget.AllBuffered, new object[] { healAmount, true });
-                        DLog.Log($"RPC 'HealRPC' enviado com {healAmount} HP.");
+                        DLog.Log($"RPC 'HealRPC' sent with {healAmount} HP.");
                     }
                     catch
                     {
-                        DLog.Log("RPC 'HealRPC' não registrado, confiando no UpdateHealthRPC.");
+                        DLog.Log("RPC 'HealRPC' not registered, relying on UpdateHealthRPC.");
                     }
                 }
                 else
                 {
-                    DLog.Log("Não conectado ao Photon, cura apenas local.");
+                    DLog.Log("Not connected to Photon, local healing only.");
                 }
-                DLog.Log($"Tentativa de curar concluída.");
+                DLog.Log($"Healing attempt completed.");
             }
             catch (Exception e)
             {
-                DLog.Log($"Erro ao tentar curar: {e.Message}");
+                DLog.Log($"Error trying to heal: {e.Message}");
             }
         }
 
@@ -80,120 +81,194 @@ namespace r.e.p.o_cheat
         {
             if (targetPlayer == null)
             {
-                DLog.Log("Jogador alvo é nulo!");
+                DLog.Log("Target player is null!");
                 return;
             }
 
             try
             {
-                DLog.Log($"Tentando causar dano: {playerName} | MasterClient: {PhotonNetwork.IsMasterClient}");
+                DLog.Log($"Attempting to damage: {playerName} | MasterClient: {PhotonNetwork.IsMasterClient}");
                 var photonViewField = targetPlayer.GetType().GetField("photonView", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (photonViewField == null) { DLog.Log("PhotonViewField não encontrado!"); return; }
+                if (photonViewField == null) { DLog.Log("PhotonViewField not found!"); return; }
                 var photonView = photonViewField.GetValue(targetPlayer) as PhotonView;
-                if (photonView == null) { DLog.Log("PhotonView não é válido!"); return; }
+                if (photonView == null) { DLog.Log("PhotonView is not valid!"); return; }
 
                 var playerHealthField = targetPlayer.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (playerHealthField == null) { DLog.Log("Campo 'playerHealth' não encontrado!"); return; }
+                if (playerHealthField == null) { DLog.Log("'playerHealth' field not found!"); return; }
                 var playerHealthInstance = playerHealthField.GetValue(targetPlayer);
-                if (playerHealthInstance == null) { DLog.Log("Instância de playerHealth é nula!"); return; }
+                if (playerHealthInstance == null) { DLog.Log("playerHealth instance is null!"); return; }
 
                 var healthType = playerHealthInstance.GetType();
                 var hurtMethod = healthType.GetMethod("Hurt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (hurtMethod != null)
                 {
                     hurtMethod.Invoke(playerHealthInstance, new object[] { damageAmount, true, -1 });
-                    DLog.Log($"Método 'Hurt' chamado localmente com {damageAmount} de dano.");
+                    DLog.Log($"'Hurt' method called locally with {damageAmount} damage.");
                 }
                 else
                 {
-                    DLog.Log("Método 'Hurt' não encontrado!");
+                    DLog.Log("'Hurt' method not found!");
                 }
 
                 if (PhotonNetwork.IsConnected && photonView != null)
                 {
                     var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
-                    DLog.Log(maxHealthField != null ? $"maxHealth encontrado: {maxHealth}" : "Campo 'maxHealth' não encontrado, usando valor padrão: 100");
+                    DLog.Log(maxHealthField != null ? $"maxHealth found: {maxHealth}" : "'maxHealth' field not found, using default value: 100");
 
                     photonView.RPC("HurtOtherRPC", RpcTarget.AllBuffered, new object[] { damageAmount, Vector3.zero, false, -1 });
-                    DLog.Log($"RPC 'HurtOtherRPC' enviado com {damageAmount} de dano.");
+                    DLog.Log($"RPC 'HurtOtherRPC' sent with {damageAmount} damage.");
 
                     try
                     {
                         photonView.RPC("HurtRPC", RpcTarget.AllBuffered, new object[] { damageAmount, true, -1 });
-                        DLog.Log($"RPC 'HurtRPC' enviado com {damageAmount} de dano.");
+                        DLog.Log($"RPC 'HurtRPC' sent with {damageAmount} damage.");
                     }
                     catch
                     {
-                        DLog.Log("RPC 'HurtRPC' não registrado, confiando no HurtOtherRPC.");
+                        DLog.Log("RPC 'HurtRPC' not registered, relying on HurtOtherRPC.");
                     }
                 }
                 else
                 {
-                    DLog.Log("Não conectado ao Photon, dano apenas local.");
+                    DLog.Log("Not connected to Photon, local damage only.");
                 }
-                DLog.Log($"Tentativa de causar dano concluída.");
+                DLog.Log($"Damage attempt completed.");
             }
             catch (Exception e)
             {
-                DLog.Log($"Erro ao tentar causar dano: {e.Message}");
+                DLog.Log($"Error trying to damage: {e.Message}");
             }
         }
 
-        public static void MaxHealth()
+        public static void ReviveSelectedPlayer(object selectedPlayer, string playerName)
         {
-            var playerControllerType = Type.GetType("PlayerController, Assembly-CSharp");
-            if (playerControllerType != null)
+            if (selectedPlayer == null)
             {
-                DLog.Log("PlayerController encontrado.");
-                var playerControllerInstance = GameHelper.FindObjectOfType(playerControllerType);
-                if (playerControllerInstance != null)
+                DLog.Log("Selected player is null!");
+                return;
+            }
+
+            try
+            {
+                var playerDeathHeadField = selectedPlayer.GetType().GetField("playerDeathHead", BindingFlags.Public | BindingFlags.Instance);
+                if (playerDeathHeadField != null)
                 {
-                    var playerAvatarScriptField = playerControllerInstance.GetType().GetField("playerAvatarScript", BindingFlags.Public | BindingFlags.Instance);
-                    if (playerAvatarScriptField != null)
+                    var playerDeathHeadInstance = playerDeathHeadField.GetValue(selectedPlayer);
+                    if (playerDeathHeadInstance != null)
                     {
-                        var playerAvatarScriptInstance = playerAvatarScriptField.GetValue(playerControllerInstance);
-                        var playerHealthField = playerAvatarScriptInstance.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.Instance);
-                        if (playerHealthField != null)
+                        // Retrieve and modify 'inExtractionPoint' to allow revival
+                        var inExtractionPointField = playerDeathHeadInstance.GetType().GetField("inExtractionPoint", BindingFlags.NonPublic | BindingFlags.Instance);
+                        var reviveMethod = playerDeathHeadInstance.GetType().GetMethod("Revive", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (inExtractionPointField != null)
                         {
-                            var playerHealthInstance = playerHealthField.GetValue(playerAvatarScriptInstance);
-                            var damageMethod = playerHealthInstance.GetType().GetMethod("UpdateHealthRPC");
-                            if (damageMethod != null)
-                            {
-                                if (Hax2.infiniteHealthActive)
-                                {
-                                    damageMethod.Invoke(playerHealthInstance, new object[] { 999999, 100, true });
-                                }
-                                else if (!Hax2.infiniteHealthActive)
-                                {
-                                    damageMethod.Invoke(playerHealthInstance, new object[] { 100, 100, true });
-                                }
-                                DLog.Log("Vida máxima ajustada para 999999.");
-                            }
-                            else
-                            {
-                                DLog.Log("Método 'UpdateHealthRPC' não encontrado em playerHealth.");
-                            }
+                            inExtractionPointField.SetValue(playerDeathHeadInstance, true);
+                            DLog.Log("'inExtractionPoint' field set to true.");
+                            DLog.Log("'inExtractionPoint' field set to true.");
+                        }
+                        if (reviveMethod != null)
+                        {
+                            reviveMethod.Invoke(playerDeathHeadInstance, null);
+                            DLog.Log("'Revive' method successfully called for: " + playerName);
+                        }
+                        else DLog.Log("'Revive' method not found!");
+                    }
+                    else DLog.Log("'playerDeathHead' instance not found.");
+                }
+                else DLog.Log("'playerDeathHead' field not found.");
+
+                var playerHealthField = selectedPlayer.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (playerHealthField != null)
+                {
+                    var playerHealthInstance = playerHealthField.GetValue(selectedPlayer);
+                    if (playerHealthInstance != null)
+                    {
+                        var healthType = playerHealthInstance.GetType();
+                        var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        var healthField = healthType.GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+                        int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
+                        DLog.Log($"Max health retrieved: {maxHealth}");
+                        if (healthField != null)
+                        {
+                            healthField.SetValue(playerHealthInstance, maxHealth);
+                            DLog.Log($"Health set directly to {maxHealth} via 'health' field.");
                         }
                         else
                         {
-                            DLog.Log("Campo 'playerHealth' não encontrado em playerAvatarScript.");
+                            DLog.Log("'health' field not found, attempting HealPlayer as fallback.");
+                            Health_Player.HealPlayer(selectedPlayer, maxHealth, playerName);
                         }
+
+                        int currentHealth = healthField != null ? (int)healthField.GetValue(playerHealthInstance) : -1;
+                        DLog.Log($"Current health after revive: {currentHealth}");
                     }
-                    else
-                    {
-                        DLog.Log("Campo 'playerAvatarScript' não encontrado em PlayerController.");
-                    }
+                    else DLog.Log("PlayerHealth instance is null, health restoration failed.");
                 }
-                else
-                {
-                    DLog.Log("playerControllerInstance não encontrado.");
-                }
+                else DLog.Log("'playerHealth' field not found, healing not performed.");
             }
-            else
+            catch (Exception e)
             {
-                DLog.Log("Tipo PlayerController não encontrado.");
+                DLog.Log($"Error reviving and healing {playerName}: {e.Message}");
             }
+        }
+
+        public static void KillSelectedPlayer(object selectedPlayer, string playerName)
+        {
+            if (selectedPlayer == null) 
+            { 
+                DLog.Log("Selected player is null!"); 
+                return; 
+            }
+            
+            try
+            {
+                DLog.Log($"Attempting to kill: {playerName} | MasterClient: {PhotonNetwork.IsMasterClient}");
+                var photonViewField = selectedPlayer.GetType().GetField("photonView", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (photonViewField == null) { DLog.Log("PhotonViewField not found!"); return; }
+                var photonView = photonViewField.GetValue(selectedPlayer) as PhotonView;
+                if (photonView == null) { DLog.Log("PhotonView is not valid!"); return; }
+                var playerHealthField = selectedPlayer.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (playerHealthField == null) { DLog.Log("'playerHealth' field not found!"); return; }
+                var playerHealthInstance = playerHealthField.GetValue(selectedPlayer);
+                if (playerHealthInstance == null) { DLog.Log("playerHealth instance is null!"); return; }
+                var healthType = playerHealthInstance.GetType();
+                var deathMethod = healthType.GetMethod("Death", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (deathMethod == null) { DLog.Log("'Death' method not found!"); return; }
+                deathMethod.Invoke(playerHealthInstance, null);
+                DLog.Log($"'Death' method called locally for {playerName}.");
+
+                var playerAvatarField = healthType.GetField("playerAvatar", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (playerAvatarField != null)
+                {
+                    var playerAvatarInstance = playerAvatarField.GetValue(playerHealthInstance);
+                    if (playerAvatarInstance != null)
+                    {
+                        var playerAvatarType = playerAvatarInstance.GetType();
+                        var playerDeathMethod = playerAvatarType.GetMethod("PlayerDeath", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (playerDeathMethod != null) { playerDeathMethod.Invoke(playerAvatarInstance, new object[] { -1 }); DLog.Log($"'PlayerDeath' method called locally for {playerName}."); }
+                        else DLog.Log("'PlayerDeath' method not found in PlayerAvatar!");
+                    }
+                    else DLog.Log("PlayerAvatar instance is null!");
+                }
+                else DLog.Log("'playerAvatar' field not found in PlayerHealth!");
+
+                if (PhotonNetwork.IsConnected && photonView != null)
+                {
+                    var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
+                    DLog.Log(maxHealthField != null ? $"maxHealth found: {maxHealth}" : "'maxHealth' field not found, using default value: 100");
+                    photonView.RPC("UpdateHealthRPC", RpcTarget.AllBuffered, new object[] { 0, maxHealth, true });
+                    DLog.Log($"RPC 'UpdateHealthRPC' sent to all with health=0, maxHealth={maxHealth}, effect=true.");
+                    try { photonView.RPC("PlayerDeathRPC", RpcTarget.AllBuffered, new object[] { -1 }); DLog.Log("Trying RPC 'PlayerDeathRPC' to force death..."); }
+                    catch { DLog.Log("RPC 'PlayerDeathRPC' not registered, trying alternative..."); }
+                    photonView.RPC("HurtOtherRPC", RpcTarget.AllBuffered, new object[] { 9999, Vector3.zero, false, -1 });
+                    DLog.Log("RPC 'HurtOtherRPC' sent with 9999 damage to ensure death.");
+                }
+                else DLog.Log("Not connected to Photon, death is only local.");
+                DLog.Log($"Attempt to kill {playerName} completed.");
+            }
+            catch (Exception e) { DLog.Log($"Error trying to kill {playerName}: {e.Message}"); }
         }
     }
 }
