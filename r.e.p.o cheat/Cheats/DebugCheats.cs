@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime; // Required for ReceiverGroup and RaiseEventOptions
@@ -260,7 +260,44 @@ namespace r.e.p.o_cheat
             }
         }
 
+        public static bool IsLocalPlayer(object player)
+        {
+            try
+            {
+                if (localPlayer == null) // If localPlayer is null, try to update it
+                {
+                    UpdateLocalPlayer();
+                    if (localPlayer == null)
+                    {
+                        return false;
+                    }
+                }
 
+                if (player is GameObject playerObj) // If player is a GameObject, compare directly
+                {
+                    return playerObj == localPlayer;
+                }
+
+                if (player is MonoBehaviour playerMono) // If player is a MonoBehaviour, compare its gameObject
+                {
+                    return playerMono.gameObject == localPlayer;
+                }
+
+                var gameObjectProperty = player.GetType().GetProperty("gameObject");
+                if (gameObjectProperty != null)
+                {
+                    GameObject playerGameObject = gameObjectProperty.GetValue(player) as GameObject;
+                    return playerGameObject == localPlayer;
+                }
+
+                return false;
+            }
+            catch (System.Exception e)
+            {
+                DLog.Log($"Error in IsLocalPlayer: {e.Message}");
+                return false;
+            }
+        }
 
         public static GameObject GetLocalPlayer()
         {
@@ -753,8 +790,7 @@ namespace r.e.p.o_cheat
                         float x = footX;
                         float y = footY;
 
-                        // Only draw the box if showEnemyBox is true
-                        if (showEnemyBox)
+                        if (showEnemyBox) // Only draw the box if showEnemyBox is true
                         {
                             Box(x, y, width, height, texture2, 1f);
                         }
