@@ -838,6 +838,14 @@ namespace r.e.p.o_cheat
                     if (transform == null || !transform.gameObject.activeInHierarchy) continue;
 
                     Vector3 itemPosition = transform.position;
+
+                    float distance = 0f;
+                    if (localPlayer != null)
+                    {
+                        distance = Vector3.Distance(localPlayer.transform.position, itemPosition);
+                        if (isPlayerDeathHead && distance > 1000f) continue; // Skip Player Death Heads that are more than 1000 units away
+                    }
+                    
                     Vector3 screenPos = cachedCamera.WorldToScreenPoint(itemPosition);
 
                     if (screenPos.z > 0 && screenPos.x > 0 && screenPos.x < Screen.width && screenPos.y > 0 && screenPos.y < Screen.height)
