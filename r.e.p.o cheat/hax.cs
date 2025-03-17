@@ -774,39 +774,69 @@ namespace r.e.p.o_cheat
                         break;
 
                     case MenuCategory.ESP:
-                        DebugCheats.drawEspBool = UIHelper.Checkbox("Enemy ESP", DebugCheats.drawEspBool, menuX + 30, menuY + 105);
+                        float currentY = menuY + 105; // Starting Y position
+                        float parentSpacing = 30f;    // Space between main parent options when children are hidden
+                        float childIndent = 20f;      // Indentation for child options
+                        float childSpacing = 30f;     // Space between child options
+
+                        // Enemy ESP section
+                        DebugCheats.drawEspBool = UIHelper.Checkbox("Enemy ESP", DebugCheats.drawEspBool, menuX + 30, currentY);
+                        currentY += DebugCheats.drawEspBool ? childIndent : parentSpacing;
+
                         if (DebugCheats.drawEspBool)
                         {
-                            DebugCheats.showEnemyNames = UIHelper.Checkbox("Show Enemy Names", DebugCheats.showEnemyNames, menuX + 50, menuY + 125);
-                            DebugCheats.showEnemyDistance = UIHelper.Checkbox("Show Enemy Distance", DebugCheats.showEnemyDistance, menuX + 50, menuY + 155);
+                            DebugCheats.showEnemyBox = UIHelper.Checkbox("Toggle Box", DebugCheats.showEnemyBox, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showEnemyNames = UIHelper.Checkbox("Toggle Names", DebugCheats.showEnemyNames, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showEnemyDistance = UIHelper.Checkbox("Toggle Distance", DebugCheats.showEnemyDistance, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.drawChamsBool = UIHelper.Checkbox("Toggle Chams", DebugCheats.drawChamsBool, menuX + 50, currentY);
+                            currentY += parentSpacing;
                         }
+                        // Item ESP section
+                        DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, menuX + 30, currentY);
+                        currentY += DebugCheats.drawItemEspBool ? childIndent : parentSpacing;
 
-                        DebugCheats.drawChamsBool = UIHelper.Checkbox("Enemy Chams", DebugCheats.drawChamsBool, menuX + 30, menuY + 175);
-
-                        DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, menuX + 30, menuY + 205);
                         if (DebugCheats.drawItemEspBool)
                         {
-                            DebugCheats.showItemNames = UIHelper.Checkbox("Show Item Names", DebugCheats.showItemNames, menuX + 50, menuY + 235);
-                            DebugCheats.showItemDistance = UIHelper.Checkbox("Show Item Distance", DebugCheats.showItemDistance, menuX + 50, menuY + 265);
-                            DebugCheats.showItemValue = UIHelper.Checkbox("Show Item Value", DebugCheats.showItemValue, menuX + 50, menuY + 295);
-                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Item ESP", DebugCheats.draw3DItemEspBool, menuX + 50, menuY + 325);
-                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Show Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, menuY + 355);
+                            DebugCheats.showItemNames = UIHelper.Checkbox("Show Item Names", DebugCheats.showItemNames, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showItemDistance = UIHelper.Checkbox("Show Item Distance", DebugCheats.showItemDistance, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showItemValue = UIHelper.Checkbox("Show Item Value", DebugCheats.showItemValue, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Item ESP", DebugCheats.draw3DItemEspBool, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Show Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, currentY);
+                            currentY += parentSpacing;
                         }
+                        // Extraction ESP section
+                        DebugCheats.drawExtractionPointEspBool = UIHelper.Checkbox("Extraction ESP", DebugCheats.drawExtractionPointEspBool, menuX + 30, currentY);
+                        currentY += DebugCheats.drawExtractionPointEspBool ? childIndent : parentSpacing;
 
-                        DebugCheats.drawExtractionPointEspBool = UIHelper.Checkbox("Extraction ESP", DebugCheats.drawExtractionPointEspBool, menuX + 30, menuY + 385);
                         if (DebugCheats.drawExtractionPointEspBool)
                         {
-                            DebugCheats.showExtractionNames = UIHelper.Checkbox("Show Extraction Names", DebugCheats.showExtractionNames, menuX + 50, menuY + 420);
-                            DebugCheats.showExtractionDistance = UIHelper.Checkbox("Show Extraction Distance", DebugCheats.showExtractionDistance, menuX + 50, menuY + 450);
+                            DebugCheats.showExtractionNames = UIHelper.Checkbox("Show Extraction Names", DebugCheats.showExtractionNames, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showExtractionDistance = UIHelper.Checkbox("Show Extraction Distance", DebugCheats.showExtractionDistance, menuX + 50, currentY);
+                            currentY += parentSpacing;
                         }
+                        // Player ESP section
+                        DebugCheats.drawPlayerEspBool = UIHelper.Checkbox("2D Player ESP", DebugCheats.drawPlayerEspBool, menuX + 30, currentY);
+                        currentY += parentSpacing;
 
-                        DebugCheats.drawPlayerEspBool = UIHelper.Checkbox("2D Player ESP", DebugCheats.drawPlayerEspBool, menuX + 30, menuY + 480);
-                        DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("3D Player ESP", DebugCheats.draw3DPlayerEspBool, menuX + 30, menuY + 510);
+                        DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("3D Player ESP", DebugCheats.draw3DPlayerEspBool, menuX + 30, currentY);
+                        currentY += (DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool) ? childIndent : parentSpacing;
+
                         if (DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool)
                         {
-                            DebugCheats.showPlayerNames = UIHelper.Checkbox("Show Player Names", DebugCheats.showPlayerNames, menuX + 50, menuY + 540);
-                            DebugCheats.showPlayerDistance = UIHelper.Checkbox("Show Player Distance", DebugCheats.showPlayerDistance, menuX + 50, menuY + 570);
-                            DebugCheats.showPlayerHP = UIHelper.Checkbox("Show Player HP", DebugCheats.showPlayerHP, menuX + 50, menuY + 600);
+                            DebugCheats.showPlayerNames = UIHelper.Checkbox("Show Player Names", DebugCheats.showPlayerNames, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showPlayerDistance = UIHelper.Checkbox("Show Player Distance", DebugCheats.showPlayerDistance, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showPlayerHP = UIHelper.Checkbox("Show Player HP", DebugCheats.showPlayerHP, menuX + 50, currentY);
+                            currentY += parentSpacing;
                         }
                         break;
 
