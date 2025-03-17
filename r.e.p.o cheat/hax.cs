@@ -148,6 +148,13 @@ namespace r.e.p.o_cheat
         public static bool stamineState = false;
         private Vector2 playerScrollPosition = Vector2.zero;
         private Vector2 enemyScrollPosition = Vector2.zero;
+        private int teleportPlayerSourceIndex = 0;  // Default to first player in list
+        private int teleportPlayerDestIndex = 0;  // Default to first player or void
+        private string[] teleportPlayerSourceOptions;  // Will contain only player names
+        private string[] teleportPlayerDestOptions;    // Will contain player names + "Void"
+        private bool showTeleportUI = false;
+        private bool showSourceDropdown = false;  // Track source dropdown visibility
+        private bool showDestDropdown = false;  // Track destination dropdown visibility
 
         public static string[] levelsToSearchItems = { "Level - Manor", "Level - Wizard", "Level - Arctic" };
 
@@ -208,6 +215,19 @@ namespace r.e.p.o_cheat
         private Vector2 dragOffsetActionSelector;
         private GUIStyle overlayDimStyle;
         private GUIStyle actionSelectorBoxStyle;
+        private static bool cursorStateInitialized = false;
+        private void UpdateTeleportOptions()
+        {
+            teleportPlayerSourceOptions = playerNames.ToArray(); // Create source array with players only
+
+            List<string> destOptions = new List<string>(); // Create destination array with players + "Void"
+            destOptions.AddRange(playerNames);       // Add all players (including local player)
+            destOptions.Add("The Void");            // Add void as last option only for destinations
+            teleportPlayerDestOptions = destOptions.ToArray();
+            teleportPlayerSourceIndex = 0;  // Default to first player
+            teleportPlayerDestIndex = teleportPlayerDestOptions.Length - 1;  // Default to void
+        }
+
 
         public void Start()
         {
@@ -872,9 +892,75 @@ namespace r.e.p.o_cheat
 
                         if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
                         if (UIHelper.Button("Kill Selected Player", menuX + 30, menuY + 370)) { KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Attempt to kill the selected player completed."); }
-                        if (UIHelper.Button("Send Player To Void", menuX + 30, menuY + 410)) Teleport.SendSelectedPlayerToVoid(selectedPlayerIndex, playerList, playerNames);
-                        if (UIHelper.Button("Teleport Player To Me", menuX + 30, menuY + 450)) { Teleport.TeleportPlayerToMe(selectedPlayerIndex, playerList, playerNames); DLog.Log($"Teleported {playerNames[selectedPlayerIndex]} to you."); }
-                        if (UIHelper.Button("Teleport Me To Player", menuX + 30, menuY + 490)) { Teleport.TeleportMeToPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log($"Teleported you to {playerNames[selectedPlayerIndex]}."); }
+                        if (UIHelper.Button(showTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, menuY + 410)) // Teleport UI with dropdown system
+                        {
+                            showTeleportUI = !showTeleportUI; // Initialize teleport options when opening
+                            if (showTeleportUI)
+                            {
+                                UpdateTeleportOptions();
+                            }
+                        }
+                        float contentWidth = 450f; // Total width of dropdowns (200 + 50 + 200)
+                        float centerX = menuX + (600f - contentWidth) / 2; // Center in the menu area
+
+                        if (showTeleportUI)
+                        {
+                            UIHelper.Label("Teleport", centerX + contentWidth / 2 - 30, menuY + 450); // Center the "Teleport" label
+                            float sourceDropdownHeight = teleportPlayerSourceOptions.Length * 25f; // Calculate dropdown heights and button positions
+                            float destDropdownHeight = teleportPlayerDestOptions.Length * 25f;
+                            float maxDropdownHeight = Math.Max(sourceDropdownHeight, destDropdownHeight);
+                            float executeButtonY = menuY + 520f;
+
+                            if (showSourceDropdown || showDestDropdown) // If either dropdown is open, move the execute button lower
+                            {
+                                executeButtonY = menuY + 520f + maxDropdownHeight;
+                            }
+                            if (GUI.Button(new Rect(centerX, menuY + 480, 200, 25), teleportPlayerSourceOptions[teleportPlayerSourceIndex]))
+                            {
+                                showSourceDropdown = !showSourceDropdown; // Toggle the source dropdown visibility
+                                showDestDropdown = false; // Close other dropdown if open
+                            }
+                            UIHelper.Label("to", centerX + 210, menuY + 480); // "to" label in the middle
+                            if (GUI.Button(new Rect(centerX + 250, menuY + 480, 200, 25), teleportPlayerDestOptions[teleportPlayerDestIndex])) // Display destination selection (right side)
+                            {
+                                showDestDropdown = !showDestDropdown; // Toggle the destination dropdown visibility
+                                showSourceDropdown = false; // Close other dropdown if open
+                            }
+                            if (showSourceDropdown) // Source dropdown options (if open) - PLAYERS ONLY
+                            {
+                                for (int i = 0; i < teleportPlayerSourceOptions.Length; i++)
+                                {
+                                    if (GUI.Button(new Rect(centerX, menuY + 510 + (i * 25), 200, 25), teleportPlayerSourceOptions[i]))
+                                    {
+                                        teleportPlayerSourceIndex = i;
+                                        showSourceDropdown = false;
+                                    }
+                                }
+                            }
+                            if (showDestDropdown) // Destination dropdown options (if open) - PLAYERS + VOID
+                            {
+                                for (int i = 0; i < teleportPlayerDestOptions.Length; i++)
+                                {
+                                    if (GUI.Button(new Rect(centerX + 250, menuY + 510 + (i * 25), 200, 25), teleportPlayerDestOptions[i]))
+                                    {
+                                        teleportPlayerDestIndex = i;
+                                        showDestDropdown = false;
+                                    }
+                                }
+                            }
+                            if (UIHelper.Button("Execute Teleport", menuX + 30, executeButtonY)) // Keep the execute button at its original position
+                            {
+                                Teleport.ExecuteTeleportWithSeparateOptions( // Call the teleport functionality from the Teleport class with separate source and destination options
+                                    teleportPlayerSourceIndex,
+                                    teleportPlayerDestIndex,
+                                    teleportPlayerSourceOptions,
+                                    teleportPlayerDestOptions,
+                                    playerList);
+
+                                showSourceDropdown = false; // Hide the dropdowns after executing
+                                showDestDropdown = false;
+                            }
+                        }
                         break;
 
                     case MenuCategory.Misc:
