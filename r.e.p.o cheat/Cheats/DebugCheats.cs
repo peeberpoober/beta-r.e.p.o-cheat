@@ -11,6 +11,7 @@ namespace r.e.p.o_cheat
 {
     static class DebugCheats
     {
+        public static float maxItemEspDistance = 1000f;
         public static bool showEnemyBox = true; // Default to true since it was previously always on
         private static int frameCounter = 0;
         public static List<Enemy> enemyList = new List<Enemy>();
@@ -839,13 +840,15 @@ namespace r.e.p.o_cheat
 
                     Vector3 itemPosition = transform.position;
 
-                    float distance = 0f;
+                    float itemDistance = 0f;
                     if (localPlayer != null)
                     {
-                        distance = Vector3.Distance(localPlayer.transform.position, itemPosition);
-                        if (isPlayerDeathHead && distance > 1000f) continue; // Skip Player Death Heads that are more than 1000 units away
+                        itemDistance = Vector3.Distance(localPlayer.transform.position, itemPosition);
+            
+                        // Skip items beyond the max distance (applies to all items including death heads)
+                        if (itemDistance > DebugCheats.maxItemEspDistance) continue;
                     }
-                    
+        
                     Vector3 screenPos = cachedCamera.WorldToScreenPoint(itemPosition);
 
                     if (screenPos.z > 0 && screenPos.x > 0 && screenPos.x < Screen.width && screenPos.y > 0 && screenPos.y < Screen.height)
