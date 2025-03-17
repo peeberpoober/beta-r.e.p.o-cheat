@@ -151,6 +151,15 @@ namespace r.e.p.o_cheat
         private bool showTeleportUI = false;
         private bool showSourceDropdown = false;  // Track source dropdown visibility
         private bool showDestDropdown = false;  // Track destination dropdown visibility
+        private bool showEnemyTeleportUI = false;
+        private bool showEnemyTeleportDropdown = false;
+        private int enemyTeleportDestIndex = 0;
+        private string[] enemyTeleportDestOptions;
+        private float enemyTeleportLabelWidth = 70f;
+        private float enemyTeleportToWidth = 20f;
+        private float enemyTeleportDropdownWidth = 200f;
+        private float enemyTeleportTotalWidth;
+        private float enemyTeleportStartX;
 
         public static string[] levelsToSearchItems = { "Level - Manor", "Level - Wizard", "Level - Arctic" };
 
@@ -202,8 +211,7 @@ namespace r.e.p.o_cheat
         private Vector2 actionSelectorScroll = Vector2.zero;
         private Vector2 hotkeyScrollPosition = Vector2.zero;
         
-        // Reference to the HotkeyManager
-        private HotkeyManager hotkeyManager;
+        private HotkeyManager hotkeyManager; // Reference to the HotkeyManager
 
         private float actionSelectorX = 300f;
         private float actionSelectorY = 200f;
@@ -223,8 +231,16 @@ namespace r.e.p.o_cheat
             teleportPlayerSourceIndex = 0;  // Default to first player
             teleportPlayerDestIndex = teleportPlayerDestOptions.Length - 1;  // Default to void
         }
-
-
+        private void UpdateEnemyTeleportOptions()
+        {
+            List<string> destOptions = new List<string>();
+            destOptions.AddRange(playerNames); // Add all players (including local player)
+            enemyTeleportDestOptions = destOptions.ToArray();
+            enemyTeleportDestIndex = 0; // Default to first player
+            float centerPoint = menuX + 300f; // Center of the menu area
+            enemyTeleportTotalWidth = enemyTeleportLabelWidth + 10f + enemyTeleportToWidth + 10f + enemyTeleportDropdownWidth;
+            enemyTeleportStartX = centerPoint - (enemyTeleportTotalWidth / 2);
+        }
         public void Start()
         {
             UpdateCursorState();
@@ -1050,7 +1066,6 @@ namespace r.e.p.o_cheat
                     case MenuCategory.Enemies:
                         UpdateEnemyList();
                         UIHelper.Label("Select an enemy:", menuX + 30, menuY + 95);
-
                         enemyScrollPosition = GUI.BeginScrollView(new Rect(menuX + 30, menuY + 115, 540, 200), enemyScrollPosition, new Rect(0, 0, 520, enemyNames.Count * 35), false, true);
                         for (int i = 0; i < enemyNames.Count; i++)
                         {
@@ -1060,7 +1075,6 @@ namespace r.e.p.o_cheat
                             GUI.color = Color.white;
                         }
                         GUI.EndScrollView();
-
                         if (UIHelper.Button("Kill Selected Enemy", menuX + 30, menuY + 330))
                         {
                             Enemies.KillSelectedEnemy(selectedEnemyIndex, enemyList, enemyNames);
@@ -1071,11 +1085,58 @@ namespace r.e.p.o_cheat
                             DebugCheats.KillAllEnemies();
                             DLog.Log("Attempt to kill all enemies completed.");
                         }
-                        if (UIHelper.Button("Teleport Enemy to Me", menuX + 30, menuY + 410))
+                        if (UIHelper.Button(showEnemyTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, menuY + 410))
                         {
-                            Enemies.TeleportEnemyToMe(selectedEnemyIndex, enemyList, enemyNames);
-                            UpdateEnemyList();
-                            DLog.Log($"Attempt to teleport {enemyNames[selectedEnemyIndex]} to you completed.");
+                            showEnemyTeleportUI = !showEnemyTeleportUI; // Toggle the teleport UI
+                            if (showEnemyTeleportUI)
+                            {
+                                UpdateEnemyTeleportOptions(); // Initialize teleport options when opening
+                            }
+                        }
+                        if (showEnemyTeleportUI)
+                        {
+                            float dropdownHeight = enemyTeleportDestOptions.Length * 25f;
+                            float executeButtonY = menuY + 480f;
+                            if (showEnemyTeleportDropdown)
+                            {
+                                executeButtonY = menuY + 480f + dropdownHeight; // If dropdown is open, move the execute button lower
+                            }
+                            UIHelper.Label("Teleport", enemyTeleportStartX, menuY + 450); // "Teleport" label
+                            UIHelper.Label("to", enemyTeleportStartX + enemyTeleportLabelWidth + 10f, menuY + 450); // "to" label
+                            if (GUI.Button(new Rect(enemyTeleportStartX + enemyTeleportLabelWidth + 10f + enemyTeleportToWidth + 10f,
+                                                  menuY + 450, enemyTeleportDropdownWidth, 25),
+                                         enemyTeleportDestOptions[enemyTeleportDestIndex]))
+                            {
+                                showEnemyTeleportDropdown = !showEnemyTeleportDropdown; // Toggle the destination dropdown visibility
+                            }
+                            if (showEnemyTeleportDropdown) // Destination dropdown options (if open)
+                            {
+                                for (int i = 0; i < enemyTeleportDestOptions.Length; i++)
+                                {
+                                    if (GUI.Button(new Rect(enemyTeleportStartX + enemyTeleportLabelWidth + 10f + enemyTeleportToWidth + 10f,
+                                                          menuY + 480 + (i * 25), enemyTeleportDropdownWidth, 25),
+                                                 enemyTeleportDestOptions[i]))
+                                    {
+                                        enemyTeleportDestIndex = i;
+                                        showEnemyTeleportDropdown = false;
+                                    }
+                                }
+                            }
+                            if (UIHelper.Button("Execute Teleport", menuX + 30, executeButtonY)) // Execute teleport button (at original position)
+                            {
+                                int playerIndex = enemyTeleportDestIndex;
+                                if (DebugCheats.IsLocalPlayer(playerList[playerIndex])) // Check if selected player is local player
+                                {
+                                    Enemies.TeleportEnemyToMe(selectedEnemyIndex, enemyList, enemyNames); // Use existing method for local player
+                                }
+                                else
+                                {
+                                    Enemies.TeleportEnemyToPlayer(selectedEnemyIndex, enemyList, enemyNames, playerIndex, playerList, playerNames); // Teleport to another player
+                                }
+                                UpdateEnemyList();
+                                showEnemyTeleportDropdown = false;
+                                DLog.Log($"Teleported {enemyNames[selectedEnemyIndex]} to {enemyTeleportDestOptions[enemyTeleportDestIndex]}.");
+                            }
                         }
                         break;
 
