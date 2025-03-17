@@ -1,8 +1,8 @@
 ﻿using System;
 using UnityEngine;
 using Photon.Pun;
-using Photon.Realtime; // Necessário para ReceiverGroup e RaiseEventOptions
-using ExitGames.Client.Photon; // Necessário para SendOptions
+using Photon.Realtime; // Required for ReceiverGroup and RaiseEventOptions
+using ExitGames.Client.Photon; // Required for SendOptions
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
@@ -148,7 +148,7 @@ namespace r.e.p.o_cheat
                 }
             }
             lastPlayerUpdateTime = Time.time;
-            DLog.Log($"Lista de dados de jogadores atualizada: {playerDataList.Count} jogadores.");
+            DLog.Log($"Player data list updated: {playerDataList.Count} players.");
         }
         private static void UpdateExtractionPointList()
         {
@@ -170,10 +170,10 @@ namespace r.e.p.o_cheat
                         }
                         Vector3 cachedPosition = extractionPoint.transform.position;
                         extractionPointList.Add(new ExtractionPointData(extractionPoint, cachedState, cachedPosition));
-                        DLog.Log($"Extraction Point cacheado na posição: {cachedPosition}");
+                        DLog.Log($"Extraction Point cached at position: {cachedPosition}");
                     }
                 }
-                DLog.Log($"Lista de Extraction Points atualizada: {extractionPointList.Count} pontos encontrados.");
+                DLog.Log($"Extraction Points list updated: {extractionPointList.Count} points found.");
             }
         }
 
@@ -243,7 +243,7 @@ namespace r.e.p.o_cheat
             }
 
             lastUpdateTime = Time.time;
-            DLog.Log($"Listas atualizadas: {enemyList.Count} inimigos, {valuableObjects.Count} itens, {playerList.Count} jogadores.");
+            DLog.Log($"Lists updated: {enemyList.Count} enemies, {valuableObjects.Count} items, {playerList.Count} players.");
         }
 
         private static void UpdateLocalPlayer()
@@ -251,11 +251,11 @@ namespace r.e.p.o_cheat
             localPlayer = GetLocalPlayer();
             if (localPlayer != null)
             {
-                DLog.Log("Jogador local atualizado com sucesso: " + localPlayer.name);
+                DLog.Log("Local player successfully updated: " + localPlayer.name);
             }
             else
             {
-                DLog.Log("Falha ao atualizar jogador local!");
+                DLog.Log("Failed to update local player!");
             }
         }
 
@@ -280,10 +280,10 @@ namespace r.e.p.o_cheat
                                 if (gameObjectProperty != null)
                                 {
                                     GameObject foundPlayer = gameObjectProperty.GetValue(player) as GameObject;
-                                    DLog.Log("Local player encontrado via Photon: " + foundPlayer.name);
+                                    DLog.Log("Local player found via Photon: " + foundPlayer.name);
                                     return foundPlayer;
                                 }
-                                DLog.Log("Local player encontrado via PhotonView: " + photonView.gameObject.name);
+                                DLog.Log("Local player found via PhotonView: " + photonView.gameObject.name);
                                 return photonView.gameObject;
                             }
                         }
@@ -296,7 +296,7 @@ namespace r.e.p.o_cheat
                     {
                         if (photonView.Owner == PhotonNetwork.LocalPlayer && photonView.IsMine)
                         {
-                            DLog.Log("Local player encontrado via Photon fallback: " + photonView.gameObject.name);
+                            DLog.Log("Local player found via Photon fallback: " + photonView.gameObject.name);
                             return photonView.gameObject;
                         }
                     }
@@ -312,7 +312,7 @@ namespace r.e.p.o_cheat
                     if (gameObjectProperty != null)
                     {
                         GameObject foundPlayer = gameObjectProperty.GetValue(player) as GameObject;
-                        DLog.Log("Local player encontrado em singleplayer via PlayerGetList: " + foundPlayer.name);
+                        DLog.Log("Local player found in singleplayer via PlayerGetList: " + foundPlayer.name);
                         return foundPlayer;
                     }
                 }
@@ -323,7 +323,7 @@ namespace r.e.p.o_cheat
                     var playerAvatar = UnityEngine.Object.FindObjectOfType(playerAvatarType) as MonoBehaviour;
                     if (playerAvatar != null)
                     {
-                        DLog.Log("Local player encontrado em singleplayer via PlayerAvatar: " + playerAvatar.gameObject.name);
+                        DLog.Log("Local player found in singleplayer via PlayerAvatar: " + playerAvatar.gameObject.name);
                         return playerAvatar.gameObject;
                     }
                 }
@@ -331,7 +331,7 @@ namespace r.e.p.o_cheat
                 var playerByTag = GameObject.FindWithTag("Player");
                 if (playerByTag != null)
                 {
-                    DLog.Log("Local player encontrado em singleplayer via tag 'Player': " + playerByTag.name);
+                    DLog.Log("Local player found in singleplayer via tag 'Player': " + playerByTag.name);
                     return playerByTag;
                 }
 
@@ -340,16 +340,16 @@ namespace r.e.p.o_cheat
                 {
                     if (obj.name.Contains("Player") && obj.activeInHierarchy)
                     {
-                        DLog.Log("Local player encontrado em singleplayer via nome genérico: " + obj.name);
+                        DLog.Log("Local player found in singleplayer via generic name: " + obj.name);
                         return obj;
                     }
                 }
 
-                DLog.Log("Nenhum jogador local encontrado no singleplayer após todas as tentativas!");
+                DLog.Log("No local player found in singleplayer after all attempts!");
                 return null;
             }
 
-            DLog.Log("Nenhum jogador local encontrado!");
+            DLog.Log("No local player found!");
             return null;
         }
 
@@ -389,22 +389,22 @@ namespace r.e.p.o_cheat
                         }
                         else
                         {
-                            DLog.Log("Nenhum inimigo encontrado em enemiesSpawned");
+                            DLog.Log("No enemies found in enemiesSpawned");
                         }
                     }
                     else
                     {
-                        DLog.Log("Campo 'enemiesSpawned' não encontrado");
+                        DLog.Log("Field 'enemiesSpawned' not found");
                     }
                 }
                 else
                 {
-                    DLog.Log("Instância de EnemyDirector é nula");
+                    DLog.Log("EnemyDirector instance is null");
                 }
             }
             else
             {
-                DLog.Log("EnemyDirector não encontrado");
+                DLog.Log("EnemyDirector not found");
             }
         }
 
@@ -827,7 +827,7 @@ namespace r.e.p.o_cheat
                             catch (Exception e)
                             {
                                 itemName = (valuableObject as UnityEngine.Object)?.name ?? "Unknown";
-                                DLog.Log($"Erro ao acessar 'name' do item: {e.Message}. Usando nome do GameObject: {itemName}");
+                                DLog.Log($"Error accessing item 'name': {e.Message}. Using GameObject name: {itemName}");
                             }
 
                             if (itemName.StartsWith("Valuable", StringComparison.OrdinalIgnoreCase))
@@ -1041,7 +1041,7 @@ namespace r.e.p.o_cheat
             }
             catch (Exception e)
             {
-                DLog.Log($"Erro ao obter vida do jogador: {e.Message}");
+                DLog.Log($"Error getting player health: {e.Message}");
                 return 100;
             }
         }
@@ -1049,7 +1049,7 @@ namespace r.e.p.o_cheat
 
         public static void KillAllEnemies()
         {
-            DLog.Log("Tentando matar todos os inimigos");
+            DLog.Log("Attempting to kill all enemies");
 
             foreach (var enemyInstance in enemyList)
             {
@@ -1068,20 +1068,20 @@ namespace r.e.p.o_cheat
                             if (hurtMethod != null)
                             {
                                 hurtMethod.Invoke(healthComponent, new object[] { 9999, Vector3.zero });
-                                DLog.Log($"Inimigo ferido com 9999 de dano via Hurt");
+                                DLog.Log($"Enemy hurt with 9999 damage via Hurt");
                             }
                             else
-                                DLog.Log("Método 'Hurt' não encontrado em EnemyHealth");
+                                DLog.Log("'Hurt' method not found in EnemyHealth");
                         }
                         else
-                            DLog.Log("Componente EnemyHealth é nulo");
+                            DLog.Log("EnemyHealth component is null");
                     }
                     else
-                        DLog.Log("Campo 'Health' não encontrado em Enemy");
+                        DLog.Log("'Health' field not found in Enemy");
                 }
                 catch (Exception e)
                 {
-                    DLog.Log($"Erro ao matar inimigo: {e.Message}");
+                    DLog.Log($"Error killing enemy: {e.Message}");
                 }
             }
             UpdateEnemyList();

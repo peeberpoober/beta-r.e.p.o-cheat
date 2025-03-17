@@ -136,6 +136,62 @@ namespace r.e.p.o_cheat
             }
         }
 
+        public static void MaxHealth()
+        {
+            var playerControllerType = Type.GetType("PlayerController, Assembly-CSharp");
+            if (playerControllerType != null)
+            {
+                DLog.Log("PlayerController found.");
+                var playerControllerInstance = GameHelper.FindObjectOfType(playerControllerType);
+                if (playerControllerInstance != null)
+                {
+                    var playerAvatarScriptField = playerControllerInstance.GetType().GetField("playerAvatarScript", BindingFlags.Public | BindingFlags.Instance);
+                    if (playerAvatarScriptField != null)
+                    {
+                        var playerAvatarScriptInstance = playerAvatarScriptField.GetValue(playerControllerInstance);
+                        var playerHealthField = playerAvatarScriptInstance.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.Instance);
+                        if (playerHealthField != null)
+                        {
+                            var playerHealthInstance = playerHealthField.GetValue(playerAvatarScriptInstance);
+                            var damageMethod = playerHealthInstance.GetType().GetMethod("UpdateHealthRPC");
+                            if (damageMethod != null)
+                            {
+                                if (Hax2.infiniteHealthActive)
+                                {
+                                    damageMethod.Invoke(playerHealthInstance, new object[] { 999999, 100, true });
+                                }
+                                else if (!Hax2.infiniteHealthActive)
+                                {
+                                    damageMethod.Invoke(playerHealthInstance, new object[] { 100, 100, true });
+                                }
+                                DLog.Log("Maximum health adjusted to 999999.");
+                            }
+                            else
+                            {
+                                DLog.Log("'UpdateHealthRPC' method not found in playerHealth.");
+                            }
+                        }
+                        else
+                        {
+                            DLog.Log("'playerHealth' field not found in playerAvatarScript.");
+                        }
+                    }
+                    else
+                    {
+                        DLog.Log("'playerAvatarScript' field not found in PlayerController.");
+                    }
+                }
+                else
+                {
+                    DLog.Log("playerControllerInstance not found.");
+                }
+            }
+            else
+            {
+                DLog.Log("PlayerController type not found.");
+            }
+        }
+
         public static void MaxStamina()
         {
             var playerControllerType = Type.GetType("PlayerController, Assembly-CSharp");

@@ -23,17 +23,17 @@ namespace r.e.p.o_cheat
             colorControllerType = Type.GetType("PlayerAvatar, Assembly-CSharp");
             if (colorControllerType == null)
             {
-                DLog.Log("colorControllerType (PlayerAvatar) não encontrado.");
+                DLog.Log("colorControllerType (PlayerAvatar) not found.");
                 return;
             }
-            DLog.Log("colorControllerType (PlayerAvatar) encontrado.");
+            DLog.Log("colorControllerType (PlayerAvatar) found.");
 
             colorControllerInstance = null;
 
             if (PhotonNetwork.IsConnected)
             {
                 var photonViews = UnityEngine.Object.FindObjectsOfType<PhotonView>();
-                DLog.Log($"Encontrados {photonViews.Length} PhotonViews na cena.");
+                DLog.Log($"Found {photonViews.Length} PhotonViews in the scene.");
                 foreach (var photonView in photonViews)
                 {
                     if (photonView != null && photonView.IsMine)
@@ -42,7 +42,7 @@ namespace r.e.p.o_cheat
                         if (playerAvatar != null)
                         {
                             colorControllerInstance = playerAvatar;
-                            DLog.Log($"PlayerAvatar local encontrado via PhotonView: {photonView.gameObject.name}, Owner: {photonView.Owner?.NickName}");
+                            DLog.Log($"Local PlayerAvatar found via PhotonView: {photonView.gameObject.name}, Owner: {photonView.Owner?.NickName}");
                             break;
                         }
                     }
@@ -54,7 +54,7 @@ namespace r.e.p.o_cheat
                 if (playerAvatar != null)
                 {
                     colorControllerInstance = playerAvatar;
-                    DLog.Log($"PlayerAvatar encontrado no singleplayer via FindObjectOfType: {(playerAvatar as MonoBehaviour).gameObject.name}");
+                    DLog.Log($"PlayerAvatar found in singleplayer via FindObjectOfType: {(playerAvatar as MonoBehaviour).gameObject.name}");
                 }
                 else
                 {
@@ -65,35 +65,35 @@ namespace r.e.p.o_cheat
                         if (playerAvatarComponent != null)
                         {
                             colorControllerInstance = playerAvatarComponent;
-                            DLog.Log($"PlayerAvatar encontrado no singleplayer via GetLocalPlayer: {localPlayer.name}");
+                            DLog.Log($"PlayerAvatar found in singleplayer via GetLocalPlayer: {localPlayer.name}");
                         }
                         else
                         {
-                            DLog.Log("Componente PlayerAvatar não encontrado no objeto retornado por GetLocalPlayer.");
+                            DLog.Log("PlayerAvatar component not found in object returned by GetLocalPlayer.");
                         }
                     }
                     else
                     {
-                        DLog.Log("Nenhum PlayerAvatar encontrado no singleplayer via GetLocalPlayer.");
+                        DLog.Log("No PlayerAvatar found in singleplayer via GetLocalPlayer.");
                     }
                 }
             }
 
             if (colorControllerInstance == null)
             {
-                DLog.Log("Nenhum PlayerAvatar local encontrado para este cliente (multiplayer ou singleplayer).");
+                DLog.Log("No local PlayerAvatar found for this client (multiplayer or singleplayer).");
                 return;
             }
 
             playerSetColorMethod = colorControllerType.GetMethod("PlayerAvatarSetColor", BindingFlags.Public | BindingFlags.Instance);
             if (playerSetColorMethod == null)
             {
-                DLog.Log("Método PlayerAvatarSetColor não encontrado em PlayerAvatar.");
+                DLog.Log("PlayerAvatarSetColor method not found in PlayerAvatar.");
                 return;
             }
 
             isInitialized = true;
-            DLog.Log("playerColor inicializado com sucesso para o jogador local.");
+            DLog.Log("playerColor successfully initialized for local player.");
         }
 
         public static void colorRandomizer()
@@ -102,7 +102,7 @@ namespace r.e.p.o_cheat
 
             if (!isInitialized || colorControllerInstance == null || playerSetColorMethod == null)
             {
-                DLog.Log("Randomizer ignorado: Falha na inicialização ou instância/método ausentes.");
+                DLog.Log("Randomizer ignored: Initialization failure or missing instance/method.");
                 return;
             }
 
@@ -113,11 +113,11 @@ namespace r.e.p.o_cheat
                 {
                     playerSetColorMethod.Invoke(colorControllerInstance, new object[] { colorIndex });
                     lastColorChangeTime = Time.time;
-                    DLog.Log($"Cor do jogador local alterada para índice: {colorIndex}");
+                    DLog.Log($"Local player color changed to index: {colorIndex}");
                 }
                 catch (Exception e)
                 {
-                    DLog.Log($"Erro ao invocar PlayerAvatarSetColor: {e.Message}");
+                    DLog.Log($"Error invoking PlayerAvatarSetColor: {e.Message}");
                 }
             }
         }
@@ -128,7 +128,7 @@ namespace r.e.p.o_cheat
             colorControllerType = null;
             colorControllerInstance = null;
             playerSetColorMethod = null;
-            DLog.Log("playerColor reiniciado.");
+            DLog.Log("playerColor reset.");
         }
     }
 }

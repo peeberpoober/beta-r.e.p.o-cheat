@@ -85,6 +85,7 @@
     <Reference Include="PhotonVoice.PUN">
       <HintPath>..\..\..\R.E.P.O\REPO_Data\Managed\PhotonVoice.PUN.dll</HintPath>
     </Reference>
+    <Reference Include="PresentationCore" />
     <Reference Include="SingularityGroup.HotReload.Runtime">
       <HintPath>..\..\..\R.E.P.O\REPO_Data\Managed\SingularityGroup.HotReload.Runtime.dll</HintPath>
     </Reference>
@@ -368,27 +369,26 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cheats\CrashLobby.cs" />
-    <Compile Include="Cheats\DebugController.cs" />
-    <Compile Include="Cheats\disablemethod.cs" />
+    <Compile Include="Cheats\Enemies.cs" />
+    <Compile Include="Utils\DebugController.cs" />
+    <Compile Include="Utils\disablemethod.cs" />
+    <Compile Include="Utils\HotkeyManager.cs" />
     <Compile Include="Cheats\Items.cs" />
     <Compile Include="Cheats\ItemSpawner.cs" />
     <Compile Include="Cheats\ItemSync.cs" />
     <Compile Include="Cheats\MiscFeatures.cs" />
     <Compile Include="Cheats\NoclipController.cs" />
-    <Compile Include="Cheats\PlayerCheatSync.cs" />
+    <Compile Include="Utils\PlayerCheatSync.cs" />
     <Compile Include="Cheats\DebugCheats.cs" />
-    <Compile Include="Cheats\GameHelper.cs" />
+    <Compile Include="Utils\GameHelper.cs" />
     <Compile Include="Cheats\Health_Player.cs" />
     <Compile Include="Cheats\playerColor.cs" />
     <Compile Include="Cheats\PlayerController.cs" />
-    <Compile Include="Cheats\StrengthDebug.cs" />
+    <Compile Include="Utils\StrengthDebug.cs" />
     <Compile Include="Cheats\Teleport.cs" />
     <Compile Include="main.cs" />
     <Compile Include="hax.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Cheats\ChamsShader.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

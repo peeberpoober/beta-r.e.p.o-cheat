@@ -157,7 +157,7 @@ namespace r.e.p.o_cheat
         {
             if (selectedItem == null || selectedItem.ItemObject == null)
             {
-                DLog.Log("Item selecionado ou ItemObject é nulo!");
+                DLog.Log("Selected item or ItemObject is null!");
                 return;
             }
 
@@ -171,7 +171,7 @@ namespace r.e.p.o_cheat
                 GameObject player = DebugCheats.GetLocalPlayer();
                 if (player == null)
                 {
-                    DLog.Log("Jogador local não encontrado!");
+                    DLog.Log("Local player not found!");
                     return;
                 }
 
@@ -188,11 +188,11 @@ namespace r.e.p.o_cheat
                     itemsTeleported++;
                 }
 
-                DLog.Log($"Teleporte de todos os itens concluído. Total de itens teleportados: {itemsTeleported}");
+                DLog.Log($"Teleport of all items completed. Total items teleported: {itemsTeleported}");
             }
             catch (Exception e)
             {
-                DLog.Log($"Erro ao teleportar todos os itens: {e.Message}");
+                DLog.Log($"Error teleporting all items: {e.Message}");
             }
         }
 
@@ -200,7 +200,7 @@ namespace r.e.p.o_cheat
         {
             if (selectedItem == null || selectedItem.ItemObject == null)
             {
-                DLog.Log("Item selecionado ou ItemObject é nulo!");
+                DLog.Log("Selected item or ItemObject is null!");
                 return;
             }
 
@@ -213,7 +213,7 @@ namespace r.e.p.o_cheat
                 GameObject player = DebugCheats.GetLocalPlayer();
                 if (player == null)
                 {
-                    DLog.Log("Jogador local não encontrado!");
+                    DLog.Log("Local player not found!");
                     return;
                 }
 
@@ -238,14 +238,14 @@ namespace r.e.p.o_cheat
 
                 if (itemTransform == null)
                 {
-                    DLog.Log($"Não foi possível obter o Transform do item '{item.Name}'!");
+                    DLog.Log($"Could not get Transform of item '{item.Name}'!");
                     return;
                 }
 
                 PhotonView itemPhotonView = itemTransform.GetComponent<PhotonView>();
                 if (itemPhotonView == null)
                 {
-                    DLog.Log($"Item '{item.Name}' não tem PhotonView, teleporte apenas local.");
+                    DLog.Log($"Item '{item.Name}' has no PhotonView, local teleport only.");
                     itemTransform.position = targetPosition;
                     return;
                 }
@@ -253,7 +253,7 @@ namespace r.e.p.o_cheat
                 if (PhotonNetwork.IsConnected && !itemPhotonView.IsMine)
                 {
                     itemPhotonView.RequestOwnership();
-                    DLog.Log($"Solicitada posse do item '{item.Name}' (ViewID: {itemPhotonView.ViewID})");
+                    DLog.Log($"Requested ownership of item '{item.Name}' (ViewID: {itemPhotonView.ViewID})");
                 }
 
                 var transformView = itemTransform.GetComponent<PhotonTransformView>();
@@ -263,7 +263,7 @@ namespace r.e.p.o_cheat
                 {
                     wasTransformViewActive = true;
                     transformView.enabled = false;
-                    DLog.Log($"PhotonTransformView desativado temporariamente no item '{item.Name}'");
+                    DLog.Log($"PhotonTransformView temporarily disabled on item '{item.Name}'");
                 }
 
                 Rigidbody rb = itemTransform.GetComponent<Rigidbody>();
@@ -272,17 +272,17 @@ namespace r.e.p.o_cheat
                 {
                     wasRbActive = !rb.isKinematic;
                     rb.isKinematic = true;
-                    DLog.Log($"Rigidbody do item '{item.Name}' desativado temporariamente");
+                    DLog.Log($"Rigidbody of item '{item.Name}' temporarily disabled");
                 }
 
                 itemTransform.position = targetPosition;
-                DLog.Log($"Item '{item.Name}' teleportado localmente para {targetPosition}");
+                DLog.Log($"Item '{item.Name}' locally teleported to {targetPosition}");
                 Vector3 currentPosition = itemTransform.position;
-                DLog.Log($"Posição atual do item '{item.Name}' após teleporte: {currentPosition}");
+                DLog.Log($"Current position of item '{item.Name}' after teleport: {currentPosition}");
                 if (PhotonNetwork.IsConnected && itemPhotonView != null)
                 {
                     itemPhotonView.RPC("TeleportItemRPC", RpcTarget.AllBuffered, targetPosition);
-                    DLog.Log($"Enviado RPC 'TeleportItemRPC' para todos para item '{item.Name}'");
+                    DLog.Log($"Sent RPC 'TeleportItemRPC' to all for item '{item.Name}'");
                 }
                 if (wasTransformViewActive || wasRbActive)
                 {
@@ -293,14 +293,14 @@ namespace r.e.p.o_cheat
                 {
                     itemGO.SetActive(false);
                     itemGO.SetActive(true);
-                    DLog.Log($"Item '{item.Name}' reativado para forçar renderização.");
+                    DLog.Log($"Item '{item.Name}' reactivated to force rendering.");
                 }
 
-                DLog.Log($"Teleporte do item '{item.Name}' concluído.");
+                DLog.Log($"Teleport of item '{item.Name}' completed.");
             }
             catch (Exception e)
             {
-                DLog.Log($"Erro ao teleportar item '{item.Name}': {e.Message}");
+                DLog.Log($"Error teleporting item '{item.Name}': {e.Message}");
             }
         }
     }
@@ -313,7 +313,7 @@ namespace r.e.p.o_cheat
             photonView = GetComponent<PhotonView>();
             if (photonView == null)
             {
-                DLog.Log($"PhotonView não encontrado no item '{gameObject.name}', adicionando um novo.");
+                DLog.Log($"PhotonView not found on item '{gameObject.name}', adding a new one.");
                 photonView = gameObject.AddComponent<PhotonView>();
             }
             PhotonNetwork.AddCallbackTarget(this);
@@ -328,7 +328,7 @@ namespace r.e.p.o_cheat
         private void TeleportItemRPC(Vector3 targetPosition)
         {
             transform.position = targetPosition;
-            DLog.Log($"Item '{gameObject.name}' sincronizado para {targetPosition} via RPC");
+            DLog.Log($"Item '{gameObject.name}' synchronized to {targetPosition} via RPC");
         }
 
         public void OnOwnershipRequest(PhotonView targetView, Player requestingPlayer)
@@ -373,12 +373,12 @@ namespace r.e.p.o_cheat
             if (rb != null)
             {
                 rb.isKinematic = false;
-                DLog.Log($"Physics reativada para '{gameObject.name}' após teleporte");
+                DLog.Log($"Physics reactivated for '{gameObject.name}' after teleport");
             }
             if (transformView != null)
             {
                 transformView.enabled = true;
-                DLog.Log($"PhotonTransformView reativado para '{gameObject.name}' após teleporte");
+                DLog.Log($"PhotonTransformView reactivated for '{gameObject.name}' after teleport");
             }
             Destroy(this);
         }
