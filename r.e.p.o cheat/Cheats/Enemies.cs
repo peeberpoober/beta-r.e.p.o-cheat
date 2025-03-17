@@ -190,5 +190,143 @@ namespace r.e.p.o_cheat
                 DLog.Log("NavMeshAgent reactivated after teleport.");
             }
         }
+        public static void TeleportEnemyToPlayer(int selectedEnemyIndex, List<Enemy> enemyList, List<string> enemyNames,
+                                        int targetPlayerIndex, List<object> playerList, List<string> playerNames)
+        {
+            if (selectedEnemyIndex < 0 || selectedEnemyIndex >= enemyList.Count)
+            {
+                DLog.Log($"Invalid enemy index! selectedEnemyIndex={selectedEnemyIndex}, enemyList.Count={enemyList.Count}");
+                return;
+            }
+
+            var selectedEnemy = enemyList[selectedEnemyIndex];
+            if (selectedEnemy == null)
+            {
+                DLog.Log("Selected enemy is null!");
+                return;
+            }
+
+            if (targetPlayerIndex < 0 || targetPlayerIndex >= playerList.Count)
+            {
+                DLog.Log($"Invalid target player index! targetPlayerIndex={targetPlayerIndex}, playerList.Count={playerList.Count}");
+                return;
+            }
+
+            var targetPlayer = playerList[targetPlayerIndex];
+            if (targetPlayer == null)
+            {
+                DLog.Log("Target player is null!");
+                return;
+            }
+
+            try
+            {
+                Vector3 targetPosition; // Get the target player's position
+
+                if (targetPlayer is GameObject playerObj) // Handle different player types to get position
+                {
+                    targetPosition = playerObj.transform.position + Vector3.up * 1.5f;
+                }
+                else if (targetPlayer is MonoBehaviour playerMono)
+                {
+                    targetPosition = playerMono.transform.position + Vector3.up * 1.5f;
+                }
+                else
+                {
+                    var transformField = targetPlayer.GetType().GetField("transform", // Try to get transform via reflection for other player types
+                        System.Reflection.BindingFlags.Public |
+                        System.Reflection.BindingFlags.NonPublic |
+                        System.Reflection.BindingFlags.Instance);
+
+                    if (transformField != null)
+                    {
+                        Transform transform = transformField.GetValue(targetPlayer) as Transform;
+                        if (transform != null)
+                        {
+                            targetPosition = transform.position + Vector3.up * 1.5f;
+                        }
+                        else
+                        {
+                            DLog.Log("Could not get transform from player!");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        DLog.Log("Could not find transform field on player!");
+                        return;
+                    }
+                }
+
+                var photonView = selectedEnemy.GetComponent<PhotonView>();
+                if (PhotonNetwork.IsConnected && photonView != null && !photonView.IsMine)
+                {
+                    photonView.RequestOwnership();
+                    DLog.Log($"Requested ownership of enemy {enemyNames[selectedEnemyIndex]} to ensure local control.");
+                }
+
+                var navMeshAgentField = selectedEnemy.GetType().GetField("NavMeshAgent", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                object navMeshAgent = null;
+                if (navMeshAgentField != null)
+                {
+                    navMeshAgent = navMeshAgentField.GetValue(selectedEnemy);
+                    if (navMeshAgent != null)
+                    {
+                        var enabledProperty = navMeshAgent.GetType().GetProperty("enabled", BindingFlags.Public | BindingFlags.Instance);
+                        if (enabledProperty != null)
+                        {
+                            enabledProperty.SetValue(navMeshAgent, false);
+                            DLog.Log($"NavMeshAgent of {enemyNames[selectedEnemyIndex]} disabled to prevent immediate movement.");
+                        }
+                    }
+                }
+
+                selectedEnemy.transform.position = targetPosition;
+                DLog.Log($"Enemy {enemyNames[selectedEnemyIndex]} teleported locally to {playerNames[targetPlayerIndex]} at {targetPosition}");
+
+                if (PhotonNetwork.IsConnected && photonView != null)
+                {
+                    var enemyType = selectedEnemy.GetType();
+                    var teleportMethod = enemyType.GetMethod("EnemyTeleported", BindingFlags.Public | BindingFlags.Instance);
+                    if (teleportMethod != null)
+                    {
+                        teleportMethod.Invoke(selectedEnemy, new object[] { targetPosition });
+                        DLog.Log($"Enemy {enemyNames[selectedEnemyIndex]} teleported via EnemyTeleported for multiplayer synchronization.");
+                    }
+                    else
+                    {
+                        DLog.Log("'EnemyTeleported' method not found, synchronization may not occur.");
+                    }
+                }
+
+                if (navMeshAgent != null)
+                {
+                    MonoBehaviour mb = selectedEnemy as MonoBehaviour;
+                    if (mb != null)
+                    {
+                        mb.StartCoroutine(ReEnableNavMeshAgent(navMeshAgent, 2f));
+                    }
+                }
+
+                var enemyGameObject = selectedEnemy.GetComponent<GameObject>();
+                if (enemyGameObject == null) enemyGameObject = ((MonoBehaviour)selectedEnemy).gameObject;
+                if (enemyGameObject != null)
+                {
+                    enemyGameObject.SetActive(false);
+                    enemyGameObject.SetActive(true);
+                    DLog.Log($"Enemy {enemyNames[selectedEnemyIndex]} reactivated to force rendering.");
+                }
+                else
+                {
+                    DLog.Log($"Enemy GameObject {enemyNames[selectedEnemyIndex]} not found for re-rendering.");
+                }
+
+                DLog.Log($"Teleport of {enemyNames[selectedEnemyIndex]} to {playerNames[targetPlayerIndex]} completed.");
+            }
+            catch (Exception e)
+            {
+                DLog.Log($"Error teleporting enemy {enemyNames[selectedEnemyIndex]} to player {playerNames[targetPlayerIndex]}: {e.Message}");
+            }
+        }
     }
 }
