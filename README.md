@@ -1,4 +1,4 @@
-# beta-r.e.p.o-cheat
+# beta-d.a.r.k.-cheat
 <sub>*Made by D4rkks (and contributors)* | **v1.1.2.1**</sub>
 
 # **FUNCTIONS:**
@@ -42,7 +42,7 @@
 - Teleport Player to You
   
 ### Misc
-- Spawn MoneyBag (almost 100% working)
+- Spawn MoneyBag
 - Player RGB Skin (partial contribution from https://github.com/svind1er)
 - Set Flashlight Intensity
 - Set Crouch Delay
