@@ -35,5 +35,14 @@ namespace r.e.p.o_cheat
                 DLog.Log("NoFog disabled");
             }
         }
+
+        /* private void AddFakePlayer()
+        {
+            int fakePlayerId = playerNames.Count(name => name.Contains("FakePlayer")) + 1;
+            string fakeName = $"<color=green>[LIVE]</color> FakePlayer{fakePlayerId}";
+            playerNames.Add(fakeName);
+            playerList.Add(null);
+            DLog.Log($"Added fake player: {fakeName}");
+        } */
     }
 }
