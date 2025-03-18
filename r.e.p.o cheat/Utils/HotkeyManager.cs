@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using r.e.p.o_cheat;
 
 namespace r.e.p.o_cheat
 {
