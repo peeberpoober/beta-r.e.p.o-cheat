@@ -1,4 +1,5 @@
 ﻿﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using Photon.Pun;
@@ -47,10 +48,8 @@ namespace r.e.p.o_cheat
                 if (PhotonNetwork.IsConnected && photonView != null)
                 {
                     var currentHealthField = healthType.GetField("currentHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     int currentHealth = currentHealthField != null ? (int)currentHealthField.GetValue(playerHealthInstance) : 0;
-                    int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
-                    DLog.Log(maxHealthField != null ? $"maxHealth found: {maxHealth}" : "'maxHealth' field not found, using default value: 100");
+                    int maxHealth = GetPlayerMaxHealth(playerHealthInstance);
 
                     photonView.RPC("UpdateHealthRPC", RpcTarget.AllBuffered, new object[] {maxHealth, maxHealth, true });
                     DLog.Log($"RPC 'UpdateHealthRPC' sent to all with health={currentHealth + maxHealth}, maxHealth={maxHealth}, effect=true.");
@@ -112,9 +111,7 @@ namespace r.e.p.o_cheat
 
                 if (PhotonNetwork.IsConnected && photonView != null)
                 {
-                    var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
-                    DLog.Log(maxHealthField != null ? $"maxHealth found: {maxHealth}" : "'maxHealth' field not found, using default value: 100");
+                    int maxHealth = GetPlayerMaxHealth(playerHealthInstance);
 
                     photonView.RPC("HurtOtherRPC", RpcTarget.AllBuffered, new object[] { damageAmount, Vector3.zero, false, -1 });
                     DLog.Log($"RPC 'HurtOtherRPC' sent with {damageAmount} damage.");
@@ -140,8 +137,27 @@ namespace r.e.p.o_cheat
                 DLog.Log($"Error trying to damage: {e.Message}");
             }
         }
+        internal static void ReviveSelectedPlayer(int selectedPlayerIndex, List<object> playerList, List<string> playerNames)
+        {
+            if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count || selectedPlayerIndex >= playerNames.Count)
+            {
+                DLog.Log("Invalid player index for revival!");
+                return;
+            }
+            
+            object selectedPlayer = playerList[selectedPlayerIndex];
+            string playerName = playerNames[selectedPlayerIndex];
+            
+            if (selectedPlayer == null)
+            {
+                DLog.Log($"Selected player at index {selectedPlayerIndex} is null!");
+                return;
+            }
+            
+            ReviveSelectedPlayer(selectedPlayer, playerList, playerName);
+        }
 
-        public static void ReviveSelectedPlayer(object selectedPlayer, string playerName)
+        public static void ReviveSelectedPlayer(object selectedPlayer, System.Collections.Generic.List<object> playerList, string playerName)
         {
             if (selectedPlayer == null)
             {
@@ -184,11 +200,9 @@ namespace r.e.p.o_cheat
                     if (playerHealthInstance != null)
                     {
                         var healthType = playerHealthInstance.GetType();
-                        var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         var healthField = healthType.GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
-                        int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
-                        DLog.Log($"Max health retrieved: {maxHealth}");
+                        int maxHealth = GetPlayerMaxHealth(playerHealthInstance);
                         if (healthField != null)
                         {
                             healthField.SetValue(playerHealthInstance, maxHealth);
@@ -200,8 +214,8 @@ namespace r.e.p.o_cheat
                             Health_Player.HealPlayer(selectedPlayer, maxHealth, playerName);
                         }
 
-                        int currentHealth = healthField != null ? (int)healthField.GetValue(playerHealthInstance) : -1;
-                        DLog.Log($"Current health after revive: {currentHealth}");
+                        int currentHealth = GetPlayerHealth(selectedPlayer);
+                        DLog.Log($"Current health after revive: {(currentHealth >= 0 ? currentHealth.ToString() : "Unknown")}");
                     }
                     else DLog.Log("PlayerHealth instance is null, health restoration failed.");
                 }
@@ -213,7 +227,27 @@ namespace r.e.p.o_cheat
             }
         }
 
-        public static void KillSelectedPlayer(object selectedPlayer, string playerName)
+        internal static void KillSelectedPlayer(int selectedPlayerIndex, List<object> playerList, List<string> playerNames)
+        {
+            if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count || selectedPlayerIndex >= playerNames.Count)
+            {
+                DLog.Log("Invalid player index for kill operation!");
+                return;
+            }
+            
+            object selectedPlayer = playerList[selectedPlayerIndex];
+            string playerName = playerNames[selectedPlayerIndex];
+            
+            if (selectedPlayer == null)
+            {
+                DLog.Log($"Selected player at index {selectedPlayerIndex} is null!");
+                return;
+            }
+            
+            KillSelectedPlayer(selectedPlayer, playerList, playerName);
+        }
+
+        public static void KillSelectedPlayer(object selectedPlayer, System.Collections.Generic.List<object> playerList, string playerName)
         {
             if (selectedPlayer == null) 
             { 
@@ -255,9 +289,7 @@ namespace r.e.p.o_cheat
 
                 if (PhotonNetwork.IsConnected && photonView != null)
                 {
-                    var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    int maxHealth = maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
-                    DLog.Log(maxHealthField != null ? $"maxHealth found: {maxHealth}" : "'maxHealth' field not found, using default value: 100");
+                    int maxHealth = GetPlayerMaxHealth(playerHealthInstance);
                     photonView.RPC("UpdateHealthRPC", RpcTarget.AllBuffered, new object[] { 0, maxHealth, true });
                     DLog.Log($"RPC 'UpdateHealthRPC' sent to all with health=0, maxHealth={maxHealth}, effect=true.");
                     try { photonView.RPC("PlayerDeathRPC", RpcTarget.AllBuffered, new object[] { -1 }); DLog.Log("Trying RPC 'PlayerDeathRPC' to force death..."); }
@@ -269,6 +301,41 @@ namespace r.e.p.o_cheat
                 DLog.Log($"Attempt to kill {playerName} completed.");
             }
             catch (Exception e) { DLog.Log($"Error trying to kill {playerName}: {e.Message}"); }
+        }
+
+        public static int GetPlayerHealth(object player)
+        {
+            try
+            {
+                var playerHealthField = player.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (playerHealthField == null) return 100;
+
+                var playerHealthInstance = playerHealthField.GetValue(player);
+                if (playerHealthInstance == null) return 100;
+
+                var healthField = playerHealthInstance.GetType().GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (healthField == null) return 100;
+
+                return (int)healthField.GetValue(playerHealthInstance);
+            }
+            catch (Exception e)
+            {
+                DLog.Log($"Error getting player health: {e.Message}");
+                return 100;
+            }
+        }
+
+        public static int GetPlayerMaxHealth(object playerHealthInstance)
+        {
+            if (playerHealthInstance == null)
+            {
+                DLog.Log("playerHealthInstance is null when trying to get maxHealth!");
+                return 100;
+            }
+            
+            var healthType = playerHealthInstance.GetType();
+            var maxHealthField = healthType.GetField("maxHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            return maxHealthField != null ? (int)maxHealthField.GetValue(playerHealthInstance) : 100;
         }
     }
 }
