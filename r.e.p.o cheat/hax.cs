@@ -9,7 +9,6 @@ using System.Linq;
 using HarmonyLib;
 using SingularityGroup.HotReload;
 
-
 namespace r.e.p.o_cheat
 {
     public static class UIHelper
@@ -147,8 +146,6 @@ namespace r.e.p.o_cheat
         public static bool godModeActive = false;
         public static bool infiniteHealthActive = false;
         public static bool stamineState = false;
-        public static bool unlimitedBatteryActive = false;
-        public static UnlimitedBattery unlimitedBatteryComponent;
         private Vector2 playerScrollPosition = Vector2.zero;
         private Vector2 enemyScrollPosition = Vector2.zero;
         private int teleportPlayerSourceIndex = 0;  // Default to first player in list
@@ -158,15 +155,6 @@ namespace r.e.p.o_cheat
         private bool showTeleportUI = false;
         private bool showSourceDropdown = false;  // Track source dropdown visibility
         private bool showDestDropdown = false;  // Track destination dropdown visibility
-        private bool showEnemyTeleportUI = false;
-        private bool showEnemyTeleportDropdown = false;
-        private int enemyTeleportDestIndex = 0;
-        private string[] enemyTeleportDestOptions;
-        private float enemyTeleportLabelWidth = 70f;
-        private float enemyTeleportToWidth = 20f;
-        private float enemyTeleportDropdownWidth = 200f;
-        private float enemyTeleportTotalWidth;
-        private float enemyTeleportStartX;
 
         public static string[] levelsToSearchItems = { "Level - Manor", "Level - Wizard", "Level - Arctic" };
 
@@ -217,9 +205,9 @@ namespace r.e.p.o_cheat
         private bool showingActionSelector = false;
         private Vector2 actionSelectorScroll = Vector2.zero;
         private Vector2 hotkeyScrollPosition = Vector2.zero;
-        private HotkeyManager hotkeyManager; // Reference to the HotkeyManager
-        public bool showWatermark = true;
 
+        // Reference to the HotkeyManager
+        private HotkeyManager hotkeyManager;
 
         private float actionSelectorX = 300f;
         private float actionSelectorY = 200f;
@@ -239,16 +227,8 @@ namespace r.e.p.o_cheat
             teleportPlayerSourceIndex = 0;  // Default to first player
             teleportPlayerDestIndex = teleportPlayerDestOptions.Length - 1;  // Default to void
         }
-        private void UpdateEnemyTeleportOptions()
-        {
-            List<string> destOptions = new List<string>();
-            destOptions.AddRange(playerNames); // Add all players (including local player)
-            enemyTeleportDestOptions = destOptions.ToArray();
-            enemyTeleportDestIndex = 0; // Default to first player
-            float centerPoint = menuX + 300f; // Center of the menu area
-            enemyTeleportTotalWidth = enemyTeleportLabelWidth + 10f + enemyTeleportToWidth + 10f + enemyTeleportDropdownWidth;
-            enemyTeleportStartX = centerPoint - (enemyTeleportTotalWidth / 2);
-        }
+
+
         public void Start()
         {
             CursorController.Init();
@@ -256,13 +236,6 @@ namespace r.e.p.o_cheat
             UpdateCursorState();
             hotkeyManager = HotkeyManager.Instance;
             hotkeyManager.Initialize();
-
-            if (unlimitedBatteryComponent == null)
-            {
-                GameObject batteryObj = new GameObject("BatteryManager");
-                unlimitedBatteryComponent = batteryObj.AddComponent<UnlimitedBattery>();
-                DontDestroyOnLoad(batteryObj);
-            }
 
             DebugCheats.texture2 = new Texture2D(2, 2, TextureFormat.ARGB32, false);
             DebugCheats.texture2.SetPixels(new[] { Color.red, Color.red, Color.red, Color.red });
@@ -292,6 +265,7 @@ namespace r.e.p.o_cheat
 
             if (RunManager.instance.levelCurrent != null && levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name))
             {
+                // Limit update frequency to prevent lag
                 if (Time.time >= nextUpdateTime)
                 {
                     DebugCheats.UpdateEnemyList();
@@ -482,12 +456,9 @@ namespace r.e.p.o_cheat
                         var nameField = enemyParent.GetType().GetField("enemyName", BindingFlags.Public | BindingFlags.Instance);
                         enemyName = nameField?.GetValue(enemyParent) as string ?? "Enemy";
                     }
+
                     int health = Enemies.GetEnemyHealth(enemy);
-                   DebugCheats.enemyHealthCache[enemy] = health;
-                    int maxHealth = Enemies.GetEnemyMaxHealth(enemy);
-                    float healthPercentage = maxHealth > 0 ? (float)health / maxHealth : 0f;
-                    string healthColor = healthPercentage > 0.66f ? "<color=green>" : (healthPercentage > 0.33f ? "<color=yellow>" : "<color=red>");
-                    string healthText = health >= 0 ? $"{healthColor}HP: {health}/{maxHealth}</color>" : "<color=gray>HP: Unknown</color>";
+                    string healthText = health >= 0 ? $"HP: {health}" : "HP: Unknown";
                     enemyNames.Add($"{enemyName} [{healthText}]");
                 }
             }
@@ -559,16 +530,75 @@ namespace r.e.p.o_cheat
             if (playerNames.Count == 0) playerNames.Add("No player Found");
         }
 
+        /* private void AddFakePlayer()
+        {
+            int fakePlayerId = playerNames.Count(name => name.Contains("FakePlayer")) + 1;
+            string fakeName = $"<color=green>[LIVE]</color> FakePlayer{fakePlayerId}";
+            playerNames.Add(fakeName);
+            playerList.Add(null);
+            DLog.Log($"Added fake player: {fakeName}");
+        } */
+
         private bool IsPlayerAlive(object player, string playerName)
         {
-            int health = Health_Player.GetPlayerHealth(player);
-            if (health < 0) {
-                DLog.Log($"Could not get health for {playerName}, assuming dead");
-                return true; // If we can't get health, assume player is dead
+            try
+            {
+                var playerHealthField = player.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (playerHealthField == null) return true;
+
+                var playerHealthInstance = playerHealthField.GetValue(player);
+                if (playerHealthInstance == null) return true;
+
+                var healthField = playerHealthInstance.GetType().GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (healthField == null) return true;
+
+                int health = (int)healthField.GetValue(playerHealthInstance);
+                return health > 0;
+            }
+            catch (Exception e)
+            {
+                DLog.Log($"Error checking health of {playerName}: {e.Message}");
+                return true;
+            }
+        }
+
+        public static void ReviveSelectedPlayer(int selectedPlayerIndex, List<object> playerList, List<string> playerNames)
+        {
+            if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count)
+            {
+                DLog.Log("Invalid player index!");
+                return;
+            }
+            var selectedPlayer = playerList[selectedPlayerIndex];
+            if (selectedPlayer == null)
+            {
+                DLog.Log("Selected player is null!");
+                return;
             }
 
-            return health > 0;
+            Health_Player.ReviveSelectedPlayer(selectedPlayer, playerNames[selectedPlayerIndex]);
+            DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]);
         }
+
+        public static void KillSelectedPlayer(int selectedPlayerIndex, List<object> playerList, List<string> playerNames)
+        {
+            if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count)
+            {
+                DLog.Log("Invalid player index!");
+                return;
+            }
+
+            var selectedPlayer = playerList[selectedPlayerIndex];
+            if (selectedPlayer == null)
+            {
+                DLog.Log("Selected player is null!");
+                return;
+            }
+
+            Health_Player.KillSelectedPlayer(selectedPlayer, playerNames[selectedPlayerIndex]);
+            DLog.Log("Attempt to kill the selected player completed.");
+        }
+
 
         private void InitializeGUIStyles()
         {
@@ -607,14 +637,8 @@ namespace r.e.p.o_cheat
 
             if (DebugCheats.drawEspBool || DebugCheats.drawItemEspBool || DebugCheats.drawExtractionPointEspBool || DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool || DebugCheats.draw3DItemEspBool || DebugCheats.drawChamsBool) DebugCheats.DrawESP();
 
-            GUIStyle style = new GUIStyle(GUI.skin.label) { wordWrap = false };
-            if (showWatermark)
-            {
-                GUIContent content = new GUIContent($"D.A.R.K CHEAT | {hotkeyManager.MenuToggleKey} - MENU");
-                Vector2 size = style.CalcSize(content);
-                GUI.Label(new Rect(10, 10, size.x, size.y), content, style);
-                GUI.Label(new Rect(10 + size.x + 10, 10, 200, size.y), "MADE BY Github/D4rkks", style);
-            }
+            GUI.Label(new Rect(10, 10, 200, 30), $"D.A.R.K CHEAT | {hotkeyManager.MenuToggleKey} - MENU");
+            GUI.Label(new Rect(230, 10, 200, 30), "MADE BY Github/D4rkks");
 
             // handle modal first
             if (showingActionSelector)
@@ -792,8 +816,10 @@ namespace r.e.p.o_cheat
                         break;
 
                     case MenuCategory.ESP:
+                        // Enemy ESP section
                         DebugCheats.drawEspBool = UIHelper.Checkbox("Enemy ESP", DebugCheats.drawEspBool, menuX + 30, currentY);
                         currentY += DebugCheats.drawEspBool ? childIndent : parentSpacing;
+
                         if (DebugCheats.drawEspBool)
                         {
                             DebugCheats.showEnemyBox = UIHelper.Checkbox("Toggle Box", DebugCheats.showEnemyBox, menuX + 50, currentY);
@@ -802,14 +828,13 @@ namespace r.e.p.o_cheat
                             currentY += childSpacing;
                             DebugCheats.showEnemyDistance = UIHelper.Checkbox("Toggle Distance", DebugCheats.showEnemyDistance, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showEnemyHP = UIHelper.Checkbox("Show Enemy HP", DebugCheats.showEnemyHP, menuX + 50, currentY);
-                            currentY += childSpacing;
                             DebugCheats.drawChamsBool = UIHelper.Checkbox("Toggle Chams", DebugCheats.drawChamsBool, menuX + 50, currentY);
                             currentY += parentSpacing;
                         }
                         // Item ESP section
                         DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, menuX + 30, currentY);
                         currentY += DebugCheats.drawItemEspBool ? childIndent : parentSpacing;
+
                         if (DebugCheats.drawItemEspBool)
                         {
                             DebugCheats.showItemNames = UIHelper.Checkbox("Show Item Names", DebugCheats.showItemNames, menuX + 50, currentY);
@@ -821,12 +846,6 @@ namespace r.e.p.o_cheat
                             DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Item ESP", DebugCheats.draw3DItemEspBool, menuX + 50, currentY);
                             currentY += childSpacing;
                             DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Show Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, currentY);
-                            currentY += childSpacing;
-
-                            // Max Distance Slider
-                            GUI.Label(new Rect(menuX + 50, currentY, 200, 20), $"Max Item Distance: {DebugCheats.maxItemEspDistance:F0}m");
-                            currentY += 20;
-                            DebugCheats.maxItemEspDistance = GUI.HorizontalSlider(new Rect(menuX + 50, currentY, 200, 20), DebugCheats.maxItemEspDistance, 0f, 1000f);
                             currentY += parentSpacing;
                         }
                         // Extraction ESP section
@@ -871,8 +890,8 @@ namespace r.e.p.o_cheat
                         }
                         GUI.EndScrollView();
 
-                        if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { Health_Player.ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
-                        if (UIHelper.Button("Kill Selected Player", menuX + 30, menuY + 370)) { Health_Player.KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Attempt to kill the selected player completed."); }
+                        if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
+                        if (UIHelper.Button("Kill Selected Player", menuX + 30, menuY + 370)) { KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Attempt to kill the selected player completed."); }
                         if (UIHelper.Button(showTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, menuY + 410)) // Teleport UI with dropdown system
                         {
                             showTeleportUI = !showTeleportUI; // Initialize teleport options when opening
@@ -979,21 +998,6 @@ namespace r.e.p.o_cheat
                         }
                         currentY += parentSpacing;
 
-                        bool newUnlimitedBatteryState = UIHelper.ButtonBool("Toggle Unlimited Battery", unlimitedBatteryActive, menuX + 30, currentY);
-                        if (newUnlimitedBatteryState != unlimitedBatteryActive)
-                        {
-                            unlimitedBatteryActive = newUnlimitedBatteryState;
-                            if (unlimitedBatteryComponent != null)
-                                unlimitedBatteryComponent.unlimitedBatteryEnabled = unlimitedBatteryActive;
-                        }
-                        currentY += parentSpacing;
-
-                        bool newWatermarkState = UIHelper.ButtonBool("Disable Watermark", !showWatermark, menuX + 30, currentY);
-                        if (newWatermarkState != !showWatermark)
-                        {
-                            showWatermark = !newWatermarkState;
-                        }
-                        currentY += parentSpacing;
 
                         MapTools.showMapTweaks = UIHelper.Checkbox("Map tweaks", MapTools.showMapTweaks, menuX + 30, currentY);
                         currentY += MapTools.showMapTweaks ? childIndent : parentSpacing;
@@ -1099,6 +1103,7 @@ namespace r.e.p.o_cheat
                     case MenuCategory.Enemies:
                         UpdateEnemyList();
                         UIHelper.Label("Select an enemy:", menuX + 30, menuY + 95);
+
                         enemyScrollPosition = GUI.BeginScrollView(new Rect(menuX + 30, menuY + 115, 540, 200), enemyScrollPosition, new Rect(0, 0, 520, enemyNames.Count * 35), false, true);
                         for (int i = 0; i < enemyNames.Count; i++)
                         {
@@ -1108,6 +1113,7 @@ namespace r.e.p.o_cheat
                             GUI.color = Color.white;
                         }
                         GUI.EndScrollView();
+
                         if (UIHelper.Button("Kill Selected Enemy", menuX + 30, menuY + 330))
                         {
                             Enemies.KillSelectedEnemy(selectedEnemyIndex, enemyList, enemyNames);
@@ -1115,61 +1121,14 @@ namespace r.e.p.o_cheat
                         }
                         if (UIHelper.Button("Kill All Enemies", menuX + 30, menuY + 370))
                         {
-                            Enemies.KillAllEnemies();
+                            DebugCheats.KillAllEnemies();
                             DLog.Log("Attempt to kill all enemies completed.");
                         }
-                        if (UIHelper.Button(showEnemyTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, menuY + 410))
+                        if (UIHelper.Button("Teleport Enemy to Me", menuX + 30, menuY + 410))
                         {
-                            showEnemyTeleportUI = !showEnemyTeleportUI; // Toggle the teleport UI
-                            if (showEnemyTeleportUI)
-                            {
-                                UpdateEnemyTeleportOptions(); // Initialize teleport options when opening
-                            }
-                        }
-                        if (showEnemyTeleportUI)
-                        {
-                            float dropdownHeight = enemyTeleportDestOptions.Length * 25f;
-                            float executeButtonY = menuY + 480f;
-                            if (showEnemyTeleportDropdown)
-                            {
-                                executeButtonY = menuY + 480f + dropdownHeight; // If dropdown is open, move the execute button lower
-                            }
-                            UIHelper.Label("Teleport", enemyTeleportStartX, menuY + 450); // "Teleport" label
-                            UIHelper.Label("to", enemyTeleportStartX + enemyTeleportLabelWidth + 10f, menuY + 450); // "to" label
-                            if (GUI.Button(new Rect(enemyTeleportStartX + enemyTeleportLabelWidth + 10f + enemyTeleportToWidth + 10f,
-                                                  menuY + 450, enemyTeleportDropdownWidth, 25),
-                                         enemyTeleportDestOptions[enemyTeleportDestIndex]))
-                            {
-                                showEnemyTeleportDropdown = !showEnemyTeleportDropdown; // Toggle the destination dropdown visibility
-                            }
-                            if (showEnemyTeleportDropdown) // Destination dropdown options (if open)
-                            {
-                                for (int i = 0; i < enemyTeleportDestOptions.Length; i++)
-                                {
-                                    if (GUI.Button(new Rect(enemyTeleportStartX + enemyTeleportLabelWidth + 10f + enemyTeleportToWidth + 10f,
-                                                          menuY + 480 + (i * 25), enemyTeleportDropdownWidth, 25),
-                                                 enemyTeleportDestOptions[i]))
-                                    {
-                                        enemyTeleportDestIndex = i;
-                                        showEnemyTeleportDropdown = false;
-                                    }
-                                }
-                            }
-                            if (UIHelper.Button("Execute Teleport", menuX + 30, executeButtonY)) // Execute teleport button (at original position)
-                            {
-                                int playerIndex = enemyTeleportDestIndex;
-                                if (DebugCheats.IsLocalPlayer(playerList[playerIndex])) // Check if selected player is local player
-                                {
-                                    Enemies.TeleportEnemyToMe(selectedEnemyIndex, enemyList, enemyNames); // Use existing method for local player
-                                }
-                                else
-                                {
-                                    Enemies.TeleportEnemyToPlayer(selectedEnemyIndex, enemyList, enemyNames, playerIndex, playerList, playerNames); // Teleport to another player
-                                }
-                                UpdateEnemyList();
-                                showEnemyTeleportDropdown = false;
-                                DLog.Log($"Teleported {enemyNames[selectedEnemyIndex]} to {enemyTeleportDestOptions[enemyTeleportDestIndex]}.");
-                            }
+                            Enemies.TeleportEnemyToMe(selectedEnemyIndex, enemyList, enemyNames);
+                            UpdateEnemyList();
+                            DLog.Log($"Attempt to teleport {enemyNames[selectedEnemyIndex]} to you completed.");
                         }
                         break;
 
