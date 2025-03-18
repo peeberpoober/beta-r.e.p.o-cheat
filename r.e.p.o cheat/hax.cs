@@ -7,6 +7,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using System.Linq;
 
+
 namespace r.e.p.o_cheat
 {
     public static class UIHelper
@@ -142,6 +143,8 @@ namespace r.e.p.o_cheat
         public static bool godModeActive = false;
         public static bool infiniteHealthActive = false;
         public static bool stamineState = false;
+        public static bool unlimitedBatteryActive = false;
+        public static UnlimitedBattery unlimitedBatteryComponent;
         private Vector2 playerScrollPosition = Vector2.zero;
         private Vector2 enemyScrollPosition = Vector2.zero;
         private int teleportPlayerSourceIndex = 0;  // Default to first player in list
@@ -213,6 +216,8 @@ namespace r.e.p.o_cheat
         
         private HotkeyManager hotkeyManager; // Reference to the HotkeyManager
 
+        public bool showWatermark = true;
+
         private float actionSelectorX = 300f;
         private float actionSelectorY = 200f;
         private bool isDraggingActionSelector = false;
@@ -246,6 +251,13 @@ namespace r.e.p.o_cheat
             UpdateCursorState();
             hotkeyManager = HotkeyManager.Instance;
             hotkeyManager.Initialize();
+
+            if (unlimitedBatteryComponent == null)
+            {
+                GameObject batteryObj = new GameObject("BatteryManager");
+                unlimitedBatteryComponent = batteryObj.AddComponent<UnlimitedBattery>();
+                DontDestroyOnLoad(batteryObj);
+            }
 
             DebugCheats.texture2 = new Texture2D(2, 2, TextureFormat.ARGB32, false);
             DebugCheats.texture2.SetPixels(new[] { Color.red, Color.red, Color.red, Color.red });
@@ -575,8 +587,14 @@ namespace r.e.p.o_cheat
 
             if (DebugCheats.drawEspBool || DebugCheats.drawItemEspBool || DebugCheats.drawExtractionPointEspBool || DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool || DebugCheats.draw3DItemEspBool || DebugCheats.drawChamsBool) DebugCheats.DrawESP();
 
-            GUI.Label(new Rect(10, 10, 200, 30), $"D.A.R.K CHEAT | {hotkeyManager.MenuToggleKey} - MENU");
-            GUI.Label(new Rect(230, 10, 200, 30), "MADE BY Github/D4rkks");
+            GUIStyle style = new GUIStyle(GUI.skin.label) { wordWrap = false };
+            if (showWatermark)
+            {
+                GUIContent content = new GUIContent($"D.A.R.K CHEAT | {hotkeyManager.MenuToggleKey} - MENU");
+                Vector2 size = style.CalcSize(content);
+                GUI.Label(new Rect(10, 10, size.x, size.y), content, style);
+                GUI.Label(new Rect(10 + size.x + 10, 10, 200, size.y), "MADE BY Github/D4rkks", style);
+            }
 
             // handle modal first
             if (showingActionSelector)
@@ -929,6 +947,7 @@ namespace r.e.p.o_cheat
                             DLog.Log("Randomize toggled: " + playerColor.isRandomizing);
                         }
 
+
                         UIHelper.Label("Flashlight Intensity: " + Hax2.flashlightIntensity, menuX + 30, menuY + 185);
                         Hax2.flashlightIntensity = UIHelper.Slider(Hax2.flashlightIntensity, 1f, 100f, menuX + 30, menuY + 205);
 
@@ -1007,6 +1026,20 @@ namespace r.e.p.o_cheat
                         if (newNoFogState != MiscFeatures.NoFogEnabled)
                         {
                             MiscFeatures.ToggleNoFog(newNoFogState);
+                        }
+
+                        bool newUnlimitedBatteryState = UIHelper.ButtonBool("Toggle Unlimited Battery", unlimitedBatteryActive, menuX + 30, menuY + 605);
+                        if (newUnlimitedBatteryState != unlimitedBatteryActive)
+                        {
+                            unlimitedBatteryActive = newUnlimitedBatteryState;
+                            if (unlimitedBatteryComponent != null)
+                                unlimitedBatteryComponent.unlimitedBatteryEnabled = unlimitedBatteryActive;
+                        }
+
+                        bool newWatermarkState = UIHelper.ButtonBool("Disable Watermark", !showWatermark, menuX + 30, menuY + 645);
+                        if (newWatermarkState != !showWatermark)
+                        {
+                            showWatermark = !newWatermarkState;
                         }
                         break;
 

@@ -48,6 +48,7 @@ namespace r.e.p.o_cheat
         private HotkeyManager()
         {
             InitializeHotkeyActions();
+            InitializeUnlimitedBatteryAction();
             LoadHotkeySettings();
         }
 
@@ -68,6 +69,16 @@ namespace r.e.p.o_cheat
                 Action = action;
                 Description = description;
             }
+        }
+
+        private void InitializeUnlimitedBatteryAction()
+        {
+            availableActions.Add(new HotkeyAction("Unlimited Battery", () =>
+            {
+                Hax2.unlimitedBatteryActive = !Hax2.unlimitedBatteryActive;
+                if (Hax2.unlimitedBatteryComponent != null)
+                    Hax2.unlimitedBatteryComponent.unlimitedBatteryEnabled = Hax2.unlimitedBatteryActive;
+            }, "toggles unlimited battery on/off"));
         }
 
         private void InitializeHotkeyActions()
@@ -178,6 +189,14 @@ namespace r.e.p.o_cheat
                 PlayerController.RemoveSpeed(Hax2.sliderValueStrength);
                 DLog.Log("speed set to normal (5)");
             }, "sets speed to normal value"));
+
+            availableActions.Add(new HotkeyAction("Unlimited Battery", () =>
+            {
+                Hax2.unlimitedBatteryActive = !Hax2.unlimitedBatteryActive;
+                if (Hax2.unlimitedBatteryComponent != null)
+                    Hax2.unlimitedBatteryComponent.unlimitedBatteryEnabled = Hax2.unlimitedBatteryActive;
+            }, "toggles unlimited battery on/off"));
+
 
             for (int i = 0; i < defaultHotkeys.Length; i++)
             {

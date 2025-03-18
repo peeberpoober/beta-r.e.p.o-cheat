@@ -370,6 +370,7 @@
   <ItemGroup>
     <Compile Include="Cheats\CrashLobby.cs" />
     <Compile Include="Cheats\Enemies.cs" />
+    <Compile Include="Cheats\UnlimitedBattery.cs" />
     <Compile Include="Utils\DebugController.cs" />
     <Compile Include="Utils\disablemethod.cs" />
     <Compile Include="Utils\HotkeyManager.cs" />
