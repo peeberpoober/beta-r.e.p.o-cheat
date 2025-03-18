@@ -64,7 +64,22 @@ namespace r.e.p.o_cheat
         {
             DLog.Log("Attempting to kill all enemies");
 
-            foreach (var enemyInstance in enemyList)
+            // Get the list directly from DebugCheats since that's the source of truth
+            var currentEnemyList = DebugCheats.enemyList;
+
+            if (currentEnemyList == null || currentEnemyList.Count == 0)
+            {
+                DLog.Log("No enemies found to kill");
+                return;
+            }
+
+            DLog.Log($"Found {currentEnemyList.Count} enemies to process");
+            int killCount = 0;
+
+            // Create a copy of the list to avoid modification issues during iteration
+            List<Enemy> enemiesCopy = new List<Enemy>(currentEnemyList);
+
+            foreach (var enemyInstance in enemiesCopy)
             {
                 if (enemyInstance == null) continue;
 
@@ -81,22 +96,32 @@ namespace r.e.p.o_cheat
                             if (hurtMethod != null)
                             {
                                 hurtMethod.Invoke(healthComponent, new object[] { 9999, Vector3.zero });
-                                DLog.Log($"Enemy hurt with 9999 damage via Hurt");
+                                killCount++;
                             }
                             else
-                                DLog.Log("'Hurt' method not found in EnemyHealth");
+                            {
+                                DLog.Log($"'Hurt' method not found in EnemyHealth for enemy {enemyInstance.name}");
+                            }
                         }
                         else
-                            DLog.Log("EnemyHealth component is null");
+                        {
+                            DLog.Log($"EnemyHealth component is null for enemy {enemyInstance.name}");
+                        }
                     }
                     else
-                        DLog.Log("'Health' field not found in Enemy");
+                    {
+                        DLog.Log($"'Health' field not found in Enemy {enemyInstance.name}");
+                    }
                 }
                 catch (Exception e)
                 {
-                    DLog.Log($"Error killing enemy: {e.Message}");
+                    DLog.Log($"Error killing enemy {enemyInstance.name}: {e.Message}");
                 }
             }
+
+            DLog.Log($"Killed {killCount} out of {enemiesCopy.Count} enemies");
+
+            // Update the enemy list after killing
             DebugCheats.UpdateEnemyList();
         }
 
