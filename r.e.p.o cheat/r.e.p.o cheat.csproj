@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -34,6 +34,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony, Version=2.3.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>Assets\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\R.E.P.O\REPO_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
@@ -371,6 +374,7 @@
     <Compile Include="Cheats\CrashLobby.cs" />
     <Compile Include="Cheats\Enemies.cs" />
     <Compile Include="Cheats\UnlimitedBattery.cs" />
+    <Compile Include="Utils\CursorController.cs" />
     <Compile Include="Utils\DebugController.cs" />
     <Compile Include="Utils\disablemethod.cs" />
     <Compile Include="Utils\HotkeyManager.cs" />
@@ -379,6 +383,7 @@
     <Compile Include="Cheats\ItemSync.cs" />
     <Compile Include="Cheats\MiscFeatures.cs" />
     <Compile Include="Cheats\NoclipController.cs" />
+    <Compile Include="Utils\MapTools.cs" />
     <Compile Include="Utils\PlayerCheatSync.cs" />
     <Compile Include="Cheats\DebugCheats.cs" />
     <Compile Include="Utils\GameHelper.cs" />
