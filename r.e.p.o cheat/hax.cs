@@ -132,6 +132,9 @@ namespace r.e.p.o_cheat
         private float nextUpdateTime = 0f;
         private const float updateInterval = 10f;
 
+        private float levelCheckTimer = 0f;
+        private const float LEVEL_CHECK_INTERVAL = 5.0f;
+        private string previousLevelName = "";
         private int selectedPlayerIndex = 0;
         private List<string> playerNames = new List<string>();
         private List<object> playerList = new List<object>();
@@ -248,6 +251,20 @@ namespace r.e.p.o_cheat
             enemyTeleportTotalWidth = enemyTeleportLabelWidth + 10f + enemyTeleportToWidth + 10f + enemyTeleportDropdownWidth;
             enemyTeleportStartX = centerPoint - (enemyTeleportTotalWidth / 2);
         }
+        private void CheckForLevelChange()
+        {
+            string currentLevelName = RunManager.instance.levelCurrent != null ? RunManager.instance.levelCurrent.name : ""; // Get current level name
+            if (currentLevelName != previousLevelName && !string.IsNullOrEmpty(currentLevelName)) // Check if level has changed
+            {
+                DLog.Log($"Level changed from {previousLevelName} to {currentLevelName}");
+                previousLevelName = currentLevelName;
+                UpdatePlayerList(); // Update player and enemy lists when level changes
+                UpdateEnemyList();
+                UpdateTeleportOptions();
+                UpdateEnemyTeleportOptions();
+                DLog.Log($"Updated player list ({playerNames.Count} players) and enemy list ({enemyNames.Count} enemies)");
+            }
+        }
         public void Start()
         {
             CursorController.Init();
@@ -287,8 +304,14 @@ namespace r.e.p.o_cheat
 
         public void Update()
         {
-            Strength.UpdateStrength();
+            levelCheckTimer += Time.deltaTime; // Level change check using timer
+            if (levelCheckTimer >= LEVEL_CHECK_INTERVAL)
+            {
+                levelCheckTimer = 0f;
+                CheckForLevelChange();
+            }
 
+            Strength.UpdateStrength();
             if (RunManager.instance.levelCurrent != null && levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name))
             {
                 if (Time.time >= nextUpdateTime)
@@ -296,7 +319,6 @@ namespace r.e.p.o_cheat
                     DebugCheats.UpdateEnemyList();
                     nextUpdateTime = Time.time + updateInterval;
                 }
-
                 // Reduce item list updates from every frame to every 5 seconds
                 if (Time.time - lastItemListUpdateTime > 5f)
                 {
@@ -305,31 +327,26 @@ namespace r.e.p.o_cheat
                     lastItemListUpdateTime = Time.time;
                 }
             }
-
             if (oldSliderValue != sliderValue)
             {
                 PlayerController.RemoveSpeed(sliderValue);
                 oldSliderValue = sliderValue;
             }
-
             if (oldSliderValueStrength != sliderValueStrength)
             {
                 Strength.MaxStrength();
                 oldSliderValueStrength = sliderValueStrength;
             }
-
             if (playerColor.isRandomizing)
             {
                 playerColor.colorRandomizer();
             }
-
             // Prevent excessive logging by adding a cooldown
             if (Time.time - lastItemListUpdateTime > 10f)
             {
                 DLog.Log($"Item list contains {itemList.Count} items.");
                 lastItemListUpdateTime = Time.time;
             }
-
             if (Input.GetKeyDown(hotkeyManager.MenuToggleKey))
             {
                 showMenu = !showMenu;
@@ -339,9 +356,7 @@ namespace r.e.p.o_cheat
                 if (!showMenu) TryUnlockCamera();
                 UpdateCursorState();
             }
-
             if (Input.GetKeyDown(hotkeyManager.ReloadKey)) Start();
-
             if (Input.GetKeyDown(hotkeyManager.UnloadKey))
             {
                 showMenu = false;
@@ -351,8 +366,6 @@ namespace r.e.p.o_cheat
                 UpdateCursorState();
                 Loader.UnloadCheat();
             }
-
-
             if (hotkeyManager.ConfiguringHotkey)
             {
                 foreach (KeyCode key in Enum.GetValues(typeof(KeyCode)))
@@ -373,21 +386,17 @@ namespace r.e.p.o_cheat
                         hotkeyManager.ProcessSystemKeyConfiguration(key);
                         break;
                     }
-
                 }
             }
             else
             {
                 hotkeyManager.CheckAndExecuteHotkeys();
             }
-
             if (showMenu) TryLockCamera();
-
             if (NoclipController.noclipActive)
             {
                 NoclipController.UpdateMovement();
             }
-
             if (MapTools.showMapTweaks)
             {
                 if (MapTools.mapDisableHiddenOverlayCheckboxActive && !MapTools.mapDisableHiddenOverlayActive)
