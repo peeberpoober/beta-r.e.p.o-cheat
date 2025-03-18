@@ -791,7 +791,7 @@ namespace r.e.p.o_cheat
                         }
                         break;
 
-                    case MenuCategory.ESP:R
+                    case MenuCategory.ESP:
                         DebugCheats.drawEspBool = UIHelper.Checkbox("Enemy ESP", DebugCheats.drawEspBool, menuX + 30, currentY);
                         currentY += DebugCheats.drawEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawEspBool)
