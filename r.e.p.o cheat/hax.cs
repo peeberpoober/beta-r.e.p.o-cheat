@@ -6,6 +6,8 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using System.Linq;
+using HarmonyLib;
+using SingularityGroup.HotReload;
 
 
 namespace r.e.p.o_cheat
@@ -31,7 +33,9 @@ namespace r.e.p.o_cheat
 
         public static bool Checkbox(string text, bool value, float? customX = null, float? customY = null)
         {
-            return GUI.Toggle(NextControlRect(customX, customY), value, text);
+            Rect rect = NextControlRect(customX, customY);
+            rect.height = 20f;
+            return GUI.Toggle(rect, value, text);
         }
 
         public static void Begin(string text, float _x, float _y, float _width, float _height, float InstructionHeight, float _controlHeight, float _controlDist)
@@ -103,7 +107,7 @@ namespace r.e.p.o_cheat
         public static float Slider(float val, float min, float max, float? customX = null, float? customY = null)
         {
             Rect rect = NextControlRect(customX, customY);
-
+            rect.height = 12f;
             return Mathf.Round(GUI.HorizontalSlider(rect, val, min, max, sliderStyle, thumbStyle));
         }
         private static Texture2D MakeSolidBackground(Color color, float alpha)
@@ -209,11 +213,11 @@ namespace r.e.p.o_cheat
         private float menuY = 50f;
         private const float titleBarHeight = 30f;
 
-        
+
         private bool showingActionSelector = false;
         private Vector2 actionSelectorScroll = Vector2.zero;
         private Vector2 hotkeyScrollPosition = Vector2.zero;
-        
+
         private HotkeyManager hotkeyManager; // Reference to the HotkeyManager
 
         public bool showWatermark = true;
@@ -248,6 +252,8 @@ namespace r.e.p.o_cheat
         }
         public void Start()
         {
+            CursorController.Init();
+            
             UpdateCursorState();
             hotkeyManager = HotkeyManager.Instance;
             hotkeyManager.Initialize();
@@ -329,6 +335,8 @@ namespace r.e.p.o_cheat
             if (Input.GetKeyDown(hotkeyManager.MenuToggleKey))
             {
                 showMenu = !showMenu;
+                CursorController.cheatMenuOpen = showMenu;
+                CursorController.UpdateCursorState();
                 DLog.Log("MENU " + showMenu);
                 if (!showMenu) TryUnlockCamera();
                 UpdateCursorState();
@@ -339,6 +347,8 @@ namespace r.e.p.o_cheat
             if (Input.GetKeyDown(hotkeyManager.UnloadKey))
             {
                 showMenu = false;
+                CursorController.cheatMenuOpen = showMenu;
+                CursorController.UpdateCursorState();
                 TryUnlockCamera();
                 UpdateCursorState();
                 Loader.UnloadCheat();
@@ -362,11 +372,11 @@ namespace r.e.p.o_cheat
                 {
                     if (Input.GetKeyDown(key))
                     {
-    hotkeyManager.ProcessSystemKeyConfiguration(key);
+                        hotkeyManager.ProcessSystemKeyConfiguration(key);
                         break;
-                  }
+                    }
 
-                                    }
+                }
             }
             else
             {
@@ -378,6 +388,14 @@ namespace r.e.p.o_cheat
             if (NoclipController.noclipActive)
             {
                 NoclipController.UpdateMovement();
+            }
+
+            if (MapTools.showMapTweaks)
+            {
+                if (MapTools.mapDisableHiddenOverlayCheckboxActive && !MapTools.mapDisableHiddenOverlayActive)
+                {
+                    MapTools.changeOverlayStatus(true);
+                }
             }
         }
 
@@ -421,6 +439,8 @@ namespace r.e.p.o_cheat
         private void UpdateCursorState()
         {
             Cursor.visible = showMenu;
+            CursorController.cheatMenuOpen = showMenu;
+            CursorController.UpdateCursorState();
             Cursor.lockState = showMenu ? CursorLockMode.None : CursorLockMode.Locked;
         }
 
@@ -547,7 +567,19 @@ namespace r.e.p.o_cheat
                 DLog.Log($"Could not get health for {playerName}, assuming dead");
                 return true; // If we can't get health, assume player is dead
             }
+
             return health > 0;
+
+            var selectedPlayer = playerList[selectedPlayerIndex];
+            if (selectedPlayer == null)
+            {
+                DLog.Log("Selected player is null!");
+                return;
+            }
+
+            Health_Player.KillSelectedPlayer(selectedPlayer, playerNames[selectedPlayerIndex]);
+            DLog.Log("Attempt to kill the selected player completed.");
+
         }
 
         private void InitializeGUIStyles()
@@ -635,8 +667,7 @@ namespace r.e.p.o_cheat
                 overlayStyle.normal.background = MakeSolidBackground(Color.clear, 0f);
                 GUI.Box(new Rect(0, 0, Screen.width, Screen.height), GUIContent.none, overlayStyle);
 
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.None;
+                UpdateCursorState();
 
                 Rect menuRect = new Rect(menuX, menuY, 600, 730);
                 Rect titleRect = new Rect(menuX, menuY, 600, titleBarHeight);
@@ -693,6 +724,11 @@ namespace r.e.p.o_cheat
 
                 GUIStyle instructionStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, normal = { textColor = Color.white } };
                 GUI.Label(new Rect(menuX + 10, menuY + 75, 580, 20), $"Press {hotkeyManager.ReloadKey} to reload! Press {hotkeyManager.MenuToggleKey} to close! Press {hotkeyManager.UnloadKey} to unload!", instructionStyle);
+
+                float currentY = menuY + 105; // Starting Y position
+                float parentSpacing = 30f;    // Space between main parent options when children are hidden
+                float childIndent = 20f;      // Indentation for child options
+                float childSpacing = 30f;     // Space between child options
 
                 switch (currentCategory)
                 {
@@ -768,10 +804,12 @@ namespace r.e.p.o_cheat
                         break;
 
                     case MenuCategory.ESP:
+
                         float currentY = menuY + 105; // Starting Y position
                         float parentSpacing = 30f;    // Space between main parent options when children are hidden
                         float childIndent = 20f;      // Indentation for child options
                         float childSpacing = 30f;     // Space between child options
+
                         // Enemy ESP section
                         DebugCheats.drawEspBool = UIHelper.Checkbox("Enemy ESP", DebugCheats.drawEspBool, menuX + 30, currentY);
                         currentY += DebugCheats.drawEspBool ? childIndent : parentSpacing;
@@ -926,7 +964,10 @@ namespace r.e.p.o_cheat
                         break;
 
                     case MenuCategory.Misc:
-                        if (UIHelper.Button("Spawn Money", menuX + 30, menuY + 105))
+                        parentSpacing = 40f;
+                        childIndent = 20f;
+
+                        if (UIHelper.Button("Spawn Money", menuX + 30, currentY))
                         {
                             DLog.Log("'Spawn Money' button clicked!");
                             GameObject localPlayer = DebugCheats.GetLocalPlayer();
@@ -940,13 +981,15 @@ namespace r.e.p.o_cheat
                             ItemSpawner.SpawnItem(targetPosition);
                             DLog.Log("Money spawned.");
                         }
-                        bool newPlayerColorState = UIHelper.ButtonBool("RGB Player", playerColor.isRandomizing, menuX + 30, menuY + 145);
+                        currentY += parentSpacing;
+
+                        bool newPlayerColorState = UIHelper.ButtonBool("RGB Player", playerColor.isRandomizing, menuX + 30, currentY);
                         if (newPlayerColorState != playerColor.isRandomizing)
                         {
                             playerColor.isRandomizing = newPlayerColorState;
                             DLog.Log("Randomize toggled: " + playerColor.isRandomizing);
                         }
-
+                        currentY += parentSpacing;
 
                         UIHelper.Label("Flashlight Intensity: " + Hax2.flashlightIntensity, menuX + 30, menuY + 185);
                         Hax2.flashlightIntensity = UIHelper.Slider(Hax2.flashlightIntensity, 1f, 100f, menuX + 30, menuY + 205);
@@ -966,15 +1009,66 @@ namespace r.e.p.o_cheat
                         UIHelper.Label("Set Custom Gravity: " + Hax2.customGravity, menuX + 30, menuY + 385);
                         Hax2.customGravity = UIHelper.Slider(Hax2.customGravity, -10f, 50f, menuX + 30, menuY + 405);
 
-                        UIHelper.Label("Set Grab Range: " + Hax2.grabRange, menuX + 30, menuY + 425);
-                        Hax2.grabRange = UIHelper.Slider(Hax2.grabRange, 0f, 50f, menuX + 30, menuY + 445);
+                        bool newNoFogState = UIHelper.ButtonBool("Toggle No Fog", MiscFeatures.NoFogEnabled, menuX + 30, currentY);
+                        if (newNoFogState != MiscFeatures.NoFogEnabled)
+                        {
+                            MiscFeatures.ToggleNoFog(newNoFogState);
+                        }
+                        currentY += parentSpacing;
 
-                        UIHelper.Label("Set Throw Strength: " + Hax2.throwStrength, menuX + 30, menuY + 465);
-                        Hax2.throwStrength = UIHelper.Slider(Hax2.throwStrength, 0f, 50f, menuX + 30, menuY + 485);
+                        MapTools.showMapTweaks = UIHelper.Checkbox("Map tweaks", MapTools.showMapTweaks, menuX + 30, currentY);
+                        currentY += MapTools.showMapTweaks ? childIndent : parentSpacing;
 
-                        UIHelper.Label("Set Slide Decay: " + Hax2.slideDecay, menuX + 30, menuY + 505);
-                        Hax2.slideDecay = UIHelper.Slider(Hax2.slideDecay, -10f, 50f, menuX + 30, menuY + 525);
+                        if (MapTools.showMapTweaks)
+                        {
+                            MapTools.mapDisableHiddenOverlayCheckboxActive = UIHelper.Checkbox("Disable '?' overlay(could not be undone)", MapTools.mapDisableHiddenOverlayCheckboxActive, menuX + 50, currentY);
+                            currentY += childSpacing;
+                        }
 
+                        UIHelper.Label("Flashlight Intensity: " + Hax2.flashlightIntensity, menuX + 31, currentY);
+                        currentY += childIndent;
+                        Hax2.flashlightIntensity = UIHelper.Slider(Hax2.flashlightIntensity, 1f, 100f, menuX + 30, currentY);
+                        currentY += childIndent;
+
+                        UIHelper.Label("Crouch Delay: " + Hax2.crouchDelay, menuX + 30, currentY);
+                        currentY += childIndent;
+                        Hax2.crouchDelay = UIHelper.Slider(Hax2.crouchDelay, 0f, 5f, menuX + 30, currentY);
+                        currentY += childIndent;
+
+                        UIHelper.Label("Set Crouch Speed: " + Hax2.crouchSpeed, menuX + 30, currentY);
+                        currentY += childIndent;
+                        Hax2.crouchSpeed = UIHelper.Slider(Hax2.crouchSpeed, 1f, 50f, menuX + 30, currentY);
+                        currentY += childIndent;
+
+                        UIHelper.Label("Set Jump Force: " + Hax2.jumpForce, menuX + 30, currentY);
+                        currentY += childIndent;
+                        Hax2.jumpForce = UIHelper.Slider(Hax2.jumpForce, 1f, 50f, menuX + 30, currentY);
+                        currentY += childIndent;
+
+                        UIHelper.Label("Set Extra Jumps: " + Hax2.extraJumps, menuX + 30, currentY);
+                        currentY += childIndent;
+                        Hax2.extraJumps = (int)UIHelper.Slider(Hax2.extraJumps, 1f, 100f, menuX + 30, currentY);
+                        currentY += childIndent;
+
+                        UIHelper.Label("Set Custom Gravity: " + Hax2.customGravity, menuX + 30, currentY);
+                        currentY += childIndent;
+                        Hax2.customGravity = UIHelper.Slider(Hax2.customGravity, -10f, 50f, menuX + 30, currentY);
+                        currentY += childIndent;
+
+                        UIHelper.Label("Set Grab Range: " + Hax2.grabRange, menuX + 30, currentY);
+                        currentY += childIndent;
+                        Hax2.grabRange = UIHelper.Slider(Hax2.grabRange, 0f, 50f, menuX + 30, currentY);
+                        currentY += childIndent;
+
+                        UIHelper.Label("Set Throw Strength: " + Hax2.throwStrength, menuX + 30, currentY);
+                        currentY += childIndent;
+                        Hax2.throwStrength = UIHelper.Slider(Hax2.throwStrength, 0f, 50f, menuX + 30, currentY);
+                        currentY += childIndent;
+
+                        UIHelper.Label("Set Slide Decay: " + Hax2.slideDecay, menuX + 30, currentY);
+                        currentY += childIndent;
+                        Hax2.slideDecay = UIHelper.Slider(Hax2.slideDecay, -10f, 50f, menuX + 30, currentY);
+                        currentY += parentSpacing;
 
                         if (Hax2.flashlightIntensity != OldflashlightIntensity)
                         {
@@ -1022,6 +1116,7 @@ namespace r.e.p.o_cheat
                             OldslideDecay = Hax2.slideDecay;
                         }
 
+
                         bool newNoFogState = UIHelper.ButtonBool("Toggle No Fog", MiscFeatures.NoFogEnabled, menuX + 30, menuY + 565);
                         if (newNoFogState != MiscFeatures.NoFogEnabled)
                         {
@@ -1041,6 +1136,7 @@ namespace r.e.p.o_cheat
                         {
                             showWatermark = !newWatermarkState;
                         }
+
                         break;
 
                     case MenuCategory.Enemies:
@@ -1279,13 +1375,13 @@ namespace r.e.p.o_cheat
 
                             Rect clearRect = new Rect(470, yPos, 60, 30);
                             if (GUI.Button(clearRect, "Clear") && currentKey != KeyCode.None)
-                             {
-                                 hotkeyManager.ClearHotkeyBinding(i);
-                             }
+                            {
+                                hotkeyManager.ClearHotkeyBinding(i);
+                            }
 
                             yPos += 40;
                         }
-                        
+
                         if (GUI.Button(new Rect(10, yPos, 540, 30), "Save Hotkey Settings"))
                         {
                             hotkeyManager.SaveHotkeySettings();
