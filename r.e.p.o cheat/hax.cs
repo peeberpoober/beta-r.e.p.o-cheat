@@ -238,13 +238,15 @@ namespace r.e.p.o_cheat
         private static bool cursorStateInitialized = false;
         private void UpdateTeleportOptions()
         {
-            teleportPlayerSourceOptions = playerNames.ToArray(); // Create source array with players only
-
-            List<string> destOptions = new List<string>(); // Create destination array with players + "Void"
-            destOptions.AddRange(playerNames);       // Add all players (including local player)
-            destOptions.Add("The Void");            // Add void as last option only for destinations
+            List<string> sourceOptions = new List<string>(); // Create source array with "All" option + players
+            sourceOptions.Add("All Players"); // Add "All" as the first option
+            sourceOptions.AddRange(playerNames); // Then add all individual players
+            teleportPlayerSourceOptions = sourceOptions.ToArray();
+            List<string> destOptions = new List<string>(); // Create destination array with players + "The Void"
+            destOptions.AddRange(playerNames);       // Add all players
+            destOptions.Add("The Void");            // Add void as last option
             teleportPlayerDestOptions = destOptions.ToArray();
-            teleportPlayerSourceIndex = 0;  // Default to first player
+            teleportPlayerSourceIndex = 0;  // Reset selections to defaults // Default to "All"
             teleportPlayerDestIndex = teleportPlayerDestOptions.Length - 1;  // Default to void
         }
         private void UpdateEnemyTeleportOptions()
