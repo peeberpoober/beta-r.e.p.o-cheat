@@ -9,6 +9,9 @@ namespace r.e.p.o_cheat
 {
     public static class Enemies
     {
+        private static Dictionary<Enemy, int> enemyMaxHealthCache = new Dictionary<Enemy, int>();
+        public static List<Enemy> enemyList = new List<Enemy>();
+
         public static void KillSelectedEnemy(int selectedEnemyIndex, List<Enemy> enemyList, List<string> enemyNames)
         {
             if (selectedEnemyIndex < 0 || selectedEnemyIndex >= enemyList.Count)
@@ -57,26 +60,44 @@ namespace r.e.p.o_cheat
             }
         }
 
-        public static int GetEnemyHealth(Enemy enemy)
+        public static void KillAllEnemies()
         {
-            try
+            DLog.Log("Attempting to kill all enemies");
+
+            foreach (var enemyInstance in enemyList)
             {
-                var healthField = enemy.GetType().GetField("Health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (healthField == null) return -1;
+                if (enemyInstance == null) continue;
 
-                var healthComponent = healthField.GetValue(enemy);
-                if (healthComponent == null) return -1;
-
-                var healthValueField = healthComponent.GetType().GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (healthValueField == null) return -1;
-
-                return (int)healthValueField.GetValue(healthComponent);
+                try
+                {
+                    var healthField = enemyInstance.GetType().GetField("Health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (healthField != null)
+                    {
+                        var healthComponent = healthField.GetValue(enemyInstance);
+                        if (healthComponent != null)
+                        {
+                            var healthType = healthComponent.GetType();
+                            var hurtMethod = healthType.GetMethod("Hurt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                            if (hurtMethod != null)
+                            {
+                                hurtMethod.Invoke(healthComponent, new object[] { 9999, Vector3.zero });
+                                DLog.Log($"Enemy hurt with 9999 damage via Hurt");
+                            }
+                            else
+                                DLog.Log("'Hurt' method not found in EnemyHealth");
+                        }
+                        else
+                            DLog.Log("EnemyHealth component is null");
+                    }
+                    else
+                        DLog.Log("'Health' field not found in Enemy");
+                }
+                catch (Exception e)
+                {
+                    DLog.Log($"Error killing enemy: {e.Message}");
+                }
             }
-            catch (Exception e)
-            {
-                DLog.Log($"Error getting enemy health: {e.Message}");
-                return -1;
-            }
+            DebugCheats.UpdateEnemyList();
         }
 
         public static void TeleportEnemyToMe(int selectedEnemyIndex, List<Enemy> enemyList, List<string> enemyNames)
@@ -180,16 +201,6 @@ namespace r.e.p.o_cheat
             }
         }
 
-        private static IEnumerator ReEnableNavMeshAgent(object navMeshAgent, float delay)
-        {
-            yield return new WaitForSeconds(delay);
-            var enabledProperty = navMeshAgent.GetType().GetProperty("enabled", BindingFlags.Public | BindingFlags.Instance);
-            if (enabledProperty != null)
-            {
-                enabledProperty.SetValue(navMeshAgent, true);
-                DLog.Log("NavMeshAgent reactivated after teleport.");
-            }
-        }
         public static void TeleportEnemyToPlayer(int selectedEnemyIndex, List<Enemy> enemyList, List<string> enemyNames,
                                         int targetPlayerIndex, List<object> playerList, List<string> playerNames)
         {
@@ -327,6 +338,64 @@ namespace r.e.p.o_cheat
             {
                 DLog.Log($"Error teleporting enemy {enemyNames[selectedEnemyIndex]} to player {playerNames[targetPlayerIndex]}: {e.Message}");
             }
+        }
+
+        private static IEnumerator ReEnableNavMeshAgent(object navMeshAgent, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            var enabledProperty = navMeshAgent.GetType().GetProperty("enabled", BindingFlags.Public | BindingFlags.Instance);
+            if (enabledProperty != null)
+            {
+                enabledProperty.SetValue(navMeshAgent, true);
+                DLog.Log("NavMeshAgent reactivated after teleport.");
+            }
+        }
+        
+        public static int GetEnemyHealth(Enemy enemy)
+        {
+            try
+            {
+                var healthField = enemy.GetType().GetField("Health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (healthField == null) return -1;
+
+                var healthComponent = healthField.GetValue(enemy);
+                if (healthComponent == null) return -1;
+
+                var healthValueField = healthComponent.GetType().GetField("healthCurrent", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (healthValueField == null) return -1;
+
+                return (int)healthValueField.GetValue(healthComponent);
+            }
+            catch (Exception e)
+            {
+                DLog.Log($"Error getting enemy health: {e.Message}");
+                return -1;
+            }
+        }
+
+        public static int GetEnemyMaxHealth(Enemy enemy)
+        {
+            if (enemyMaxHealthCache.TryGetValue(enemy, out int cachedMaxHealth))
+            {
+                return cachedMaxHealth;
+            }
+
+            int currentHealth = GetEnemyHealth(enemy);
+            int maxHealth = currentHealth > 0 ? currentHealth : 100;
+            
+            enemyMaxHealthCache[enemy] = maxHealth;
+            
+            return maxHealth;
+        }
+
+        public static float GetEnemyHealthPercentage(Enemy enemy)
+        {
+            int health = GetEnemyHealth(enemy);
+            int maxHealth = GetEnemyMaxHealth(enemy);
+            
+            if (health < 0 || maxHealth <= 0) return -1f;
+            
+            return (float)health / maxHealth;
         }
     }
 }

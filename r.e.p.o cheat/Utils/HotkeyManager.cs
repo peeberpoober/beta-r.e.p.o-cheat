@@ -129,7 +129,7 @@ namespace r.e.p.o_cheat
 
             availableActions.Add(new HotkeyAction("Kill All Enemies", () =>
             {
-                DebugCheats.KillAllEnemies();
+                Enemies.KillAllEnemies();
                 DLog.Log("all enemies killed.");
             }, "kills all enemies on the map"));
 

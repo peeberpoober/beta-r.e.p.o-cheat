@@ -41,6 +41,7 @@ namespace r.e.p.o_cheat
 
         public static bool showEnemyNames = true;
         public static bool showEnemyDistance = true;
+        public static bool showEnemyHP = true;
         public static bool showItemNames = true;
         public static bool showItemValue = true;
         public static bool showItemDistance = false;
@@ -63,6 +64,7 @@ namespace r.e.p.o_cheat
         private static float lastPlayerUpdateTime = 0f;
         private static float playerUpdateInterval = 1f;
         private static Dictionary<int, int> playerHealthCache = new Dictionary<int, int>();
+        public static Dictionary<Enemy, int> enemyHealthCache = new Dictionary<Enemy, int>();
         private const float maxEspDistance = 100f;
 
         private static FieldInfo _levelAnimationStartedField =
@@ -143,7 +145,7 @@ namespace r.e.p.o_cheat
                         if (data.PhotonView != null && data.Transform != null)
                         {
                             playerDataList.Add(data);
-                            int health = GetPlayerHealth(player);
+                            int health = Health_Player.GetPlayerHealth(player);
                             playerHealthCache[data.PhotonView.ViewID] = health;
                         }
                     }
@@ -196,6 +198,7 @@ namespace r.e.p.o_cheat
         {
             UpdateExtractionPointList();
             enemyList.Clear();
+            enemyHealthCache.Clear();
             var enemyDirectorType = Type.GetType("EnemyDirector, Assembly-CSharp");
             if (enemyDirectorType != null)
             {
@@ -220,6 +223,8 @@ namespace r.e.p.o_cheat
                                         var enemyInstance = enemyInstanceField.GetValue(enemy) as Enemy;
                                         if (enemyInstance != null && enemyInstance.gameObject != null && enemyInstance.gameObject.activeInHierarchy)
                                         {
+                                            int health = Enemies.GetEnemyHealth(enemyInstance);
+                                            enemyHealthCache[enemyInstance] = health;
                                             enemyList.Add(enemyInstance);
                                         }
                                     }
@@ -395,6 +400,7 @@ namespace r.e.p.o_cheat
         public static void UpdateEnemyList()
         {
             enemyList.Clear();
+            enemyHealthCache.Clear();
 
             var enemyDirectorType = Type.GetType("EnemyDirector, Assembly-CSharp");
             if (enemyDirectorType != null)
@@ -420,6 +426,8 @@ namespace r.e.p.o_cheat
                                         var enemyInstance = enemyInstanceField.GetValue(enemy) as Enemy;
                                         if (enemyInstance != null && enemyInstance.gameObject != null && enemyInstance.gameObject.activeInHierarchy)
                                         {
+                                            int health = Enemies.GetEnemyHealth(enemyInstance);
+                                            enemyHealthCache[enemyInstance] = health;
                                             enemyList.Add(enemyInstance);
                                         }
                                     }
@@ -634,6 +642,7 @@ namespace r.e.p.o_cheat
             {
                 UpdateLocalPlayer();
             }
+            
             if (Time.time - lastUpdateTime > updateInterval)
             {
                 UpdatePlayerDataList();
@@ -796,7 +805,7 @@ namespace r.e.p.o_cheat
                             Box(x, y, width, height, texture2, 1f);
                         }
 
-                        float labelWidth = 100f;
+                        float labelWidth = 200f;
                         float labelX = x - labelWidth / 2f;
 
                         var enemyParent = enemyInstance.GetComponentInParent(Type.GetType("EnemyParent, Assembly-CSharp"));
@@ -805,6 +814,17 @@ namespace r.e.p.o_cheat
                         {
                             var nameField = enemyParent.GetType().GetField("enemyName", BindingFlags.Public | BindingFlags.Instance);
                             enemyName = nameField?.GetValue(enemyParent) as string ?? "Enemy";
+                        }
+                        
+                        string healthText = "";
+                        if (showEnemyHP && enemyHealthCache.ContainsKey(enemyInstance))
+                        {
+                            int health = Enemies.GetEnemyHealth(enemyInstance);
+                            enemyHealthCache[enemyInstance] = health;
+                            int maxHealth = Enemies.GetEnemyMaxHealth(enemyInstance);
+                            float healthPercentage = maxHealth > 0 ? (float)health / maxHealth : 0f;
+                            healthText = health >= 0 ? $" HP: {health}/{maxHealth}" : "";
+                            healthStyle.normal.textColor = healthPercentage > 0.66f ? Color.green : (healthPercentage > 0.33f ? Color.yellow : Color.red);
                         }
 
                         string distanceText = "";
@@ -815,13 +835,23 @@ namespace r.e.p.o_cheat
                         }
 
                         string fullText = "";
-                        if (showEnemyNames) fullText = enemyName;
-                        if (showEnemyDistance) fullText += distanceText;
+                        if (showEnemyNames) fullText = enemyName += " " + distanceText;
 
                         float labelHeight = enemyStyle.CalcHeight(new GUIContent(fullText), labelWidth);
                         float labelY = y - height - labelHeight;
+                        
+                        // Calculate height for health text if shown
+                        float healthLabelHeight = 0f;
+                        if (showEnemyHP && !string.IsNullOrEmpty(healthText)) {
+                            healthLabelHeight = healthStyle.CalcHeight(new GUIContent(healthText), labelWidth);
+                        }
 
                         GUI.Label(new Rect(labelX, labelY, labelWidth, labelHeight), fullText, enemyStyle);
+                        
+                        // Display health text if enabled
+                        if (showEnemyHP && !string.IsNullOrEmpty(healthText)) {
+                            GUI.Label(new Rect(labelX, labelY - healthLabelHeight, labelWidth, healthLabelHeight), healthText, healthStyle);
+                        }
                     }
                 }
             }
@@ -844,11 +874,11 @@ namespace r.e.p.o_cheat
                     if (localPlayer != null)
                     {
                         itemDistance = Vector3.Distance(localPlayer.transform.position, itemPosition);
-            
+
                         // Skip items beyond the max distance (applies to all items including death heads)
                         if (itemDistance > DebugCheats.maxItemEspDistance) continue;
                     }
-        
+
                     Vector3 screenPos = cachedCamera.WorldToScreenPoint(itemPosition);
 
                     if (screenPos.z > 0 && screenPos.x > 0 && screenPos.x < Screen.width && screenPos.y > 0 && screenPos.y < Screen.height)
@@ -923,7 +953,7 @@ namespace r.e.p.o_cheat
                         string nameText = showItemNames ? itemName : "";
                         if (showItemDistance) nameText += distanceText;
 
-                        float labelWidth = 150f;
+                        float labelWidth = 200f;
                         float valueLabelHeight = valueStyle.CalcHeight(new GUIContent(itemValue.ToString() + "$"), labelWidth);
                         float nameLabelHeight = nameStyle.CalcHeight(new GUIContent(nameText), labelWidth);
                         float totalHeight = nameLabelHeight + valueLabelHeight + 5f;
@@ -969,7 +999,7 @@ namespace r.e.p.o_cheat
 
                         string pointName = "Extraction Point";
                         string stateText = $" ({epData.CachedState})";
-                        string distanceText = showExtractionDistance && localPlayer != null ? $"{Vector3.Distance(localPlayer.transform.position, epData.CachedPosition):F1}m" : "";
+                        string distanceText = showExtractionDistance && localPlayer != null ? $"[{Vector3.Distance(localPlayer.transform.position, epData.CachedPosition):F1}m]" : "";
 
                         Color originalColor = nameStyle.normal.textColor;
 
@@ -978,7 +1008,7 @@ namespace r.e.p.o_cheat
                         string nameFullText = showExtractionNames ? pointName + stateText : "";
                         if (showExtractionDistance) nameFullText += " " + distanceText;
 
-                        float labelWidth = 150f;
+                        float labelWidth = 200f;
                         float nameLabelHeight = nameStyle.CalcHeight(new GUIContent(nameFullText), labelWidth);
                         float totalHeight = nameLabelHeight;
                         float labelX = x - labelWidth / 2f;
@@ -1049,94 +1079,50 @@ namespace r.e.p.o_cheat
                     nameStyle.normal.textColor = Color.white;
 
                     int health = playerHealthCache.ContainsKey(playerData.PhotonView.ViewID) ? playerHealthCache[playerData.PhotonView.ViewID] : 100;
-                    string healthText = $"HP: {health}";
-                    string distanceText = showPlayerDistance && localPlayer != null ? $"{distanceToPlayer:F1}m" : "";
+                    string healthText = "";
+                    if (showPlayerHP)
+                    {
+                        int maxHealth = Health_Player.GetPlayerMaxHealth(playerData.PlayerObject);
+                        float healthPercentage = maxHealth > 0 ? (float)health / maxHealth : 0f;
+                        healthText = health >= 0 ? $"HP: {health}/{maxHealth}" : "";
+                        healthStyle.normal.textColor = healthPercentage > 0.66f ? Color.green : (healthPercentage > 0.33f ? Color.yellow : Color.red);
+                    }
+                    
+                    string distanceText = "";
+                    if (showPlayerDistance && localPlayer != null)
+                        distanceText = $" [{distanceToPlayer:F1}m]";
 
                     string nameFullText = showPlayerNames ? playerData.Name : "";
-                    if (showPlayerDistance) nameFullText += " " + distanceText;
+                    if (showPlayerDistance) nameFullText += distanceText;
 
-                    float labelWidth = 150f;
+                    float labelWidth = 200f;
                     float nameHeight = nameStyle.CalcHeight(new GUIContent(nameFullText), labelWidth);
                     float healthHeight = healthStyle.CalcHeight(new GUIContent(healthText), labelWidth);
-                    float totalHeight = nameHeight + (showPlayerHP ? healthHeight + 2f : 0f);
+                    float totalHeight = nameHeight;
                     float labelX = footX - labelWidth / 2f;
                     float labelY = footY - height - totalHeight - 10f;
+                    
+                    // Calculate height for health text if shown
+                    float healthLabelY = labelY;
+                    if (showPlayerHP && !string.IsNullOrEmpty(healthText)) {
+                        healthLabelY = labelY - healthHeight;
+                    }
 
                     if (!string.IsNullOrEmpty(nameFullText))
                     {
                         GUI.Label(new Rect(labelX, labelY, labelWidth, nameHeight), nameFullText, nameStyle);
                     }
-                    if (showPlayerHP)
+                    
+                    // Display health text if enabled
+                    if (showPlayerHP && !string.IsNullOrEmpty(healthText))
                     {
-                        GUI.Label(new Rect(labelX, labelY + nameHeight + 2f, labelWidth, healthHeight), healthText, healthStyle);
+                        GUI.Label(new Rect(labelX, healthLabelY, labelWidth, healthHeight), healthText, healthStyle);
                     }
 
                     nameStyle.normal.textColor = originalNameColor;
 
                 }
             }
-        }
-        private static int GetPlayerHealth(object player)
-        {
-            try
-            {
-                var playerHealthField = player.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (playerHealthField == null) return 100;
-
-                var playerHealthInstance = playerHealthField.GetValue(player);
-                if (playerHealthInstance == null) return 100;
-
-                var healthField = playerHealthInstance.GetType().GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (healthField == null) return 100;
-
-                return (int)healthField.GetValue(playerHealthInstance);
-            }
-            catch (Exception e)
-            {
-                DLog.Log($"Error getting player health: {e.Message}");
-                return 100;
-            }
-        }
-
-
-        public static void KillAllEnemies()
-        {
-            DLog.Log("Attempting to kill all enemies");
-
-            foreach (var enemyInstance in enemyList)
-            {
-                if (enemyInstance == null) continue;
-
-                try
-                {
-                    var healthField = enemyInstance.GetType().GetField("Health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (healthField != null)
-                    {
-                        var healthComponent = healthField.GetValue(enemyInstance);
-                        if (healthComponent != null)
-                        {
-                            var healthType = healthComponent.GetType();
-                            var hurtMethod = healthType.GetMethod("Hurt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                            if (hurtMethod != null)
-                            {
-                                hurtMethod.Invoke(healthComponent, new object[] { 9999, Vector3.zero });
-                                DLog.Log($"Enemy hurt with 9999 damage via Hurt");
-                            }
-                            else
-                                DLog.Log("'Hurt' method not found in EnemyHealth");
-                        }
-                        else
-                            DLog.Log("EnemyHealth component is null");
-                    }
-                    else
-                        DLog.Log("'Health' field not found in Enemy");
-                }
-                catch (Exception e)
-                {
-                    DLog.Log($"Error killing enemy: {e.Message}");
-                }
-            }
-            UpdateEnemyList();
         }
     }
 }

@@ -275,7 +275,6 @@ namespace r.e.p.o_cheat
 
             if (RunManager.instance.levelCurrent != null && levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name))
             {
-                // Limit update frequency to prevent lag
                 if (Time.time >= nextUpdateTime)
                 {
                     DebugCheats.UpdateEnemyList();
@@ -452,9 +451,12 @@ namespace r.e.p.o_cheat
                         var nameField = enemyParent.GetType().GetField("enemyName", BindingFlags.Public | BindingFlags.Instance);
                         enemyName = nameField?.GetValue(enemyParent) as string ?? "Enemy";
                     }
-
                     int health = Enemies.GetEnemyHealth(enemy);
-                    string healthText = health >= 0 ? $"HP: {health}" : "HP: Unknown";
+                   DebugCheats.enemyHealthCache[enemy] = health;
+                    int maxHealth = Enemies.GetEnemyMaxHealth(enemy);
+                    float healthPercentage = maxHealth > 0 ? (float)health / maxHealth : 0f;
+                    string healthColor = healthPercentage > 0.66f ? "<color=green>" : (healthPercentage > 0.33f ? "<color=yellow>" : "<color=red>");
+                    string healthText = health >= 0 ? $"{healthColor}HP: {health}/{maxHealth}</color>" : "<color=gray>HP: Unknown</color>";
                     enemyNames.Add($"{enemyName} [{healthText}]");
                 }
             }
@@ -526,75 +528,15 @@ namespace r.e.p.o_cheat
             if (playerNames.Count == 0) playerNames.Add("No player Found");
         }
 
-        /* private void AddFakePlayer()
-        {
-            int fakePlayerId = playerNames.Count(name => name.Contains("FakePlayer")) + 1;
-            string fakeName = $"<color=green>[LIVE]</color> FakePlayer{fakePlayerId}";
-            playerNames.Add(fakeName);
-            playerList.Add(null);
-            DLog.Log($"Added fake player: {fakeName}");
-        } */
-
         private bool IsPlayerAlive(object player, string playerName)
         {
-            try
-            {
-                var playerHealthField = player.GetType().GetField("playerHealth", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (playerHealthField == null) return true;
-
-                var playerHealthInstance = playerHealthField.GetValue(player);
-                if (playerHealthInstance == null) return true;
-
-                var healthField = playerHealthInstance.GetType().GetField("health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (healthField == null) return true;
-
-                int health = (int)healthField.GetValue(playerHealthInstance);
-                return health > 0;
+            int health = Health_Player.GetPlayerHealth(player);
+            if (health < 0) {
+                DLog.Log($"Could not get health for {playerName}, assuming dead");
+                return true; // If we can't get health, assume player is dead
             }
-            catch (Exception e)
-            {
-                DLog.Log($"Error checking health of {playerName}: {e.Message}");
-                return true;
-            }
+            return health > 0;
         }
-
-        public static void ReviveSelectedPlayer(int selectedPlayerIndex, List<object> playerList, List<string> playerNames)
-        {
-            if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count)
-            {
-                DLog.Log("Invalid player index!");
-                return;
-            }
-            var selectedPlayer = playerList[selectedPlayerIndex];
-            if (selectedPlayer == null)
-            {
-                DLog.Log("Selected player is null!");
-                return;
-            }
-
-            Health_Player.ReviveSelectedPlayer(selectedPlayer, playerNames[selectedPlayerIndex]);
-            DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]);
-        }
-
-        public static void KillSelectedPlayer(int selectedPlayerIndex, List<object> playerList, List<string> playerNames)
-        {
-            if (selectedPlayerIndex < 0 || selectedPlayerIndex >= playerList.Count)
-            {
-                DLog.Log("Invalid player index!");
-                return;
-            }
-            
-            var selectedPlayer = playerList[selectedPlayerIndex];
-            if (selectedPlayer == null)
-            {
-                DLog.Log("Selected player is null!");
-                return;
-            }
-            
-            Health_Player.KillSelectedPlayer(selectedPlayer, playerNames[selectedPlayerIndex]);
-            DLog.Log("Attempt to kill the selected player completed.");
-        }
-
 
         private void InitializeGUIStyles()
         {
@@ -823,6 +765,8 @@ namespace r.e.p.o_cheat
                             currentY += childSpacing;
                             DebugCheats.showEnemyDistance = UIHelper.Checkbox("Toggle Distance", DebugCheats.showEnemyDistance, menuX + 50, currentY);
                             currentY += childSpacing;
+                            DebugCheats.showEnemyHP = UIHelper.Checkbox("Show Enemy HP", DebugCheats.showEnemyHP, menuX + 50, currentY);
+                            currentY += childSpacing;
                             DebugCheats.drawChamsBool = UIHelper.Checkbox("Toggle Chams", DebugCheats.drawChamsBool, menuX + 50, currentY);
                             currentY += parentSpacing;
                         }
@@ -841,7 +785,7 @@ namespace r.e.p.o_cheat
                             currentY += childSpacing;
                             DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Show Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, currentY);
                             currentY += childSpacing;
-        
+
                             // Max Distance Slider
                             GUI.Label(new Rect(menuX + 50, currentY, 200, 20), $"Max Item Distance: {DebugCheats.maxItemEspDistance:F0}m");
                             currentY += 20;
@@ -890,8 +834,8 @@ namespace r.e.p.o_cheat
                         }
                         GUI.EndScrollView();
 
-                        if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
-                        if (UIHelper.Button("Kill Selected Player", menuX + 30, menuY + 370)) { KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Attempt to kill the selected player completed."); }
+                        if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { Health_Player.ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
+                        if (UIHelper.Button("Kill Selected Player", menuX + 30, menuY + 370)) { Health_Player.KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Attempt to kill the selected player completed."); }
                         if (UIHelper.Button(showTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, menuY + 410)) // Teleport UI with dropdown system
                         {
                             showTeleportUI = !showTeleportUI; // Initialize teleport options when opening
@@ -1085,7 +1029,7 @@ namespace r.e.p.o_cheat
                         }
                         if (UIHelper.Button("Kill All Enemies", menuX + 30, menuY + 370))
                         {
-                            DebugCheats.KillAllEnemies();
+                            Enemies.KillAllEnemies();
                             DLog.Log("Attempt to kill all enemies completed.");
                         }
                         if (UIHelper.Button(showEnemyTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, menuY + 410))
