@@ -63,26 +63,18 @@ namespace r.e.p.o_cheat
         public static void KillAllEnemies()
         {
             DLog.Log("Attempting to kill all enemies");
-
-            // Get the list directly from DebugCheats since that's the source of truth
             var currentEnemyList = DebugCheats.enemyList;
-
             if (currentEnemyList == null || currentEnemyList.Count == 0)
             {
                 DLog.Log("No enemies found to kill");
                 return;
             }
-
             DLog.Log($"Found {currentEnemyList.Count} enemies to process");
             int killCount = 0;
-
-            // Create a copy of the list to avoid modification issues during iteration
-            List<Enemy> enemiesCopy = new List<Enemy>(currentEnemyList);
-
+            List<Enemy> enemiesCopy = new List<Enemy>(currentEnemyList); // Create a copy of the list to avoid modification issues during iteration
             foreach (var enemyInstance in enemiesCopy)
             {
                 if (enemyInstance == null) continue;
-
                 try
                 {
                     var healthField = enemyInstance.GetType().GetField("Health", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -118,11 +110,8 @@ namespace r.e.p.o_cheat
                     DLog.Log($"Error killing enemy {enemyInstance.name}: {e.Message}");
                 }
             }
-
             DLog.Log($"Killed {killCount} out of {enemiesCopy.Count} enemies");
-
-            // Update the enemy list after killing
-            DebugCheats.UpdateEnemyList();
+            DebugCheats.UpdateEnemyList(); // Update the enemy list after killing
         }
 
         public static void TeleportEnemyToMe(int selectedEnemyIndex, List<Enemy> enemyList, List<string> enemyNames)
