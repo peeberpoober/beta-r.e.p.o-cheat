@@ -1,0 +1,17 @@
+﻿using UnityEngine;
+using Photon.Pun;
+
+namespace dark_cheat
+{
+    public class PlayerCheatSync : MonoBehaviourPunCallbacks
+    {
+        [PunRPC]
+        public void SpawnItemRPC(Vector3 spawnPosition)
+        {
+            if (PhotonNetwork.IsMasterClient)
+            {
+                DLog.Log("Master Client received RPC and spawned item at: " + spawnPosition);
+            }
+        }
+    }
+}

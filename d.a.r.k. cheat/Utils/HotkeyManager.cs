@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace r.e.p.o_cheat
+namespace dark_cheat
 {
     public class HotkeyManager
     {

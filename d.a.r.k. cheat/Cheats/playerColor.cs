@@ -3,7 +3,7 @@ using System.Reflection;
 using UnityEngine;
 using Photon.Pun;
 
-namespace r.e.p.o_cheat
+namespace dark_cheat
 {
     internal class playerColor
     {

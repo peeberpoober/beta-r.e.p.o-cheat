@@ -7,7 +7,7 @@
     <ProjectGuid>{07205E12-856A-40BF-A8EE-41329506BE39}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>r.e.p.o_cheat</RootNamespace>
+    <RootNamespace>dark_cheat</RootNamespace>
     <AssemblyName>r.e.p.o cheat</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

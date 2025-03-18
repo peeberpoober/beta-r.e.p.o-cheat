@@ -5,7 +5,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 
-namespace r.e.p.o_cheat
+namespace dark_cheat
 {
     static class Health_Player
     {

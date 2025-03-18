@@ -7,7 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Collections;
-namespace r.e.p.o_cheat
+namespace dark_cheat
 {
     static class DebugCheats
     {

@@ -10,7 +10,7 @@ using HarmonyLib;
 using SingularityGroup.HotReload;
 
 
-namespace r.e.p.o_cheat
+namespace dark_cheat
 {
     public static class UIHelper
     {
@@ -152,7 +152,7 @@ namespace r.e.p.o_cheat
         private float sliderValue = 0.5f;
         public static float sliderValueStrength = 0.5f;
         public static float offsetESp = 0.5f;
-        private bool showMenu = true;
+        public static bool showMenu = true;
         public static bool godModeActive = false;
         public static bool infiniteHealthActive = false;
         public static bool stamineState = false;
@@ -377,18 +377,18 @@ namespace r.e.p.o_cheat
             }
             if (Input.GetKeyDown(hotkeyManager.MenuToggleKey))
             {
-                showMenu = !showMenu;
-                CursorController.cheatMenuOpen = showMenu;
+                Hax2.showMenu = !Hax2.showMenu;
+                CursorController.cheatMenuOpen = Hax2.showMenu;
                 CursorController.UpdateCursorState();
-                DLog.Log("MENU " + showMenu);
-                if (!showMenu) TryUnlockCamera();
+                DLog.Log("MENU " + Hax2.showMenu);
+                if (!Hax2.showMenu) TryUnlockCamera();
                 UpdateCursorState();
             }
             if (Input.GetKeyDown(hotkeyManager.ReloadKey)) Start();
             if (Input.GetKeyDown(hotkeyManager.UnloadKey))
             {
-                showMenu = false;
-                CursorController.cheatMenuOpen = showMenu;
+                Hax2.showMenu = false;
+                CursorController.cheatMenuOpen = Hax2.showMenu;
                 CursorController.UpdateCursorState();
                 TryUnlockCamera();
                 UpdateCursorState();
@@ -420,7 +420,7 @@ namespace r.e.p.o_cheat
             {
                 hotkeyManager.CheckAndExecuteHotkeys();
             }
-            if (showMenu) TryLockCamera();
+            if (Hax2.showMenu) TryLockCamera();
             if (NoclipController.noclipActive)
             {
                 NoclipController.UpdateMovement();
@@ -473,10 +473,10 @@ namespace r.e.p.o_cheat
 
         private void UpdateCursorState()
         {
-            Cursor.visible = showMenu;
-            CursorController.cheatMenuOpen = showMenu;
+            Cursor.visible = Hax2.showMenu;
+            CursorController.cheatMenuOpen = Hax2.showMenu;
             CursorController.UpdateCursorState();
-            Cursor.lockState = showMenu ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.lockState = Hax2.showMenu ? CursorLockMode.None : CursorLockMode.Locked;
         }
 
         private void UpdateItemList()
@@ -531,8 +531,6 @@ namespace r.e.p.o_cheat
             if (enemyNames.Count == 0) enemyNames.Add("No enemies found");
         }
 
-
-
         private void ActionSelectorWindow(int windowID)
         {
             if (GUI.Button(new Rect(370, 5, 20, 20), "X"))
@@ -565,8 +563,6 @@ namespace r.e.p.o_cheat
 
             GUI.EndScrollView();
         }
-
-
 
         private void UpdatePlayerList()
         {
@@ -684,7 +680,7 @@ namespace r.e.p.o_cheat
                 }
             }
 
-            if (showMenu)
+            if (Hax2.showMenu)
             {
                 GUIStyle overlayStyle = new GUIStyle();
                 overlayStyle.normal.background = MakeSolidBackground(Color.clear, 0f);
