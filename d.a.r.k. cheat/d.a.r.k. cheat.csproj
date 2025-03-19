@@ -389,6 +389,7 @@
     <Compile Include="Utils\GameHelper.cs" />
     <Compile Include="Cheats\playerColor.cs" />
     <Compile Include="Cheats\PlayerController.cs" />
+    <Compile Include="Cheats\Players.cs" />
     <Compile Include="Utils\StrengthDebug.cs" />
     <Compile Include="Cheats\Teleport.cs" />
     <Compile Include="main.cs" />
