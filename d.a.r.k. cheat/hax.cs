@@ -141,9 +141,9 @@ namespace dark_cheat
         private bool pendingLevelUpdate = false;
         private float levelChangeDetectedTime = 0f;
         private const float LEVEL_UPDATE_DELAY = 3.0f;
-        private int selectedPlayerIndex = 0;
-        private List<string> playerNames = new List<string>();
-        private List<object> playerList = new List<object>();
+        public static int selectedPlayerIndex = 0;
+        public static List<string> playerNames = new List<string>();
+        public static List<object> playerList = new List<object>();
         private int selectedEnemyIndex = 0;
         private List<string> enemyNames = new List<string>();
         private List<Enemy> enemyList = new List<Enemy>();
@@ -295,9 +295,7 @@ namespace dark_cheat
             DLog.Log($"Level update complete. Player list: {playerNames.Count} players, Enemy list: {enemyNames.Count} enemies");
         }
         public void Start()
-        {
-            CursorController.Init();
-            
+        {        
             UpdateCursorState();
             hotkeyManager = HotkeyManager.Instance;
             hotkeyManager.Initialize();
@@ -317,15 +315,15 @@ namespace dark_cheat
             if (playerHealthType != null)
             {
                 DLog.Log("playerHealthType is not null");
-                Health_Player.playerHealthInstance = FindObjectOfType(playerHealthType);
-                DLog.Log(Health_Player.playerHealthInstance != null ? "playerHealthInstance is not null" : "playerHealthInstance null");
+                Players.playerHealthInstance = FindObjectOfType(playerHealthType);
+                DLog.Log(Players.playerHealthInstance != null ? "playerHealthInstance is not null" : "playerHealthInstance null");
             }
             else DLog.Log("playerHealthType null");
 
             var playerMaxHealth = Type.GetType("ItemUpgradePlayerHealth, Assembly-CSharp");
             if (playerMaxHealth != null)
             {
-                Health_Player.playerMaxHealthInstance = FindObjectOfType(playerMaxHealth);
+                Players.playerMaxHealthInstance = FindObjectOfType(playerMaxHealth);
                 DLog.Log("playerMaxHealth is not null");
             }
             else DLog.Log("playerMaxHealth null");
@@ -593,7 +591,7 @@ namespace dark_cheat
 
         private bool IsPlayerAlive(object player, string playerName)
         {
-            int health = Health_Player.GetPlayerHealth(player);
+            int health = Players.GetPlayerHealth(player);
             if (health < 0) {
                 DLog.Log($"Could not get health for {playerName}, assuming dead");
                 return true; // If we can't get health, assume player is dead
@@ -768,7 +766,7 @@ namespace dark_cheat
                         {
                             if (selectedPlayerIndex >= 0 && selectedPlayerIndex < playerList.Count)
                             {
-                                Health_Player.HealPlayer(playerList[selectedPlayerIndex], 50, playerNames[selectedPlayerIndex]);
+                                Players.HealPlayer(playerList[selectedPlayerIndex], 50, playerNames[selectedPlayerIndex]);
                                 DLog.Log($"Player {playerNames[selectedPlayerIndex]} healed.");
                             }
                             else
@@ -780,7 +778,7 @@ namespace dark_cheat
                         {
                             if (selectedPlayerIndex >= 0 && selectedPlayerIndex < playerList.Count)
                             {
-                                Health_Player.DamagePlayer(playerList[selectedPlayerIndex], 1, playerNames[selectedPlayerIndex]);
+                                Players.DamagePlayer(playerList[selectedPlayerIndex], 1, playerNames[selectedPlayerIndex]);
                                 DLog.Log($"Player {playerNames[selectedPlayerIndex]} damaged.");
                             }
                             else
@@ -828,15 +826,15 @@ namespace dark_cheat
                         currentY += DebugCheats.drawEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawEspBool)
                         {
-                            DebugCheats.showEnemyBox = UIHelper.Checkbox("Toggle Box", DebugCheats.showEnemyBox, menuX + 50, currentY);
-                            currentY += childSpacing;
-                            DebugCheats.showEnemyNames = UIHelper.Checkbox("Toggle Names", DebugCheats.showEnemyNames, menuX + 50, currentY);
-                            currentY += childSpacing;
-                            DebugCheats.showEnemyDistance = UIHelper.Checkbox("Toggle Distance", DebugCheats.showEnemyDistance, menuX + 50, currentY);
-                            currentY += childSpacing;
-                            DebugCheats.showEnemyHP = UIHelper.Checkbox("Show Enemy HP", DebugCheats.showEnemyHP, menuX + 50, currentY);
+                            DebugCheats.showEnemyBox = UIHelper.Checkbox("Toggle 2D Box", DebugCheats.showEnemyBox, menuX + 50, currentY);
                             currentY += childSpacing;
                             DebugCheats.drawChamsBool = UIHelper.Checkbox("Toggle Chams", DebugCheats.drawChamsBool, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showEnemyNames = UIHelper.Checkbox("Show Enemy Names", DebugCheats.showEnemyNames, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showEnemyDistance = UIHelper.Checkbox("Show Enemy Distance", DebugCheats.showEnemyDistance, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.showEnemyHP = UIHelper.Checkbox("Show Enemy HP", DebugCheats.showEnemyHP, menuX + 50, currentY);
                             currentY += parentSpacing;
                         }
                         // Item ESP section
@@ -844,13 +842,13 @@ namespace dark_cheat
                         currentY += DebugCheats.drawItemEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawItemEspBool)
                         {
+                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("Toggle 3D Box", DebugCheats.draw3DItemEspBool, menuX + 50, currentY);
+                            currentY += childSpacing;
                             DebugCheats.showItemNames = UIHelper.Checkbox("Show Item Names", DebugCheats.showItemNames, menuX + 50, currentY);
                             currentY += childSpacing;
                             DebugCheats.showItemDistance = UIHelper.Checkbox("Show Item Distance", DebugCheats.showItemDistance, menuX + 50, currentY);
                             currentY += childSpacing;
                             DebugCheats.showItemValue = UIHelper.Checkbox("Show Item Value", DebugCheats.showItemValue, menuX + 50, currentY);
-                            currentY += childSpacing;
-                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Item ESP", DebugCheats.draw3DItemEspBool, menuX + 50, currentY);
                             currentY += childSpacing;
                             DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Show Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, currentY);
                             currentY += childSpacing;
@@ -873,14 +871,15 @@ namespace dark_cheat
                             currentY += parentSpacing;
                         }
                         // Player ESP section
-                        DebugCheats.drawPlayerEspBool = UIHelper.Checkbox("2D Player ESP", DebugCheats.drawPlayerEspBool, menuX + 30, currentY);
+                        DebugCheats.drawPlayerEspBool = UIHelper.Checkbox("Player ESP", DebugCheats.drawPlayerEspBool, menuX + 30, currentY);
                         currentY += parentSpacing;
 
-                        DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("3D Player ESP", DebugCheats.draw3DPlayerEspBool, menuX + 30, currentY);
-                        currentY += (DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool) ? childIndent : parentSpacing;
-
-                        if (DebugCheats.drawPlayerEspBool || DebugCheats.draw3DPlayerEspBool)
+                        if (DebugCheats.drawPlayerEspBool)
                         {
+                            DebugCheats.draw2DPlayerEspBool = UIHelper.Checkbox("Toggle 2D Box", DebugCheats.draw2DPlayerEspBool, menuX + 50, currentY);
+                            currentY += childSpacing;
+                            DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("Toggle 3D Box", DebugCheats.draw3DPlayerEspBool, menuX + 50, currentY);
+                            currentY += childSpacing;
                             DebugCheats.showPlayerNames = UIHelper.Checkbox("Show Player Names", DebugCheats.showPlayerNames, menuX + 50, currentY);
                             currentY += childSpacing;
                             DebugCheats.showPlayerDistance = UIHelper.Checkbox("Show Player Distance", DebugCheats.showPlayerDistance, menuX + 50, currentY);
@@ -902,8 +901,9 @@ namespace dark_cheat
                             GUI.color = Color.white;
                         }
                         GUI.EndScrollView();
-                        if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { Health_Player.ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
-                        if (UIHelper.Button("Kill Selected Player", menuX + 30, menuY + 370)) { Health_Player.KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Attempt to kill the selected player completed."); }
+                        if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { Players.ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
+                        if (UIHelper.Button("Kill", menuX + 30, menuY + 370)) { Players.KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Attempt to kill the selected player completed."); }
+                        if (UIHelper.Button("Force Tumble", menuX + 30, menuY + 700)) { Players.ForcePlayerTumble(); };
 
                         if (UIHelper.Button(showTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, menuY + 410))
                         {

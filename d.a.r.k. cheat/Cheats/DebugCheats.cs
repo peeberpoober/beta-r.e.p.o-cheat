@@ -28,9 +28,10 @@ namespace dark_cheat
 
         public static bool drawEspBool = false;
         public static bool drawItemEspBool = false;
-        public static bool drawPlayerEspBool = false;
         public static bool draw3DItemEspBool = false;
-        public static bool draw3DPlayerEspBool = false;
+        public static bool drawPlayerEspBool = false;
+        public static bool draw2DPlayerEspBool = false;
+        public static bool draw3DPlayerEspBool = true;
         public static bool drawExtractionPointEspBool = false;
 
         public static GUIStyle nameStyle;
@@ -145,7 +146,7 @@ namespace dark_cheat
                         if (data.PhotonView != null && data.Transform != null)
                         {
                             playerDataList.Add(data);
-                            int health = Health_Player.GetPlayerHealth(player);
+                            int health = Players.GetPlayerHealth(player);
                             playerHealthCache[data.PhotonView.ViewID] = health;
                         }
                     }
@@ -637,7 +638,7 @@ namespace dark_cheat
                 return;
             }
             InitializeStyles();
-            if (!drawEspBool && !drawItemEspBool && !drawExtractionPointEspBool && !drawPlayerEspBool && !draw3DPlayerEspBool && !draw3DItemEspBool && !drawChamsBool) return;
+            if (!drawEspBool && !drawItemEspBool && !drawExtractionPointEspBool && !drawPlayerEspBool && !draw2DPlayerEspBool && !draw3DPlayerEspBool && !draw3DItemEspBool && !drawChamsBool) return;
             if (localPlayer == null)
             {
                 UpdateLocalPlayer();
@@ -646,7 +647,7 @@ namespace dark_cheat
             if (Time.time - lastUpdateTime > updateInterval)
             {
                 UpdatePlayerDataList();
-                if (drawEspBool || drawItemEspBool || drawExtractionPointEspBool || drawPlayerEspBool || draw3DPlayerEspBool || draw3DItemEspBool || drawChamsBool)
+                if (drawEspBool || drawItemEspBool || drawExtractionPointEspBool || drawPlayerEspBool || draw2DPlayerEspBool || draw3DPlayerEspBool || draw3DItemEspBool || drawChamsBool)
                 {
                     UpdateLists();
                 }
@@ -1025,7 +1026,7 @@ namespace dark_cheat
                 }
             }
 
-            if (drawPlayerEspBool || draw3DPlayerEspBool)
+            if (drawPlayerEspBool)
             {
 
                 foreach (var playerData in playerDataList)
@@ -1070,7 +1071,7 @@ namespace dark_cheat
                         Bounds bounds = GetActiveColliderBounds(playerData.Transform.gameObject);
                         CreateBoundsEdges(bounds, Color.red);
                     }
-                    if (drawPlayerEspBool)
+                    if (draw2DPlayerEspBool)
                     {
                         Box(x, y, width, height, texture2, 2f);
                     }
@@ -1082,7 +1083,7 @@ namespace dark_cheat
                     string healthText = "";
                     if (showPlayerHP)
                     {
-                        int maxHealth = Health_Player.GetPlayerMaxHealth(playerData.PlayerObject);
+                        int maxHealth = Players.GetPlayerMaxHealth(playerData.PlayerObject);
                         float healthPercentage = maxHealth > 0 ? (float)health / maxHealth : 0f;
                         healthText = health >= 0 ? $"HP: {health}/{maxHealth}" : "";
                         healthStyle.normal.textColor = healthPercentage > 0.66f ? Color.green : (healthPercentage > 0.33f ? Color.yellow : Color.red);

@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -7,7 +7,7 @@ using Photon.Realtime;
 
 namespace dark_cheat
 {
-    static class Health_Player
+    static class Players
     {
         static public object playerHealthInstance;
         static public object playerMaxHealthInstance;
@@ -211,7 +211,7 @@ namespace dark_cheat
                         else
                         {
                             DLog.Log("'health' field not found, attempting HealPlayer as fallback.");
-                            Health_Player.HealPlayer(selectedPlayer, maxHealth, playerName);
+                            Players.HealPlayer(selectedPlayer, maxHealth, playerName);
                         }
 
                         int currentHealth = GetPlayerHealth(selectedPlayer);
@@ -301,6 +301,42 @@ namespace dark_cheat
                 DLog.Log($"Attempt to kill {playerName} completed.");
             }
             catch (Exception e) { DLog.Log($"Error trying to kill {playerName}: {e.Message}"); }
+        }
+        
+        public static void ForcePlayerTumble(float duration = 10f)  // Default duration is 10 seconds
+        {
+            if (Hax2.selectedPlayerIndex < 0 || Hax2.selectedPlayerIndex >= Hax2.playerList.Count)
+            {
+                Debug.Log("Invalid player index!");
+                return;
+            }
+            var selectedPlayer = Hax2.playerList[Hax2.selectedPlayerIndex];
+            if (selectedPlayer == null)
+            {
+                Debug.Log("Selected player is null!");
+                return;
+            }
+            try
+            {
+                Debug.Log($"Forcing {Hax2.playerNames[Hax2.selectedPlayerIndex]} to tumble for {duration} seconds.");
+                var playerTumbleField = selectedPlayer.GetType().GetField("tumble", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (playerTumbleField == null) { Debug.Log("PlayerTumble field not found!"); return; }
+                var playerTumble = playerTumbleField.GetValue(selectedPlayer) as PlayerTumble;
+                if (playerTumble == null) { Debug.Log("PlayerTumble instance is null!"); return; }
+                var photonViewField = playerTumble.GetType().GetField("photonView", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (photonViewField == null) { Debug.Log("PhotonView field not found on PlayerTumble!"); return; }
+                var photonView = photonViewField.GetValue(playerTumble) as PhotonView;
+                if (photonView == null) { Debug.Log("PhotonView is not valid!"); return; }
+                photonView.RPC("TumbleSetRPC", RpcTarget.All, true, false);
+                photonView.RPC("TumbleOverrideTimeRPC", RpcTarget.All, duration);
+                photonView.RPC("TumbleForceRPC", RpcTarget.All, new Vector3(10f, 50f, 0f));  // Throw forward
+                photonView.RPC("TumbleTorqueRPC", RpcTarget.All, new Vector3(0f, 0f, 2000f));
+                Debug.Log($"Forced {Hax2.playerNames[Hax2.selectedPlayerIndex]} to tumble for {duration} seconds.");
+            }
+            catch (Exception e)
+            {
+                Debug.Log($"Error forcing {Hax2.playerNames[Hax2.selectedPlayerIndex]} to tumble: {e.Message}");
+            }
         }
 
         public static int GetPlayerHealth(object player)
