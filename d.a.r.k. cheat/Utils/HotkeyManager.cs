@@ -167,7 +167,7 @@ namespace dark_cheat
                 GameObject localPlayer = DebugCheats.GetLocalPlayer();
                 if (localPlayer != null)
                 {
-                    Health_Player.HealPlayer(localPlayer, 100, "Self");
+                    Players.HealPlayer(localPlayer, 100, "Self");
                     DLog.Log("healed self by 100 hp.");
                 }
                 else
