@@ -6,7 +6,6 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using System.Linq;
-using HarmonyLib;
 using SingularityGroup.HotReload;
 
 
@@ -235,7 +234,6 @@ namespace dark_cheat
         private Vector2 dragOffsetActionSelector;
         private GUIStyle overlayDimStyle;
         private GUIStyle actionSelectorBoxStyle;
-        private static bool cursorStateInitialized = false;
         private void UpdateTeleportOptions()
         {
             List<string> sourceOptions = new List<string>(); // Create source array with "All" option + players
@@ -295,8 +293,7 @@ namespace dark_cheat
             DLog.Log($"Level update complete. Player list: {playerNames.Count} players, Enemy list: {enemyNames.Count} enemies");
         }
         public void Start()
-        {        
-            UpdateCursorState();
+        {
             hotkeyManager = HotkeyManager.Instance;
             hotkeyManager.Initialize();
 
@@ -376,20 +373,25 @@ namespace dark_cheat
             if (Input.GetKeyDown(hotkeyManager.MenuToggleKey))
             {
                 Hax2.showMenu = !Hax2.showMenu;
-                CursorController.cheatMenuOpen = Hax2.showMenu;
-                CursorController.UpdateCursorState();
                 DLog.Log("MENU " + Hax2.showMenu);
-                if (!Hax2.showMenu) TryUnlockCamera();
-                UpdateCursorState();
+
+                if (Hax2.showMenu) // Add cursor visibility toggle
+                {
+                    Cursor.visible = true;
+                    Cursor.lockState = CursorLockMode.None;
+                }
+                else
+                {
+                    Cursor.visible = false;
+                    Cursor.lockState = CursorLockMode.Locked;
+                    TryUnlockCamera();
+                }
             }
             if (Input.GetKeyDown(hotkeyManager.ReloadKey)) Start();
             if (Input.GetKeyDown(hotkeyManager.UnloadKey))
             {
                 Hax2.showMenu = false;
-                CursorController.cheatMenuOpen = Hax2.showMenu;
-                CursorController.UpdateCursorState();
                 TryUnlockCamera();
-                UpdateCursorState();
                 Loader.UnloadCheat();
             }
             if (hotkeyManager.ConfiguringHotkey)
@@ -467,14 +469,6 @@ namespace dark_cheat
                 else DLog.LogError("Failed to find field disableAimingTimer.");
             }
             else DLog.LogWarning("InputManager.instance not found!");
-        }
-
-        private void UpdateCursorState()
-        {
-            Cursor.visible = Hax2.showMenu;
-            CursorController.cheatMenuOpen = Hax2.showMenu;
-            CursorController.UpdateCursorState();
-            Cursor.lockState = Hax2.showMenu ? CursorLockMode.None : CursorLockMode.Locked;
         }
 
         private void UpdateItemList()
@@ -684,7 +678,6 @@ namespace dark_cheat
                 overlayStyle.normal.background = MakeSolidBackground(Color.clear, 0f);
                 GUI.Box(new Rect(0, 0, Screen.width, Screen.height), GUIContent.none, overlayStyle);
 
-                UpdateCursorState();
 
                 Rect menuRect = new Rect(menuX, menuY, 600, 730);
                 Rect titleRect = new Rect(menuX, menuY, 600, titleBarHeight);
@@ -903,9 +896,10 @@ namespace dark_cheat
                         GUI.EndScrollView();
                         if (UIHelper.Button("Revive", menuX + 30, menuY + 330)) { Players.ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
                         if (UIHelper.Button("Kill", menuX + 30, menuY + 370)) { Players.KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Attempt to kill the selected player completed."); }
-                        if (UIHelper.Button("Force Tumble", menuX + 30, menuY + 700)) { Players.ForcePlayerTumble(); };
 
-                        if (UIHelper.Button(showTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, menuY + 410))
+                        if (UIHelper.Button("Force Tumble", menuX + 30, menuY + 410)) { Players.ForcePlayerTumble(); }
+
+                        if (UIHelper.Button("Teleport Options", menuX + 30, menuY + 450))
                         {
                             showTeleportUI = !showTeleportUI;
                             if (showTeleportUI)
@@ -913,24 +907,25 @@ namespace dark_cheat
                                 UpdateTeleportOptions();
                             }
                         }
+
                         float contentWidth = 450f;
                         float centerX = menuX + (600f - contentWidth) / 2;
                         if (showTeleportUI)
                         {
-                            UIHelper.Label("Teleport", centerX + contentWidth / 2 - 30, menuY + 450);
+                            UIHelper.Label("Teleport", centerX + contentWidth / 2 - 30, menuY + 490);
                             float dropdownVisibleHeight = 150f; // Fixed dropdown heights regardless of content
-                            float executeButtonY = menuY + 520f; // Show only 6 items at a time (25px each)
+                            float executeButtonY = menuY + 560f; // Show only 6 items at a time (25px each)
                             if (showSourceDropdown || showDestDropdown) // If either dropdown is open, move the execute button lower
                             {
-                                executeButtonY = menuY + 520f + dropdownVisibleHeight + 10f;
+                                executeButtonY = menuY + 560f + dropdownVisibleHeight + 10f;
                             }
-                            if (GUI.Button(new Rect(centerX, menuY + 480, 200, 25), teleportPlayerSourceOptions[teleportPlayerSourceIndex])) // Source selector button
+                            if (GUI.Button(new Rect(centerX, menuY + 520, 200, 25), teleportPlayerSourceOptions[teleportPlayerSourceIndex])) // Source selector button
                             {
                                 showSourceDropdown = !showSourceDropdown;
                                 showDestDropdown = false;
                             }
-                            UIHelper.Label("to", centerX + 210, menuY + 480); // "to" label
-                            if (GUI.Button(new Rect(centerX + 250, menuY + 480, 200, 25), teleportPlayerDestOptions[teleportPlayerDestIndex])) // Destination selector button
+                            UIHelper.Label("to", centerX + 210, menuY + 520); // "to" label
+                            if (GUI.Button(new Rect(centerX + 250, menuY + 520, 200, 25), teleportPlayerDestOptions[teleportPlayerDestIndex])) // Destination selector button
                             {
                                 showDestDropdown = !showDestDropdown;
                                 showSourceDropdown = false;
@@ -940,7 +935,7 @@ namespace dark_cheat
                                 float totalSourceHeight = teleportPlayerSourceOptions.Length * 25f;
                                 bool needsScrollbar = totalSourceHeight > dropdownVisibleHeight;
                                 sourceDropdownScrollPosition = GUI.BeginScrollView( // Begin scroll view for source dropdown, hide scrollbar if not needed
-                                    new Rect(centerX, menuY + 510, 200, dropdownVisibleHeight),
+                                    new Rect(centerX, menuY + 550, 200, dropdownVisibleHeight),
                                     sourceDropdownScrollPosition,
                                     new Rect(0, 0, needsScrollbar ? 180 : 200, totalSourceHeight),
                                     false, needsScrollbar);
@@ -959,7 +954,7 @@ namespace dark_cheat
                                 float totalDestHeight = teleportPlayerDestOptions.Length * 25f;
                                 bool needsScrollbar = totalDestHeight > dropdownVisibleHeight;
                                 destDropdownScrollPosition = GUI.BeginScrollView( // Begin scroll view for destination dropdown, hide scrollbar if not needed
-                                    new Rect(centerX + 250, menuY + 510, 200, dropdownVisibleHeight),
+                                    new Rect(centerX + 250, menuY + 550, 200, dropdownVisibleHeight),
                                     destDropdownScrollPosition,
                                     new Rect(0, 0, needsScrollbar ? 180 : 200, totalDestHeight),
                                     false, needsScrollbar);
