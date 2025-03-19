@@ -20,10 +20,16 @@ namespace dark_cheat
         private static float scaleX, scaleY;
         public static Texture2D texture2;
         private static float lastUpdateTime = 0f;
-        private static float lastExtractionUpdateTime = 0f;
-        private const float updateInterval = 1f;
-        private const float extractionUpdateInterval = 5f;
+        private const float updateInterval = 5f;
         private static GameObject localPlayer;
+        
+        private static int lastPlayerDataCount = 0;
+        private static int lastEnemyCount = 0;
+        private static int lastItemCount = 0;
+        private static int lastPlayerCount = 0;
+        private static int lastExtractionPointCount = 0;
+        private static string lastLocalPlayerName = "";
+        private static Vector3 lastExtractionPosition = Vector3.zero;
         private static List<ExtractionPointData> extractionPointList = new List<ExtractionPointData>();
 
         public static bool drawEspBool = false;
@@ -62,9 +68,9 @@ namespace dark_cheat
         private static bool originalOcclusionCulling = false;
 
         private static List<PlayerData> playerDataList = new List<PlayerData>();
-        private static float lastPlayerUpdateTime = 0f;
         private static float playerUpdateInterval = 1f;
         private static Dictionary<int, int> playerHealthCache = new Dictionary<int, int>();
+        private static float lastPlayerUpdateTime = 0f;
         public static Dictionary<Enemy, int> enemyHealthCache = new Dictionary<Enemy, int>();
         private const float maxEspDistance = 100f;
 
@@ -152,12 +158,17 @@ namespace dark_cheat
                     }
                 }
             }
-            lastPlayerUpdateTime = Time.time;
-            DLog.Log($"Player data list updated: {playerDataList.Count} players.");
+            
+            // Only log if the count has changed
+            if (playerDataList.Count != lastPlayerDataCount) {
+                DLog.Log($"Player data list updated: {playerDataList.Count} players.");
+                lastPlayerDataCount = playerDataList.Count;
+            }
         }
         private static void UpdateExtractionPointList()
         {
             extractionPointList.Clear();
+
             var extractionPoints = UnityEngine.Object.FindObjectsOfType(Type.GetType("ExtractionPoint, Assembly-CSharp"));
             if (extractionPoints != null)
             {
@@ -175,10 +186,14 @@ namespace dark_cheat
                         }
                         Vector3 cachedPosition = extractionPoint.transform.position;
                         extractionPointList.Add(new ExtractionPointData(extractionPoint, cachedState, cachedPosition));
-                        DLog.Log($"Extraction Point cached at position: {cachedPosition}");
+
+                        if (Vector3.Distance(cachedPosition, lastExtractionPosition) > 0.1f)
+                        {
+                            DLog.Log($"Extraction Point cached at position: {cachedPosition}");
+                            lastExtractionPosition = cachedPosition;
+                        }
                     }
                 }
-                DLog.Log($"Extraction Points list updated: {extractionPointList.Count} points found.");
             }
         }
 
@@ -198,6 +213,13 @@ namespace dark_cheat
         private static void UpdateLists()
         {
             UpdateExtractionPointList();
+            
+            if (extractionPointList.Count != lastExtractionPointCount)
+            {
+                DLog.Log($"Extraction Points list updated: {extractionPointList.Count} points found.");
+                lastExtractionPointCount = extractionPointList.Count;
+            }
+            
             enemyList.Clear();
             enemyHealthCache.Clear();
             var enemyDirectorType = Type.GetType("EnemyDirector, Assembly-CSharp");
@@ -251,20 +273,39 @@ namespace dark_cheat
             }
 
             lastUpdateTime = Time.time;
-            DLog.Log($"Lists updated: {enemyList.Count} enemies, {valuableObjects.Count} items, {playerList.Count} players.");
+            
+            // Only log if any of the counts have changed
+            if (enemyList.Count != lastEnemyCount || 
+                valuableObjects.Count != lastItemCount || 
+                playerList.Count != lastPlayerCount)
+            {
+                DLog.Log($"Lists updated: {enemyList.Count} enemies, {valuableObjects.Count} items, {playerList.Count} players.");
+                lastEnemyCount = enemyList.Count;
+                lastItemCount = valuableObjects.Count;
+                lastPlayerCount = playerList.Count;
+            }
         }
 
         private static void UpdateLocalPlayer()
         {
-            localPlayer = GetLocalPlayer();
-            if (localPlayer != null)
+            GameObject newLocalPlayer = GetLocalPlayer();
+            string newPlayerName = newLocalPlayer != null ? newLocalPlayer.name : "null";
+            
+            // Only log if the local player has changed
+            if (newLocalPlayer != localPlayer || newPlayerName != lastLocalPlayerName)
             {
-                DLog.Log("Local player successfully updated: " + localPlayer.name);
+                if (newLocalPlayer != null)
+                {
+                    DLog.Log("Local player successfully updated: " + newPlayerName);
+                }
+                else
+                {
+                    DLog.Log("Failed to update local player!");
+                }
+                lastLocalPlayerName = newPlayerName;
             }
-            else
-            {
-                DLog.Log("Failed to update local player!");
-            }
+            
+            localPlayer = newLocalPlayer;
         }
 
         public static bool IsLocalPlayer(object player)
@@ -325,10 +366,22 @@ namespace dark_cheat
                                 if (gameObjectProperty != null)
                                 {
                                     GameObject foundPlayer = gameObjectProperty.GetValue(player) as GameObject;
-                                    DLog.Log("Local player found via Photon: " + foundPlayer.name);
+                                    
+                                    // Only log if the player name has changed
+                                    string playerName = foundPlayer.name;
+                                    if (playerName != lastLocalPlayerName) {
+                                        DLog.Log("Local player found via Photon: " + playerName);
+                                        lastLocalPlayerName = playerName;
+                                    }
                                     return foundPlayer;
                                 }
-                                DLog.Log("Local player found via PhotonView: " + photonView.gameObject.name);
+                                
+                                // Only log if the player name has changed
+                                string playerViewName = photonView.gameObject.name;
+                                if (playerViewName != lastLocalPlayerName) {
+                                    DLog.Log("Local player found via PhotonView: " + playerViewName);
+                                    lastLocalPlayerName = playerViewName;
+                                }
                                 return photonView.gameObject;
                             }
                         }
@@ -341,7 +394,13 @@ namespace dark_cheat
                     {
                         if (photonView.Owner == PhotonNetwork.LocalPlayer && photonView.IsMine)
                         {
-                            DLog.Log("Local player found via Photon fallback: " + photonView.gameObject.name);
+                            // Only log if the player name has changed
+                            string playerName = photonView.gameObject.name;
+                            if (playerName != lastLocalPlayerName)
+                            {
+                                DLog.Log("Local player found via Photon fallback: " + playerName);
+                                lastLocalPlayerName = playerName;
+                            }
                             return photonView.gameObject;
                         }
                     }
@@ -357,7 +416,13 @@ namespace dark_cheat
                     if (gameObjectProperty != null)
                     {
                         GameObject foundPlayer = gameObjectProperty.GetValue(player) as GameObject;
-                        DLog.Log("Local player found in singleplayer via PlayerGetList: " + foundPlayer.name);
+                        // Only log if the player name has changed
+                        string playerName = foundPlayer.name;
+                        if (playerName != lastLocalPlayerName)
+                        {
+                            DLog.Log("Local player found in singleplayer via PlayerGetList: " + playerName);
+                            lastLocalPlayerName = playerName;
+                        }
                         return foundPlayer;
                     }
                 }
@@ -368,7 +433,13 @@ namespace dark_cheat
                     var playerAvatar = UnityEngine.Object.FindObjectOfType(playerAvatarType) as MonoBehaviour;
                     if (playerAvatar != null)
                     {
-                        DLog.Log("Local player found in singleplayer via PlayerAvatar: " + playerAvatar.gameObject.name);
+                        // Only log if the player name has changed
+                        string playerName = playerAvatar.gameObject.name;
+                        if (playerName != lastLocalPlayerName)
+                        {
+                            DLog.Log("Local player found in singleplayer via PlayerAvatar: " + playerName);
+                            lastLocalPlayerName = playerName;
+                        }
                         return playerAvatar.gameObject;
                     }
                 }
@@ -376,7 +447,13 @@ namespace dark_cheat
                 var playerByTag = GameObject.FindWithTag("Player");
                 if (playerByTag != null)
                 {
-                    DLog.Log("Local player found in singleplayer via tag 'Player': " + playerByTag.name);
+                    // Only log if the player name has changed
+                    string playerName = playerByTag.name;
+                    if (playerName != lastLocalPlayerName)
+                    {
+                        DLog.Log("Local player found in singleplayer via tag 'Player': " + playerName);
+                        lastLocalPlayerName = playerName;
+                    }
                     return playerByTag;
                 }
 
@@ -385,7 +462,13 @@ namespace dark_cheat
                 {
                     if (obj.name.Contains("Player") && obj.activeInHierarchy)
                     {
-                        DLog.Log("Local player found in singleplayer via generic name: " + obj.name);
+                        // Only log if the player name has changed
+                        string playerName = obj.name;
+                        if (playerName != lastLocalPlayerName)
+                        {
+                            DLog.Log("Local player found in singleplayer via generic name: " + playerName);
+                            lastLocalPlayerName = playerName;
+                        }
                         return obj;
                     }
                 }
@@ -644,14 +727,23 @@ namespace dark_cheat
                 UpdateLocalPlayer();
             }
             
-            if (Time.time - lastUpdateTime > updateInterval)
+            // Split updates to avoid doing everything at once
+            float currentTime = Time.time;
+            
+            // Update player data more frequently but not every frame
+            if (currentTime - lastPlayerUpdateTime > playerUpdateInterval)
             {
                 UpdatePlayerDataList();
-                if (drawEspBool || drawItemEspBool || drawExtractionPointEspBool || drawPlayerEspBool || draw2DPlayerEspBool || draw3DPlayerEspBool || draw3DItemEspBool || drawChamsBool)
+                lastPlayerUpdateTime = currentTime;
+            }
+            
+            if (currentTime - lastUpdateTime > updateInterval)
+            {
+                if (drawEspBool || drawItemEspBool || drawExtractionPointEspBool || drawPlayerEspBool || draw2DPlayerEspBool || draw3DPlayerEspBool || draw3DItemEspBool)
                 {
                     UpdateLists();
                 }
-                UpdateLocalPlayer();
+                lastUpdateTime = currentTime;
             }
 
             frameCounter++;

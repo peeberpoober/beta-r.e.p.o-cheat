@@ -14,6 +14,7 @@ namespace dark_cheat
         private static Type colorControllerType;
         private static object colorControllerInstance;
         private static MethodInfo playerSetColorMethod;
+        private static PhotonView playerPhotonView;
         private static bool isInitialized = false;
 
         private static void Initialize()
@@ -42,6 +43,7 @@ namespace dark_cheat
                         if (playerAvatar != null)
                         {
                             colorControllerInstance = playerAvatar;
+                            playerPhotonView = photonView;
                             DLog.Log($"Local PlayerAvatar found via PhotonView: {photonView.gameObject.name}, Owner: {photonView.Owner?.NickName}");
                             break;
                         }
@@ -54,6 +56,7 @@ namespace dark_cheat
                 if (playerAvatar != null)
                 {
                     colorControllerInstance = playerAvatar;
+                    playerPhotonView = (playerAvatar as MonoBehaviour)?.GetComponent<PhotonView>();
                     DLog.Log($"PlayerAvatar found in singleplayer via FindObjectOfType: {(playerAvatar as MonoBehaviour).gameObject.name}");
                 }
                 else
@@ -65,6 +68,7 @@ namespace dark_cheat
                         if (playerAvatarComponent != null)
                         {
                             colorControllerInstance = playerAvatarComponent;
+                            playerPhotonView = localPlayer.GetComponent<PhotonView>();
                             DLog.Log($"PlayerAvatar found in singleplayer via GetLocalPlayer: {localPlayer.name}");
                         }
                         else
@@ -100,6 +104,13 @@ namespace dark_cheat
         {
             Initialize();
 
+            // Re-initialize if we've been running for a while to ensure we have the latest PhotonView
+            if (isInitialized && Time.time - lastColorChangeTime > 5.0f)
+            {
+                Reset();
+                Initialize();
+            }
+
             if (!isInitialized || colorControllerInstance == null || playerSetColorMethod == null)
             {
                 DLog.Log("Randomizer ignored: Initialization failure or missing instance/method.");
@@ -108,6 +119,13 @@ namespace dark_cheat
 
             if (isRandomizing && Time.time - lastColorChangeTime >= changeInterval)
             {
+                // Verify PhotonView is valid before proceeding
+                if (PhotonNetwork.IsConnected && (playerPhotonView == null || !IsPhotonViewValid(playerPhotonView)))
+                {
+                    Reset();
+                    Initialize();
+                    return;
+                }
                 var colorIndex = new System.Random().Next(0, 30);
                 try
                 {
@@ -122,12 +140,26 @@ namespace dark_cheat
             }
         }
 
+        // Helper method to check if a PhotonView is valid
+        private static bool IsPhotonViewValid(PhotonView view)
+        {
+            if (view == null)
+                return false;
+                
+            // Check if the PhotonView is still attached to an active GameObject
+            if (view.gameObject == null || !view.gameObject.activeInHierarchy)
+                return false;
+                
+            return view.ViewID != 0 && view.Owner != null;
+        }
+
         public static void Reset()
         {
             isInitialized = false;
             colorControllerType = null;
             colorControllerInstance = null;
             playerSetColorMethod = null;
+            playerPhotonView = null;
             DLog.Log("playerColor reset.");
         }
     }

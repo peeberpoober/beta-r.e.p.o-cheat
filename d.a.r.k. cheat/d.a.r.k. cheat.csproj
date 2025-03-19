@@ -377,7 +377,7 @@
     <Compile Include="Utils\HotkeyManager.cs" />
     <Compile Include="Cheats\Items.cs" />
     <Compile Include="Cheats\ItemSpawner.cs" />
-    <Compile Include="Cheats\ItemSync.cs" />
+    <Compile Include="Utils\ItemSync.cs" />
     <Compile Include="Cheats\MiscFeatures.cs" />
     <Compile Include="Cheats\NoclipController.cs" />
     <Compile Include="Utils\MapTools.cs" />

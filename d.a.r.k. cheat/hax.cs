@@ -213,8 +213,7 @@ namespace dark_cheat
         private List<ItemTeleport.GameItem> itemList = new List<ItemTeleport.GameItem>();
         private int selectedItemIndex = 0;
         private Vector2 itemScrollPosition = Vector2.zero;
-        private float lastItemListUpdateTime = 0f;
-        private const float itemListUpdateInterval = 2f;
+        private int previousItemCount = 0;
         private bool isDragging = false;
         private Vector2 dragOffset;
         private float menuX = 50f;
@@ -279,7 +278,6 @@ namespace dark_cheat
         }
         private void PerformDelayedLevelUpdate()
         {
-            DLog.Log("Performing delayed level update...");
             UpdatePlayerList(); // Update all player and enemy lists
             UpdateEnemyList();
             if (showTeleportUI) // Update teleport options if UIs are open
@@ -290,12 +288,11 @@ namespace dark_cheat
             {
                 UpdateEnemyTeleportOptions();
             }
-            DLog.Log($"Level update complete. Player list: {playerNames.Count} players, Enemy list: {enemyNames.Count} enemies");
+            DLog.Log($"Level update -> Player list: {playerNames.Count} players, Enemy list: {enemyNames.Count} enemies");
         }
         public void Start()
         {
             hotkeyManager = HotkeyManager.Instance;
-            hotkeyManager.Initialize();
 
             if (unlimitedBatteryComponent == null)
             {
@@ -328,64 +325,16 @@ namespace dark_cheat
 
         public void Update()
         {
-            levelCheckTimer += Time.deltaTime; // Level change check using timer
+            levelCheckTimer += Time.deltaTime;
             if (levelCheckTimer >= LEVEL_CHECK_INTERVAL)
             {
                 levelCheckTimer = 0f;
                 CheckForLevelChange();
             }
-            Strength.UpdateStrength();
-            if (RunManager.instance.levelCurrent != null && levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name))
-            {
-                if (Time.time >= nextUpdateTime)
-                {
-                    DebugCheats.UpdateEnemyList();
-                    nextUpdateTime = Time.time + updateInterval;
-                }
-                // Reduce item list updates from every frame to every 5 seconds
-                if (Time.time - lastItemListUpdateTime > 5f)
-                {
-                    UpdateItemList();
-                    itemList = ItemTeleport.GetItemList();
-                    lastItemListUpdateTime = Time.time;
-                }
-            }
-            if (oldSliderValue != sliderValue)
-            {
-                PlayerController.RemoveSpeed(sliderValue);
-                oldSliderValue = sliderValue;
-            }
-            if (oldSliderValueStrength != sliderValueStrength)
-            {
-                Strength.MaxStrength();
-                oldSliderValueStrength = sliderValueStrength;
-            }
-            if (playerColor.isRandomizing)
-            {
-                playerColor.colorRandomizer();
-            }
-            // Prevent excessive logging by adding a cooldown
-            if (Time.time - lastItemListUpdateTime > 10f)
-            {
-                DLog.Log($"Item list contains {itemList.Count} items.");
-                lastItemListUpdateTime = Time.time;
-            }
             if (Input.GetKeyDown(hotkeyManager.MenuToggleKey))
             {
                 Hax2.showMenu = !Hax2.showMenu;
                 DLog.Log("MENU " + Hax2.showMenu);
-
-                if (Hax2.showMenu) // Add cursor visibility toggle
-                {
-                    Cursor.visible = true;
-                    Cursor.lockState = CursorLockMode.None;
-                }
-                else
-                {
-                    Cursor.visible = false;
-                    Cursor.lockState = CursorLockMode.Locked;
-                    TryUnlockCamera();
-                }
             }
             if (Input.GetKeyDown(hotkeyManager.ReloadKey)) Start();
             if (Input.GetKeyDown(hotkeyManager.UnloadKey))
@@ -416,20 +365,47 @@ namespace dark_cheat
                     }
                 }
             }
-            else
+            
+            Strength.UpdateStrength();
+            if (RunManager.instance.levelCurrent != null && levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name))
             {
-                hotkeyManager.CheckAndExecuteHotkeys();
-            }
-            if (Hax2.showMenu) TryLockCamera();
-            if (NoclipController.noclipActive)
-            {
-                NoclipController.UpdateMovement();
-            }
-            if (MapTools.showMapTweaks)
-            {
-                if (MapTools.mapDisableHiddenOverlayCheckboxActive && !MapTools.mapDisableHiddenOverlayActive)
+                if (Time.time >= nextUpdateTime)
                 {
-                    MapTools.changeOverlayStatus(true);
+                    UpdateEnemyList();
+                    UpdateItemList();
+                    itemList = ItemTeleport.GetItemList();
+                    nextUpdateTime = Time.time + updateInterval;
+                }
+
+                if (oldSliderValue != sliderValue)
+                {
+                    PlayerController.RemoveSpeed(sliderValue);
+                    oldSliderValue = sliderValue;
+                }
+                if (oldSliderValueStrength != sliderValueStrength)
+                {
+                    Strength.MaxStrength();
+                    oldSliderValueStrength = sliderValueStrength;
+                }
+                if (playerColor.isRandomizing)
+                {
+                    playerColor.colorRandomizer();
+                }
+                
+                // Execute hotkeys only when in game
+                hotkeyManager.CheckAndExecuteHotkeys();
+                
+                if (Hax2.showMenu) TryLockCamera();
+                if (NoclipController.noclipActive)
+                {
+                    NoclipController.UpdateMovement();
+                }
+                if (MapTools.showMapTweaks)
+                {
+                    if (MapTools.mapDisableHiddenOverlayCheckboxActive && !MapTools.mapDisableHiddenOverlayActive)
+                    {
+                        MapTools.changeOverlayStatus(true);
+                    }
                 }
             }
         }
@@ -463,8 +439,11 @@ namespace dark_cheat
                 if (field != null)
                 {
                     float currentValue = (float)field.GetValue(InputManager.instance);
-                    field.SetValue(InputManager.instance, 0f);
-                    DLog.Log("disableAimingTimer reset to 0 (menu closed).");
+                    if (currentValue > 0f)
+                    {
+                        field.SetValue(InputManager.instance, 0f);
+                        DLog.Log("disableAimingTimer reset to 0 (menu closed).");
+                    }
                 }
                 else DLog.LogError("Failed to find field disableAimingTimer.");
             }
@@ -488,7 +467,11 @@ namespace dark_cheat
             }
 
             itemList = ItemTeleport.GetItemList();
-            DLog.Log($"Item list updated: {itemList.Count} items found (including ValuableObject and PlayerDeathHead).");
+            if (itemList.Count != previousItemCount)
+            {
+                DLog.Log($"Item list updated: {itemList.Count} items found (including ValuableObject and PlayerDeathHead).");
+                previousItemCount = itemList.Count;
+            }
         }
 
         private void UpdateEnemyList()
@@ -620,6 +603,19 @@ namespace dark_cheat
 
         public void OnGUI()
         {
+            // Ensure cursor is visible when menu is open (added to fix cursor visibility after Harmony removal)
+            if (Hax2.showMenu)
+            {
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None;
+            }
+            else
+            {
+                Cursor.visible = false;
+                //Cursor.lockState = CursorLockMode.Locked;
+                TryUnlockCamera();
+            }
+            
             if (!initialized)
             {
                 InitializeGUIStyles();
@@ -899,7 +895,7 @@ namespace dark_cheat
 
                         if (UIHelper.Button("Force Tumble", menuX + 30, menuY + 410)) { Players.ForcePlayerTumble(); }
 
-                        if (UIHelper.Button("Teleport Options", menuX + 30, menuY + 450))
+                        if (UIHelper.Button(showTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, menuY + 450))
                         {
                             showTeleportUI = !showTeleportUI;
                             if (showTeleportUI)
