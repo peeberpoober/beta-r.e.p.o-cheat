@@ -387,7 +387,6 @@
     <Compile Include="Utils\PlayerCheatSync.cs" />
     <Compile Include="Cheats\DebugCheats.cs" />
     <Compile Include="Utils\GameHelper.cs" />
-    <Compile Include="Cheats\Health_Player.cs" />
     <Compile Include="Cheats\playerColor.cs" />
     <Compile Include="Cheats\PlayerController.cs" />
     <Compile Include="Utils\StrengthDebug.cs" />
