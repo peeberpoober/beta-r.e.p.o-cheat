@@ -8,7 +8,6 @@ using Photon.Realtime;
 using System.Linq;
 using SingularityGroup.HotReload;
 
-
 namespace dark_cheat
 {
     public static class UIHelper
@@ -233,6 +232,8 @@ namespace dark_cheat
         private Vector2 dragOffsetActionSelector;
         private GUIStyle overlayDimStyle;
         private GUIStyle actionSelectorBoxStyle;
+
+        public static bool debounce = false; // move this somewhere pls
         private void UpdateTeleportOptions()
         {
             List<string> sourceOptions = new List<string>(); // Create source array with "All" option + players
@@ -407,6 +408,13 @@ namespace dark_cheat
                         MapTools.changeOverlayStatus(true);
                     }
                 }
+            }
+
+            // keybind for ThumbleGuard
+            if (Input.GetKeyDown(KeyCode.F11))
+            {
+                debounce = !debounce;
+                Debug.Log("TumbleGuard: " + (debounce ? "Enabled" : "Disabled"));
             }
         }
 
@@ -668,7 +676,7 @@ namespace dark_cheat
                 }
             }
 
-            if (Hax2.showMenu)
+            if (showMenu)
             {
                 GUIStyle overlayStyle = new GUIStyle();
                 overlayStyle.normal.background = MakeSolidBackground(Color.clear, 0f);
