@@ -1,12 +1,11 @@
-﻿using HarmonyLib;
+/* // commented out, not using harmony.
+using HarmonyLib;
 using System.Collections;
 using UnityEngine;
-
 public static class CursorController
 {
     public static bool cheatMenuOpen = false;
     public static bool overrideCursorSetting = false;
-
     private static bool currentlySettingCursor = false;
     private static CursorLockMode lastLockState = Cursor.lockState;
     private static bool lastCursorVisible = Cursor.visible;
@@ -21,7 +20,6 @@ public static class CursorController
         try
         {
             currentlySettingCursor = true;
-
             if (cheatMenuOpen)
             {
                 Cursor.lockState = CursorLockMode.None;
@@ -32,7 +30,6 @@ public static class CursorController
                 Cursor.lockState = lastLockState;
                 Cursor.visible = lastCursorVisible;
             }
-
             currentlySettingCursor = false;
         }
         catch (System.Exception ex)
@@ -40,7 +37,6 @@ public static class CursorController
             Debug.LogError("CursorController.UpdateCursorState error: " + ex);
         }
     }
-
     public static IEnumerator UnlockCoroutine()
     {
         while (true)
@@ -49,7 +45,6 @@ public static class CursorController
             UpdateCursorState();
         }
     }
-
     [HarmonyPatch(typeof(Cursor), "set_lockState")]
     public class SetLockStatePatch
     {
@@ -65,7 +60,6 @@ public static class CursorController
             }
         }
     }
-
     [HarmonyPatch(typeof(Cursor), "set_visible")]
     public class SetVisiblePatch
     {
@@ -82,3 +76,4 @@ public static class CursorController
         }
     }
 }
+*/
