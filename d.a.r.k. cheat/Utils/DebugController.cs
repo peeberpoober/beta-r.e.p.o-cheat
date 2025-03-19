@@ -7,7 +7,6 @@ namespace dark_cheat
         [Conditional("DEBUG")]
         public static void Log(string message)
         {
-
             UnityEngine.Debug.Log(message);
         }
 

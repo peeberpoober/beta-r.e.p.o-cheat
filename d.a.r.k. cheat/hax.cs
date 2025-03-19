@@ -612,7 +612,7 @@ namespace dark_cheat
         public void OnGUI()
         {
             // Ensure cursor is visible when menu is open (added to fix cursor visibility after Harmony removal)
-            if (Hax2.showMenu)
+            if (showMenu)
             {
                 Cursor.visible = true;
                 Cursor.lockState = CursorLockMode.None;
@@ -620,7 +620,7 @@ namespace dark_cheat
             else
             {
                 Cursor.visible = false;
-                //Cursor.lockState = CursorLockMode.Locked;
+                Cursor.lockState = CursorLockMode.Locked;
                 TryUnlockCamera();
             }
             

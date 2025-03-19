@@ -1,30 +1,35 @@
-using dark_cheat;
-using System;
-using System.Collections.Generic;
+using HarmonyLib;
 using UnityEngine;
 
 namespace dark_cheat
 {
     public class Loader
     {
+        private static Harmony harmonyInstance;
+        private static GameObject Load;
+
         public static void Init()
         {
-            Loader.Load = new GameObject();
-            Loader.Load.AddComponent<Hax2>();
-            UnityEngine.Object.DontDestroyOnLoad(Loader.Load);
+            Load = new GameObject();
+            Load.AddComponent<Hax2>();
+            Object.DontDestroyOnLoad(Load);
 
-            // Previous Harmony patching code removed
+            harmonyInstance = new Harmony("dark_cheat");
+            harmonyInstance.PatchAll();
+
             DLog.Log("Cheat loader initialized successfully!");
         }
 
-        private static GameObject Load;
-
         public static void UnloadCheat()
         {
-            UnityEngine.Object.Destroy(Loader.Load);
-            System.GC.Collect();
+            Object.Destroy(Load);
+            if (harmonyInstance != null)
+            {
+                // Do not use UnpatchAll, cause it can break mods
+                harmonyInstance.UnpatchSelf();
+            }
 
-            // Previous Harmony unpatching code removed
+            System.GC.Collect();
         }
     }
 }
