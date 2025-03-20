@@ -474,7 +474,6 @@ namespace dark_cheat
             Cursor.visible = Hax2.showMenu;
             CursorController.cheatMenuOpen = Hax2.showMenu;
             CursorController.UpdateCursorState();
-            Cursor.lockState = Hax2.showMenu ? CursorLockMode.None : CursorLockMode.Locked;
         }
 
         private void UpdateItemList()
