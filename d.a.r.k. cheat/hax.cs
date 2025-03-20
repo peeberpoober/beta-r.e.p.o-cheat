@@ -152,6 +152,7 @@ namespace dark_cheat
         public static float offsetESp = 0.5f;
         public static bool showMenu = true;
         public static bool godModeActive = false;
+        public static bool debounce = false;
         public static bool infiniteHealthActive = false;
         public static bool stamineState = false;
         public static bool unlimitedBatteryActive = false;
@@ -219,7 +220,6 @@ namespace dark_cheat
         private float menuY = 50f;
         private const float titleBarHeight = 30f;
 
-
         private bool showingActionSelector = false;
         private Vector2 actionSelectorScroll = Vector2.zero;
         private Vector2 hotkeyScrollPosition = Vector2.zero;
@@ -233,7 +233,6 @@ namespace dark_cheat
         private GUIStyle overlayDimStyle;
         private GUIStyle actionSelectorBoxStyle;
 
-        public static bool debounce = false; // move this somewhere pls
         private void UpdateTeleportOptions()
         {
             List<string> sourceOptions = new List<string>(); // Create source array with "All" option + players
@@ -335,14 +334,33 @@ namespace dark_cheat
             if (Input.GetKeyDown(hotkeyManager.MenuToggleKey))
             {
                 Hax2.showMenu = !Hax2.showMenu;
+
+                CursorController.cheatMenuOpen = Hax2.showMenu;
+                CursorController.UpdateCursorState();
+
                 DLog.Log("MENU " + Hax2.showMenu);
+
+                if (!Hax2.showMenu) TryUnlockCamera();
+                UpdateCursorState();
             }
             if (Input.GetKeyDown(hotkeyManager.ReloadKey)) Start();
             if (Input.GetKeyDown(hotkeyManager.UnloadKey))
             {
                 Hax2.showMenu = false;
+
+                CursorController.cheatMenuOpen = Hax2.showMenu;
+                CursorController.UpdateCursorState();
+
                 TryUnlockCamera();
+
+                UpdateCursorState();
+
                 Loader.UnloadCheat();
+            }
+            if (Input.GetKeyDown(KeyCode.F11))
+            {
+                debounce = !debounce;
+                Debug.Log("TumbleGuard: " + (debounce ? "Enabled" : "Disabled"));
             }
             if (hotkeyManager.ConfiguringHotkey)
             {
@@ -409,13 +427,6 @@ namespace dark_cheat
                     }
                 }
             }
-
-            // keybind for ThumbleGuard
-            if (Input.GetKeyDown(KeyCode.F11))
-            {
-                debounce = !debounce;
-                Debug.Log("TumbleGuard: " + (debounce ? "Enabled" : "Disabled"));
-            }
         }
 
         private void TryLockCamera()
@@ -456,6 +467,14 @@ namespace dark_cheat
                 else DLog.LogError("Failed to find field disableAimingTimer.");
             }
             else DLog.LogWarning("InputManager.instance not found!");
+        }
+
+        private void UpdateCursorState()
+        {
+            Cursor.visible = Hax2.showMenu;
+            CursorController.cheatMenuOpen = Hax2.showMenu;
+            CursorController.UpdateCursorState();
+            Cursor.lockState = Hax2.showMenu ? CursorLockMode.None : CursorLockMode.Locked;
         }
 
         private void UpdateItemList()
@@ -611,19 +630,6 @@ namespace dark_cheat
 
         public void OnGUI()
         {
-            // Ensure cursor is visible when menu is open (added to fix cursor visibility after Harmony removal)
-            if (showMenu)
-            {
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.None;
-            }
-            else
-            {
-                Cursor.visible = false;
-                Cursor.lockState = CursorLockMode.Locked;
-                TryUnlockCamera();
-            }
-            
             if (!initialized)
             {
                 InitializeGUIStyles();
@@ -682,6 +688,7 @@ namespace dark_cheat
                 overlayStyle.normal.background = MakeSolidBackground(Color.clear, 0f);
                 GUI.Box(new Rect(0, 0, Screen.width, Screen.height), GUIContent.none, overlayStyle);
 
+                UpdateCursorState();
 
                 Rect menuRect = new Rect(menuX, menuY, 600, 730);
                 Rect titleRect = new Rect(menuX, menuY, 600, titleBarHeight);
@@ -783,30 +790,31 @@ namespace dark_cheat
                                 DLog.Log("No valid player selected to damage!");
                             }
                         }
-                        bool newHealState = UIHelper.ButtonBool("Toggle Infinite Health", infiniteHealthActive, menuX + 30, menuY + 355);
+                        bool newHealState = UIHelper.ButtonBool("Infinite Health", infiniteHealthActive, menuX + 30, menuY + 355);
                         if (newHealState != infiniteHealthActive) { infiniteHealthActive = newHealState; PlayerController.MaxHealth(); }
-                        bool newStaminaState = UIHelper.ButtonBool("Toggle Infinite Stamina", stamineState, menuX + 30, menuY + 395);
+                        bool newStaminaState = UIHelper.ButtonBool("Infinite Stamina", stamineState, menuX + 30, menuY + 395);
                         if (newStaminaState != stamineState) { stamineState = newStaminaState; PlayerController.MaxStamina(); DLog.Log("God mode toggled: " + stamineState); }
-                        bool newGodModeState = UIHelper.ButtonBool("Toggle God Mode", godModeActive, menuX + 30, menuY + 435);
+                        bool newGodModeState = UIHelper.ButtonBool("God Mode", godModeActive, menuX + 30, menuY + 435);
                         if (newGodModeState != godModeActive) { PlayerController.GodMode(); godModeActive = newGodModeState; DLog.Log("God mode toggled: " + godModeActive); }
-
-                        bool newNoclipActive = UIHelper.ButtonBool("Toggle Noclip", NoclipController.noclipActive, menuX + 30, menuY + 475);
+                        bool newNoclipActive = UIHelper.ButtonBool("Noclip", NoclipController.noclipActive, menuX + 30, menuY + 475);
                         if (newNoclipActive != NoclipController.noclipActive) { NoclipController.ToggleNoclip(); }
+                        bool newTumbleGuardActive = UIHelper.ButtonBool("Tumble Guard", Hax2.debounce, menuX + 30, menuY + 515);
+                        if (newTumbleGuardActive != Hax2.debounce) { PlayerTumblePatch.ToggleTumbleGuard(); }
 
-                        UIHelper.Label("Speed Value " + sliderValue, menuX + 30, menuY + 515);
+                        UIHelper.Label("Speed Value " + sliderValue, menuX + 30, menuY + 545);
 
                         oldSliderValue = sliderValue;
-                        sliderValue = UIHelper.Slider(sliderValue, 1f, 30f, menuX + 30, menuY + 535);
+                        sliderValue = UIHelper.Slider(sliderValue, 1f, 30f, menuX + 30, menuY + 565);
 
-                        UIHelper.Label("Strength Value: " + sliderValueStrength, menuX + 30, menuY + 555);
+                        UIHelper.Label("Strength Value: " + sliderValueStrength, menuX + 30, menuY + 585);
                         oldSliderValueStrength = sliderValueStrength;
-                        sliderValueStrength = UIHelper.Slider(sliderValueStrength, 1f, 100f, menuX + 30, menuY + 575);
+                        sliderValueStrength = UIHelper.Slider(sliderValueStrength, 1f, 100f, menuX + 30, menuY + 615);
 
-                        UIHelper.Label("Stamina Recharge Delay: " + Hax2.staminaRechargeDelay, menuX + 30, menuY + 605);
-                        Hax2.staminaRechargeDelay = UIHelper.Slider(Hax2.staminaRechargeDelay, 0f, 10f, menuX + 30, menuY + 626);
+                        UIHelper.Label("Stamina Recharge Delay: " + Hax2.staminaRechargeDelay, menuX + 30, menuY + 645);
+                        Hax2.staminaRechargeDelay = UIHelper.Slider(Hax2.staminaRechargeDelay, 0f, 10f, menuX + 30, menuY + 666);
 
-                        UIHelper.Label("Stamina Recharge Rate: " + Hax2.staminaRechargeRate, menuX + 30, menuY + 645);
-                        Hax2.staminaRechargeRate = UIHelper.Slider(Hax2.staminaRechargeRate, 1f, 20f, menuX + 30, menuY + 665);
+                        UIHelper.Label("Stamina Recharge Rate: " + Hax2.staminaRechargeRate, menuX + 30, menuY + 685);
+                        Hax2.staminaRechargeRate = UIHelper.Slider(Hax2.staminaRechargeRate, 1f, 20f, menuX + 30, menuY + 705);
 
                         if (Hax2.staminaRechargeDelay != oldStaminaRechargeDelay || Hax2.staminaRechargeRate != oldStaminaRechargeRate)
                         {
@@ -823,15 +831,15 @@ namespace dark_cheat
                         currentY += DebugCheats.drawEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawEspBool)
                         {
-                            DebugCheats.showEnemyBox = UIHelper.Checkbox("Toggle 2D Box", DebugCheats.showEnemyBox, menuX + 50, currentY);
+                            DebugCheats.showEnemyBox = UIHelper.Checkbox("2D Box", DebugCheats.showEnemyBox, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.drawChamsBool = UIHelper.Checkbox("Toggle Chams", DebugCheats.drawChamsBool, menuX + 50, currentY);
+                            DebugCheats.drawChamsBool = UIHelper.Checkbox("Chams", DebugCheats.drawChamsBool, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showEnemyNames = UIHelper.Checkbox("Show Enemy Names", DebugCheats.showEnemyNames, menuX + 50, currentY);
+                            DebugCheats.showEnemyNames = UIHelper.Checkbox("Names", DebugCheats.showEnemyNames, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showEnemyDistance = UIHelper.Checkbox("Show Enemy Distance", DebugCheats.showEnemyDistance, menuX + 50, currentY);
+                            DebugCheats.showEnemyDistance = UIHelper.Checkbox("Distance", DebugCheats.showEnemyDistance, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showEnemyHP = UIHelper.Checkbox("Show Enemy HP", DebugCheats.showEnemyHP, menuX + 50, currentY);
+                            DebugCheats.showEnemyHP = UIHelper.Checkbox("Health", DebugCheats.showEnemyHP, menuX + 50, currentY);
                             currentY += parentSpacing;
                         }
                         // Item ESP section
@@ -839,15 +847,15 @@ namespace dark_cheat
                         currentY += DebugCheats.drawItemEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawItemEspBool)
                         {
-                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("Toggle 3D Box", DebugCheats.draw3DItemEspBool, menuX + 50, currentY);
+                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Box", DebugCheats.draw3DItemEspBool, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showItemNames = UIHelper.Checkbox("Show Item Names", DebugCheats.showItemNames, menuX + 50, currentY);
+                            DebugCheats.showItemNames = UIHelper.Checkbox("Names", DebugCheats.showItemNames, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showItemDistance = UIHelper.Checkbox("Show Item Distance", DebugCheats.showItemDistance, menuX + 50, currentY);
+                            DebugCheats.showItemDistance = UIHelper.Checkbox("Distance", DebugCheats.showItemDistance, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showItemValue = UIHelper.Checkbox("Show Item Value", DebugCheats.showItemValue, menuX + 50, currentY);
+                            DebugCheats.showItemValue = UIHelper.Checkbox("Value", DebugCheats.showItemValue, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Show Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, currentY);
+                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, currentY);
                             currentY += childSpacing;
 
                             // Max Distance Slider
@@ -862,9 +870,9 @@ namespace dark_cheat
 
                         if (DebugCheats.drawExtractionPointEspBool)
                         {
-                            DebugCheats.showExtractionNames = UIHelper.Checkbox("Show Extraction Names", DebugCheats.showExtractionNames, menuX + 50, currentY);
+                            DebugCheats.showExtractionNames = UIHelper.Checkbox("Name/Status", DebugCheats.showExtractionNames, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showExtractionDistance = UIHelper.Checkbox("Show Extraction Distance", DebugCheats.showExtractionDistance, menuX + 50, currentY);
+                            DebugCheats.showExtractionDistance = UIHelper.Checkbox("Distance", DebugCheats.showExtractionDistance, menuX + 50, currentY);
                             currentY += parentSpacing;
                         }
                         // Player ESP section
@@ -873,15 +881,15 @@ namespace dark_cheat
 
                         if (DebugCheats.drawPlayerEspBool)
                         {
-                            DebugCheats.draw2DPlayerEspBool = UIHelper.Checkbox("Toggle 2D Box", DebugCheats.draw2DPlayerEspBool, menuX + 50, currentY);
+                            DebugCheats.draw2DPlayerEspBool = UIHelper.Checkbox("2D Box", DebugCheats.draw2DPlayerEspBool, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("Toggle 3D Box", DebugCheats.draw3DPlayerEspBool, menuX + 50, currentY);
+                            DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("3D Box", DebugCheats.draw3DPlayerEspBool, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showPlayerNames = UIHelper.Checkbox("Show Player Names", DebugCheats.showPlayerNames, menuX + 50, currentY);
+                            DebugCheats.showPlayerNames = UIHelper.Checkbox("Names", DebugCheats.showPlayerNames, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showPlayerDistance = UIHelper.Checkbox("Show Player Distance", DebugCheats.showPlayerDistance, menuX + 50, currentY);
+                            DebugCheats.showPlayerDistance = UIHelper.Checkbox("Distance", DebugCheats.showPlayerDistance, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showPlayerHP = UIHelper.Checkbox("Show Player HP", DebugCheats.showPlayerHP, menuX + 50, currentY);
+                            DebugCheats.showPlayerHP = UIHelper.Checkbox("Health", DebugCheats.showPlayerHP, menuX + 50, currentY);
                             currentY += parentSpacing;
                         }
                         break;
@@ -1014,14 +1022,14 @@ namespace dark_cheat
                         }
                         currentY += parentSpacing;
 
-                        bool newNoFogState = UIHelper.ButtonBool("Toggle No Fog", MiscFeatures.NoFogEnabled, menuX + 30, currentY);
+                        bool newNoFogState = UIHelper.ButtonBool("No Fog", MiscFeatures.NoFogEnabled, menuX + 30, currentY);
                         if (newNoFogState != MiscFeatures.NoFogEnabled)
                         {
                             MiscFeatures.ToggleNoFog(newNoFogState);
                         }
                         currentY += parentSpacing;
                         
-                        bool newUnlimitedBatteryState = UIHelper.ButtonBool("Toggle Unlimited Battery", unlimitedBatteryActive, menuX + 30, currentY);
+                        bool newUnlimitedBatteryState = UIHelper.ButtonBool("Unlimited Battery", unlimitedBatteryActive, menuX + 30, currentY);
                         if (newUnlimitedBatteryState != unlimitedBatteryActive)
                         {
                             unlimitedBatteryActive = newUnlimitedBatteryState;
@@ -1037,7 +1045,7 @@ namespace dark_cheat
                         }
                         currentY += parentSpacing;
 
-                        MapTools.showMapTweaks = UIHelper.Checkbox("Map tweaks", MapTools.showMapTweaks, menuX + 30, currentY);
+                        MapTools.showMapTweaks = UIHelper.Checkbox("Map Tweaks", MapTools.showMapTweaks, menuX + 30, currentY);
                         currentY += MapTools.showMapTweaks ? childIndent : parentSpacing;
 
                         if (MapTools.showMapTweaks)

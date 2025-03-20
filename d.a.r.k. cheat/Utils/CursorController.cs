@@ -1,4 +1,3 @@
-/* // commented out, not using harmony.
 using HarmonyLib;
 using System.Collections;
 using UnityEngine;
@@ -76,4 +75,3 @@ public static class CursorController
         }
     }
 }
-*/
