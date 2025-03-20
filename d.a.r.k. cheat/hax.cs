@@ -104,10 +104,14 @@ namespace dark_cheat
         public static void Label(string text, float? customX = null, float? customY = null) => GUI.Label(NextControlRect(customX, customY), text);
         public static float Slider(float val, float min, float max, float? customX = null, float? customY = null)
         {
+            // Get control rect, but reduce height to 12px for better hitbox management
             Rect rect = NextControlRect(customX, customY);
             rect.height = 12f;
+
+            // Round value after interacting
             return Mathf.Round(GUI.HorizontalSlider(rect, val, min, max, sliderStyle, thumbStyle));
         }
+   
         private static Texture2D MakeSolidBackground(Color color, float alpha)
         {
             Color key = new Color(color.r, color.g, color.b, alpha);
@@ -130,6 +134,8 @@ namespace dark_cheat
         private float nextUpdateTime = 0f;
         private const float updateInterval = 10f;
 
+        private bool sliderDragging = false;
+        private bool dragTargetIsMin = false;
         private Vector2 sourceDropdownScrollPosition = Vector2.zero;
         private Vector2 destDropdownScrollPosition = Vector2.zero;
         private Vector2 enemyTeleportDropdownScrollPosition = Vector2.zero;
@@ -841,6 +847,7 @@ namespace dark_cheat
                             DebugCheats.showEnemyHP = UIHelper.Checkbox("Health", DebugCheats.showEnemyHP, menuX + 50, currentY);
                             currentY += parentSpacing;
                         }
+
                         // Item ESP section
                         DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, menuX + 30, currentY);
                         currentY += DebugCheats.drawItemEspBool ? childIndent : parentSpacing;
@@ -852,21 +859,42 @@ namespace dark_cheat
                             currentY += childSpacing;
                             DebugCheats.showItemDistance = UIHelper.Checkbox("Distance", DebugCheats.showItemDistance, menuX + 50, currentY);
                             currentY += childSpacing;
+
+                            // Item Distance slider (only shown when Show Item Distance is enabled)
+                            if (DebugCheats.showItemDistance)
+                            {
+                                GUI.Label(new Rect(menuX + 70, currentY, 200, 20), $"Max Item Distance: {DebugCheats.maxItemEspDistance:F0}m");
+                                currentY += 20;
+                                DebugCheats.maxItemEspDistance = GUI.HorizontalSlider(new Rect(menuX + 70, currentY, 200, 20), DebugCheats.maxItemEspDistance, 0f, 1000f);
+                                currentY += childSpacing;
+                            }
+
                             DebugCheats.showItemValue = UIHelper.Checkbox("Value", DebugCheats.showItemValue, menuX + 50, currentY);
                             currentY += childSpacing;
-                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, currentY);
-                            currentY += childSpacing;
 
-                            // Max Distance Slider
-                            GUI.Label(new Rect(menuX + 50, currentY, 200, 20), $"Max Item Distance: {DebugCheats.maxItemEspDistance:F0}m");
-                            currentY += 20;
-                            DebugCheats.maxItemEspDistance = GUI.HorizontalSlider(new Rect(menuX + 50, currentY, 200, 20), DebugCheats.maxItemEspDistance, 0f, 1000f);
+                            // Value Range Slider (only shown when Show Item Value is enabled)
+                            if (DebugCheats.showItemValue)
+                            {
+                                GUI.Label(new Rect(menuX + 70, currentY, 200, 20), $"Min Item Value: ${DebugCheats.minItemValue}");
+                                currentY += 20;
+
+                                // Simple min value slider
+                                DebugCheats.minItemValue = Mathf.RoundToInt(GUI.HorizontalSlider(
+                                    new Rect(menuX + 70, currentY, 200, 20),
+                                    DebugCheats.minItemValue,
+                                    0,
+                                    50000));
+
+                                currentY += childSpacing;
+                            }
+
+                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Dead Player Heads", DebugCheats.showPlayerDeathHeads, menuX + 50, currentY);
                             currentY += parentSpacing;
                         }
+
                         // Extraction ESP section
                         DebugCheats.drawExtractionPointEspBool = UIHelper.Checkbox("Extraction ESP", DebugCheats.drawExtractionPointEspBool, menuX + 30, currentY);
                         currentY += DebugCheats.drawExtractionPointEspBool ? childIndent : parentSpacing;
-
                         if (DebugCheats.drawExtractionPointEspBool)
                         {
                             DebugCheats.showExtractionNames = UIHelper.Checkbox("Name/Status", DebugCheats.showExtractionNames, menuX + 50, currentY);
@@ -874,10 +902,10 @@ namespace dark_cheat
                             DebugCheats.showExtractionDistance = UIHelper.Checkbox("Distance", DebugCheats.showExtractionDistance, menuX + 50, currentY);
                             currentY += parentSpacing;
                         }
+
                         // Player ESP section
                         DebugCheats.drawPlayerEspBool = UIHelper.Checkbox("Player ESP", DebugCheats.drawPlayerEspBool, menuX + 30, currentY);
-                        currentY += parentSpacing;
-
+                        currentY += DebugCheats.drawPlayerEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawPlayerEspBool)
                         {
                             DebugCheats.draw2DPlayerEspBool = UIHelper.Checkbox("2D Box", DebugCheats.draw2DPlayerEspBool, menuX + 50, currentY);
