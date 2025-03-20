@@ -11,6 +11,8 @@ namespace dark_cheat
 {
     static class DebugCheats
     {
+        public static int minItemValue = 0;
+        public static int maxItemValue = 50000;
         public static float maxItemEspDistance = 1000f;
         public static bool showEnemyBox = true; // Default to true since it was previously always on
         private static int frameCounter = 0;
@@ -954,22 +956,37 @@ namespace dark_cheat
                 foreach (var valuableObject in valuableObjects)
                 {
                     if (valuableObject == null) continue;
-
                     bool isPlayerDeathHead = valuableObject.GetType().Name == "PlayerDeathHead";
                     if (!DebugCheats.showPlayerDeathHeads && isPlayerDeathHead) continue;
-
                     var transform = valuableObject.GetType().GetProperty("transform", BindingFlags.Public | BindingFlags.Instance)?.GetValue(valuableObject) as Transform;
                     if (transform == null || !transform.gameObject.activeInHierarchy) continue;
-
                     Vector3 itemPosition = transform.position;
-
                     float itemDistance = 0f;
                     if (localPlayer != null)
                     {
                         itemDistance = Vector3.Distance(localPlayer.transform.position, itemPosition);
+                        if (itemDistance > DebugCheats.maxItemEspDistance) continue; // Skip items beyond the max distance
+                    }
 
-                        // Skip items beyond the max distance (applies to all items including death heads)
-                        if (itemDistance > DebugCheats.maxItemEspDistance) continue;
+                    if (!isPlayerDeathHead && DebugCheats.showItemValue)
+                    {
+                        int itemValue = 0;
+                        var valueField = valuableObject.GetType().GetField("dollarValueCurrent", BindingFlags.Public | BindingFlags.Instance);
+                        if (valueField != null)
+                        {
+                            try
+                            {
+                                itemValue = Convert.ToInt32(valueField.GetValue(valuableObject));
+
+                                // Skip items below the minimum value
+                                if (itemValue < DebugCheats.minItemValue)
+                                    continue;
+                            }
+                            catch (Exception e)
+                            {
+                                DLog.Log($"Error reading 'dollarValueCurrent': {e.Message}. Defaulting to 0.");
+                            }
+                        }
                     }
 
                     Vector3 screenPos = cachedCamera.WorldToScreenPoint(itemPosition);
