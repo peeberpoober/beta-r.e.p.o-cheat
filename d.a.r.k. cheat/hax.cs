@@ -1249,17 +1249,13 @@ namespace dark_cheat
                         break;
 
                     case MenuCategory.Enemies:
-                        Rect enemiesViewRect = new Rect(menuX + 20, menuY + 95, 560, 700);
-                        Rect enemiesContentRect = new Rect(0, 0, 540, 1200);
-                        enemiesScrollPosition = GUI.BeginScrollView(enemiesViewRect, enemiesScrollPosition, enemiesContentRect);
-
-                        yPos = 10;
+                        float enemyYPos = menuY + 95;
 
                         UpdateEnemyList();
-                        UIHelper.Label("Select an enemy:", 0, yPos);
-                        yPos += childIndent;
-                        
-                        enemyScrollPosition = GUI.BeginScrollView(new Rect(0, yPos, 540, 200), enemyScrollPosition, new Rect(0, 0, 520, enemyNames.Count * 35), false, true);
+                        UIHelper.Label("Select an enemy:", menuX + 30, enemyYPos);
+                        enemyYPos += 20;
+
+                        enemyScrollPosition = GUI.BeginScrollView(new Rect(menuX + 30, enemyYPos, 540, 200), enemyScrollPosition, new Rect(0, 0, 520, enemyNames.Count * 35), false, true);
                         for (int i = 0; i < enemyNames.Count; i++)
                         {
                             if (i == selectedEnemyIndex) GUI.color = Color.white;
@@ -1268,72 +1264,114 @@ namespace dark_cheat
                             GUI.color = Color.white;
                         }
                         GUI.EndScrollView();
-                        yPos += 215;
-                        
-                        if (UIHelper.Button("Kill Selected Enemy", 0, yPos))
+                        enemyYPos += 215;
+
+                        if (UIHelper.Button("Kill Selected Enemy", menuX + 30, enemyYPos))
                         {
                             Enemies.KillSelectedEnemy(selectedEnemyIndex, enemyList, enemyNames);
                             DLog.Log($"Attempt to kill the selected enemy completed: {enemyNames[selectedEnemyIndex]}");
                         }
-                        yPos += parentSpacing;
-                        
-                        if (UIHelper.Button("Kill All Enemies", 0, yPos))
+                        enemyYPos += 40;
+
+                        if (UIHelper.Button("Kill All Enemies", menuX + 30, enemyYPos))
                         {
                             Enemies.KillAllEnemies();
                             DLog.Log("Attempt to kill all enemies completed.");
                         }
-                        yPos += parentSpacing;
-                        
-                        if (UIHelper.Button(showEnemyTeleportUI ? "Hide Teleport Options" : "Teleport Options", 0, yPos))
+                        enemyYPos += 40;
+
+                        if (UIHelper.Button(showEnemyTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, enemyYPos))
                         {
                             showEnemyTeleportUI = !showEnemyTeleportUI;
                             if (showEnemyTeleportUI)
                             {
                                 UpdateEnemyTeleportOptions();
                             }
-                        yPos += showEnemyTeleportUI ? childIndent : parentSpacing;
-                        
                         }
+                        enemyYPos += 40;
+
                         if (showEnemyTeleportUI)
                         {
-                            float dropdownVisibleHeight = 150f; // Fixed visible height for dropdown
-                            float executeButtonY = yPos + 3f;
-                            if (showEnemyTeleportDropdown)
-                            {
-                                executeButtonY = yPos + 30f + dropdownVisibleHeight + 10f;
-                            }
-                            UIHelper.Label("Teleport", enemyTeleportStartX, yPos);
-                            UIHelper.Label("to", enemyTeleportStartX + enemyTeleportLabelWidth + 10f, yPos);
-                            float dropdownX = enemyTeleportStartX + enemyTeleportLabelWidth + 10f + enemyTeleportToWidth + 10f; // Destination selector button
-                            if (GUI.Button(new Rect(dropdownX, yPos, enemyTeleportDropdownWidth, 25),
-                                          enemyTeleportDestOptions[enemyTeleportDestIndex]))
+                            GUI.Label(new Rect(menuX + 30, enemyYPos, 150, 25), "Teleport Enemy To:");
+
+                            string currentDestination = enemyTeleportDestIndex >= 0 && enemyTeleportDestIndex < enemyTeleportDestOptions.Length ?
+                                enemyTeleportDestOptions[enemyTeleportDestIndex] : "No players available";
+
+                            if (GUI.Button(new Rect(menuX + 180, enemyYPos, 200, 25), currentDestination))
                             {
                                 showEnemyTeleportDropdown = !showEnemyTeleportDropdown;
                             }
-                            yPos += childSpacing;
-                            
-                            if (showEnemyTeleportDropdown) // Destination dropdown with scroll view (if open)
+                            enemyYPos += 40;
+
+                            List<string> availablePlayers = new List<string>();
+                            for (int i = 0; i < playerNames.Count; i++)
                             {
-                                float totalHeight = enemyTeleportDestOptions.Length * 25f;
-                                bool needsScrollbar = totalHeight > dropdownVisibleHeight;
-                                enemyTeleportDropdownScrollPosition = GUI.BeginScrollView( // Begin scroll view for destination dropdown, hide scrollbar if not needed
-                                    new Rect(dropdownX, yPos, enemyTeleportDropdownWidth, dropdownVisibleHeight),
-                                    enemyTeleportDropdownScrollPosition,
-                                    new Rect(0, 0, needsScrollbar ? (enemyTeleportDropdownWidth - 20) : enemyTeleportDropdownWidth, totalHeight),
-                                    false, needsScrollbar);
-                                for (int i = 0; i < enemyTeleportDestOptions.Length; i++)
+                                if (i != enemyTeleportDestIndex)
                                 {
-                                    if (GUI.Button(new Rect(0, i * 25, needsScrollbar ? (enemyTeleportDropdownWidth - 20) : enemyTeleportDropdownWidth, 25),
-                                                  enemyTeleportDestOptions[i]))
-                                    {
-                                        enemyTeleportDestIndex = i;
-                                        showEnemyTeleportDropdown = false;
-                                    }
+                                    availablePlayers.Add(playerNames[i]);
                                 }
-                                GUI.EndScrollView();
                             }
-                            
-                            if (UIHelper.Button("Execute Teleport", 30, executeButtonY)) // Execute teleport button
+
+                            if (showEnemyTeleportDropdown)
+                            {
+                                if (availablePlayers.Count == 0)
+                                {
+                                    GUIStyle noWrapStyle = new GUIStyle(GUI.skin.label);
+                                    noWrapStyle.alignment = TextAnchor.MiddleCenter;
+                                    noWrapStyle.wordWrap = false;
+
+                                    float labelWidth = 500f;
+                                    float labelX = menuX + (600 - labelWidth) / 2;
+
+                                    GUI.Label(new Rect(labelX, enemyYPos, labelWidth, 25), "No other players available, so lonely :(", noWrapStyle);
+                                    enemyYPos += 30;
+                                }
+                                else
+                                {
+                                    int itemHeight = 25;
+                                    int maxVisibleItems = 6;
+                                    int visibleItems = Math.Min(availablePlayers.Count, maxVisibleItems);
+                                    float dropdownHeight = visibleItems * itemHeight;
+
+                                    Rect dropdownRect = new Rect(menuX + 180, enemyYPos, 200, dropdownHeight);
+
+                                    float contentHeight = availablePlayers.Count * itemHeight;
+
+                                    enemyTeleportDropdownScrollPosition = GUI.BeginScrollView(
+                                        dropdownRect,
+                                        enemyTeleportDropdownScrollPosition,
+                                        new Rect(0, 0, 180, contentHeight));
+
+                                    for (int i = 0; i < availablePlayers.Count; i++)
+                                    {
+                                        if (GUI.Button(new Rect(0, i * itemHeight, 180, itemHeight), availablePlayers[i]))
+                                        {
+                                            int playerIndex = playerNames.IndexOf(availablePlayers[i]);
+                                            if (playerIndex >= 0)
+                                            {
+                                                enemyTeleportDestIndex = playerIndex;
+                                                showEnemyTeleportDropdown = false;
+                                            }
+                                        }
+                                    }
+                                    GUI.EndScrollView();
+                                    enemyYPos += dropdownHeight + 10;
+                                }
+                            }
+                            else if (availablePlayers.Count == 0)
+                            {
+                                GUIStyle noWrapStyle = new GUIStyle(GUI.skin.label);
+                                noWrapStyle.alignment = TextAnchor.MiddleCenter;
+                                noWrapStyle.wordWrap = false;
+
+                                float labelWidth = 500f;
+                                float labelX = menuX + (600 - labelWidth) / 2;
+
+                                GUI.Label(new Rect(labelX, enemyYPos, labelWidth, 25), "No other players available, so lonely :(", noWrapStyle);
+                                enemyYPos += 30;
+                            }
+
+                            if (UIHelper.Button("Execute Teleport", menuX + 30, enemyYPos))
                             {
                                 int playerIndex = enemyTeleportDestIndex;
                                 if (playerIndex >= 0 && playerIndex < playerList.Count)
@@ -1348,17 +1386,15 @@ namespace dark_cheat
                                                                     playerIndex, playerList, playerNames);
                                     }
                                     UpdateEnemyList();
-                                    showEnemyTeleportDropdown = false;
-                                    DLog.Log($"Teleported {enemyNames[selectedEnemyIndex]} to {enemyTeleportDestOptions[enemyTeleportDestIndex]}.");
+                                    DLog.Log($"Teleported {enemyNames[selectedEnemyIndex]} to {playerNames[playerIndex]}.");
                                 }
                                 else
                                 {
                                     DLog.Log("Invalid player index for teleport target");
                                 }
+                                showEnemyTeleportDropdown = false;
                             }
                         }
-                        
-                        GUI.EndScrollView();
                         break;
 
                     case MenuCategory.Items:
