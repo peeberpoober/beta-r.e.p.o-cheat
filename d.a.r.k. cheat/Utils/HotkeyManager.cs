@@ -47,13 +47,7 @@ namespace dark_cheat
 
         private HotkeyManager()
         {
-            InitializeHotkeyActions();
-            InitializeUnlimitedBatteryAction();
-            LoadHotkeySettings();
-        }
-
-        public void Initialize()
-        {
+            availableActions.Clear(); // Clear existing actions before re-initializing
             InitializeHotkeyActions();
             LoadHotkeySettings();
         }
@@ -71,16 +65,6 @@ namespace dark_cheat
             }
         }
 
-        private void InitializeUnlimitedBatteryAction()
-        {
-            availableActions.Add(new HotkeyAction("Unlimited Battery", () =>
-            {
-                Hax2.unlimitedBatteryActive = !Hax2.unlimitedBatteryActive;
-                if (Hax2.unlimitedBatteryComponent != null)
-                    Hax2.unlimitedBatteryComponent.unlimitedBatteryEnabled = Hax2.unlimitedBatteryActive;
-            }, "toggles unlimited battery on/off"));
-        }
-
         private void InitializeHotkeyActions()
         {
             availableActions.Add(new HotkeyAction("God Mode", () =>
@@ -91,13 +75,21 @@ namespace dark_cheat
                 DLog.Log("god mode toggled: " + Hax2.godModeActive);
             }, "toggles god mode on/off"));
 
-            availableActions.Add(new HotkeyAction("Noclip Toggle", () =>
+            availableActions.Add(new HotkeyAction("Noclip", () =>
             {
                 bool newNoclipState = !NoclipController.noclipActive;
                 NoclipController.ToggleNoclip();
                 NoclipController.noclipActive = newNoclipState;
-                DLog.Log("Noclip toggled: " + NoclipController.noclipActive);
-            }, "Toggles noclip on/off"));
+                DLog.Log("noclip toggled: " + NoclipController.noclipActive);
+            }, "toggles noclip on/off"));
+
+            availableActions.Add(new HotkeyAction("Tumble Guard", () =>
+            {
+                bool newTumbleGuardState = !Hax2.debounce;
+                PlayerTumblePatch.ToggleTumbleGuard();
+                Hax2.debounce = newTumbleGuardState;
+                DLog.Log("tumble tuard toggled: " + Hax2.debounce);
+            }, "toggles tumble guard on/off"));
 
             availableActions.Add(new HotkeyAction("Infinite Health", () =>
             {

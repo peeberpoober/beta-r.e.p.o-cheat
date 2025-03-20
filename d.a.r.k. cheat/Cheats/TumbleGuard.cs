@@ -24,5 +24,10 @@ namespace dark_cheat
                 });
             }
         }
+
+        public static void ToggleTumbleGuard()
+        {
+            Hax2.debounce = !Hax2.debounce;
+        }
     }
 }
