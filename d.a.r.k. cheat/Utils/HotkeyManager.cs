@@ -119,9 +119,8 @@ namespace dark_cheat
                 if (localPlayer != null)
                 {
                     Vector3 targetPosition = localPlayer.transform.position + Vector3.up * 1.5f;
-                    // Note: We can't use transform here since this is not a MonoBehaviour
-                    // This will be handled by the caller
-                    ItemSpawner.SpawnItem(targetPosition);
+                    // Use the SpawnMoney method instead of SpawnItem
+                    ItemSpawner.SpawnMoney(targetPosition);
                     DLog.Log("money spawned.");
                 }
                 else

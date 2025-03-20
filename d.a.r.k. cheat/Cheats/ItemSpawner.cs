@@ -8,73 +8,421 @@ namespace dark_cheat
 {
     public class ItemSpawner : MonoBehaviourPunCallbacks
     {
-        public static void SpawnItem(Vector3 position, int value = 45000)
+        private static Dictionary<string, GameObject> itemPrefabCache = new Dictionary<string, GameObject>();
+        private static List<string> availableItems = new List<string>();
+
+        public static List<string> GetAvailableItems()
+        {
+            if (availableItems.Count == 0)
+            {
+                availableItems.Add("Item Cart Medium");
+                availableItems.Add("Item Cart Small");
+                availableItems.Add("Item Drone Battery");
+                availableItems.Add("Item Drone Feather");
+                availableItems.Add("Item Drone Indestructible");
+                availableItems.Add("Item Drone Torque");
+                availableItems.Add("Item Drone Zero Gravity");
+                availableItems.Add("Item Extraction Tracker");
+                availableItems.Add("Item Grenade Duct Taped");
+                availableItems.Add("Item Grenade Explosive");
+                availableItems.Add("Item Grenade Human");
+                availableItems.Add("Item Grenade Shockwave");
+                availableItems.Add("Item Grenade Stun");
+                availableItems.Add("Item Gun Handgun");
+                availableItems.Add("Item Gun Shotgun");
+                availableItems.Add("Item Gun Tranq");
+                availableItems.Add("Item Health Pack Large");
+                availableItems.Add("Item Health Pack Medium");
+                availableItems.Add("Item Health Pack Small");
+                availableItems.Add("Item Melee Baseball Bat");
+                availableItems.Add("Item Melee Frying Pan");
+                availableItems.Add("Item Melee Inflatable Hammer");
+                availableItems.Add("Item Melee Sledge Hammer");
+                availableItems.Add("Item Melee Sword");
+                availableItems.Add("Item Mine Explosive");
+                availableItems.Add("Item Mine Shockwave");
+                availableItems.Add("Item Mine Stun");
+                availableItems.Add("Item Orb Zero Gravity");
+                availableItems.Add("Item Power Crystal");
+                availableItems.Add("Item Rubber Duck");
+                availableItems.Add("Item Upgrade Map Player Count");
+                availableItems.Add("Item Upgrade Player Energy");
+                availableItems.Add("Item Upgrade Player Extra Jump");
+                availableItems.Add("Item Upgrade Player Grab Range");
+                availableItems.Add("Item Upgrade Player Grab Strength");
+                availableItems.Add("Item Upgrade Player Health");
+                availableItems.Add("Item Upgrade Player Sprint Speed");
+                availableItems.Add("Item Upgrade Player Tumble Launch");
+                availableItems.Add("Item Valuable Tracker");
+                availableItems.Add("Valuable Small");
+                availableItems.Add("Valuable Medium");
+                availableItems.Add("Valuable Large");
+            }
+            return availableItems;
+        }
+
+        public static void SpawnMoney(Vector3 position, int value = 45000)
         {
             try
             {
-                DLog.Log($"Spawning item at position: {position} with value: {value}");
+                SpawnItem("Valuable Small", position, value);
+            }
+            catch (Exception ex)
+            {
+                DLog.Log($"Error spawning money via Valuable Small: {ex.Message}");
+                try
+                {
+                    DLog.Log("Attempting direct money spawn...");
+                    CreateMoneyDirectly(position, value);
+                }
+                catch (Exception ex2)
+                {
+                    DLog.LogError($"Failed to spawn money via fallback method: {ex2.Message}");
+                }
+            }
+        }
 
-                // Setup variables
+        private static void CreateMoneyDirectly(Vector3 position, int value)
+        {
+            bool isMultiplayer = SemiFunc.IsMultiplayer();
+            GameObject moneyObj = new GameObject("Valuable_Spawned");
+            moneyObj.transform.position = position;
+            Rigidbody rb = moneyObj.AddComponent<Rigidbody>();
+            rb.mass = 1f;
+            rb.drag = 0.1f;
+            rb.angularDrag = 0.05f;
+            rb.useGravity = true;
+            rb.isKinematic = false;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            BoxCollider collider = moneyObj.AddComponent<BoxCollider>();
+            collider.size = new Vector3(0.2f, 0.2f, 0.2f);
+            collider.center = Vector3.zero;
+            var physGrabObj = moneyObj.AddComponent(Type.GetType("PhysGrabObject, Assembly-CSharp"));
+            var valuableObj = moneyObj.AddComponent(Type.GetType("ValuableObject, Assembly-CSharp"));
+            if (valuableObj != null)
+            {
+                var dollarValueCurrentField = valuableObj.GetType().GetField("dollarValueCurrent", BindingFlags.Public | BindingFlags.Instance);
+                var dollarValueOriginalField = valuableObj.GetType().GetField("dollarValueOriginal", BindingFlags.Public | BindingFlags.Instance);
+                var dollarValueSetField = valuableObj.GetType().GetField("dollarValueSet", BindingFlags.Public | BindingFlags.Instance);
+                if (dollarValueCurrentField != null) dollarValueCurrentField.SetValue(valuableObj, (float)value);
+                if (dollarValueOriginalField != null) dollarValueOriginalField.SetValue(valuableObj, (float)value);
+                if (dollarValueSetField != null) dollarValueSetField.SetValue(valuableObj, true);
+            }
+            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            visual.transform.SetParent(moneyObj.transform, false);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localScale = new Vector3(0.15f, 0.15f, 0.15f);
+            Renderer renderer = visual.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(1f, 0.84f, 0f);
+                renderer.material.SetFloat("_Metallic", 1f);
+                renderer.material.SetFloat("_Glossiness", 0.8f);
+            }
+            if (isMultiplayer)
+            {
+                ConfigureSyncComponents(moneyObj);
+            }
+            DLog.Log($"Created money object directly with value: {value}");
+        }
+
+        public static void SpawnItem(string itemName, Vector3 position, int value = 0)
+        {
+            try
+            {
+                DLog.Log($"Spawning item: {itemName} at position: {position}");
+                if (!PhotonNetwork.IsMasterClient && PhotonNetwork.IsConnected)
+                {
+                    DLog.Log("Only the host can spawn items in multiplayer!");
+                    return;
+                }
                 bool isMultiplayer = SemiFunc.IsMultiplayer();
-                GameObject itemPrefab = AssetManager.instance.surplusValuableSmall;
+                GameObject itemPrefab = GetItemPrefab(itemName);
+                if (itemPrefab == null && itemName.Contains("Valuable"))
+                {
+                    DLog.Log($"Item prefab not found for: {itemName}, trying direct valuable creation");
+                    if (CreateValuableDirectly(itemName, position, value))
+                    {
+                        return;
+                    }
+                }
+                else if (itemPrefab == null)
+                {
+                    DLog.LogError($"Item prefab not found for: {itemName}");
+                    return;
+                }
                 GameObject spawnedItem;
-
-                // Prepare value data to pass during instantiation
-                object[] itemData = new object[] { value };
-
-                // Step 1: Instantiate the item based on game mode
+                object[] itemData = null;
+                if (itemName.Contains("Valuable") && value > 0)
+                {
+                    itemData = new object[] { value };
+                }
                 if (!isMultiplayer)
                 {
                     DLog.Log("Offline mode: Spawning locally.");
-                    spawnedItem = Instantiate(itemPrefab, position, Quaternion.identity);
+                    spawnedItem = UnityEngine.Object.Instantiate(itemPrefab, position, Quaternion.identity);
                     ConfigureSyncComponents(spawnedItem);
                     EnsureItemVisibility(spawnedItem);
                 }
                 else
                 {
                     DLog.Log("Multiplayer mode: Spawning via Photon.");
-
-                    var photonNetworkType = typeof(PhotonNetwork);
-                    var instantiateMethod = photonNetworkType.GetMethod("NetworkInstantiate", BindingFlags.NonPublic | BindingFlags.Static, null,
-                        new Type[] { typeof(InstantiateParameters), typeof(bool), typeof(bool) }, null);
-
-                    if (instantiateMethod == null)
+                    string prefabPath = GetPrefabPath(itemName);
+                    if (string.IsNullOrEmpty(prefabPath))
                     {
-                        DLog.LogError("NetworkInstantiate method not found");
+                        DLog.LogError($"Could not determine prefab path for: {itemName}");
                         return;
                     }
-
-                    var currentLevelPrefixField = photonNetworkType.GetField("currentLevelPrefix", BindingFlags.NonPublic | BindingFlags.Static);
-                    if (currentLevelPrefixField == null)
+                    try
                     {
-                        DLog.LogError("currentLevelPrefix field not found");
-                        return;
+                        spawnedItem = PhotonNetwork.Instantiate(prefabPath, position, Quaternion.identity, 0, itemData);
                     }
-
-                    var currentLevelPrefix = currentLevelPrefixField.GetValue(null);
-
-                    var parameters = new InstantiateParameters(
-                        "Valuables/" + itemPrefab.name,
-                        position,
-                        Quaternion.identity,
-                        0,
-                        itemData,
-                        (byte)currentLevelPrefix,
-                        null,
-                        PhotonNetwork.LocalPlayer,
-                        PhotonNetwork.ServerTimestamp);
-
-                    spawnedItem = (GameObject)instantiateMethod.Invoke(null, new object[] { parameters, true, false });
-                    ConfigureSyncComponents(spawnedItem);
+                    catch (Exception ex)
+                    {
+                        DLog.LogError($"Photon instantiate failed: {ex.Message}. Falling back to local instantiate.");
+                        spawnedItem = UnityEngine.Object.Instantiate(itemPrefab, position, Quaternion.identity);
+                        ConfigureSyncComponents(spawnedItem);
+                    }
                 }
-
-                ConfigureValuableObject(spawnedItem, value, isMultiplayer);
+                if (itemName.Contains("Valuable") && value > 0)
+                {
+                    ConfigureValuableObject(spawnedItem, value, isMultiplayer);
+                }
                 ConfigurePhysicsProperties(spawnedItem, position, isMultiplayer);
+                DLog.Log($"Successfully spawned {itemName}");
             }
             catch (Exception ex)
             {
                 DLog.LogError($"Error in SpawnItem: {ex.Message}\n{ex.StackTrace}");
+                if (itemName.Contains("Valuable"))
+                {
+                    DLog.Log($"Attempting direct creation for valuable after failure");
+                    CreateValuableDirectly(itemName, position, value);
+                }
             }
+        }
+
+        private static bool CreateValuableDirectly(string itemName, Vector3 position, int value)
+        {
+            try
+            {
+                DLog.Log($"Creating valuable directly: {itemName} with value {value}");
+                float sizeMultiplier = 1.0f;
+                if (itemName.Contains("Medium")) sizeMultiplier = 1.5f;
+                else if (itemName.Contains("Large")) sizeMultiplier = 2.0f;
+                GameObject valuableObj = new GameObject(itemName + "_Spawned");
+                valuableObj.transform.position = position;
+                Rigidbody rb = valuableObj.AddComponent<Rigidbody>();
+                rb.mass = 1f * sizeMultiplier;
+                rb.drag = 0.1f;
+                rb.angularDrag = 0.05f;
+                rb.useGravity = true;
+                rb.isKinematic = false;
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+                rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                BoxCollider collider = valuableObj.AddComponent<BoxCollider>();
+                collider.size = new Vector3(0.2f, 0.2f, 0.2f) * sizeMultiplier;
+                collider.center = Vector3.zero;
+                var physGrabObjType = Type.GetType("PhysGrabObject, Assembly-CSharp");
+                if (physGrabObjType != null)
+                {
+                    var physGrabObj = valuableObj.AddComponent(physGrabObjType);
+                    var midPointField = physGrabObjType.GetField("midPoint", BindingFlags.Public | BindingFlags.Instance);
+                    if (midPointField != null) midPointField.SetValue(physGrabObj, position);
+                    var targetPositionField = physGrabObjType.GetField("targetPosition", BindingFlags.Public | BindingFlags.Instance);
+                    if (targetPositionField != null) targetPositionField.SetValue(physGrabObj, position);
+                }
+                var valuableObjType = Type.GetType("ValuableObject, Assembly-CSharp");
+                if (valuableObjType != null)
+                {
+                    var valuableComponent = valuableObj.AddComponent(valuableObjType);
+                    var dollarValueCurrentField = valuableObjType.GetField("dollarValueCurrent", BindingFlags.Public | BindingFlags.Instance);
+                    var dollarValueOriginalField = valuableObjType.GetField("dollarValueOriginal", BindingFlags.Public | BindingFlags.Instance);
+                    var dollarValueSetField = valuableObjType.GetField("dollarValueSet", BindingFlags.Public | BindingFlags.Instance);
+                    if (dollarValueCurrentField != null) dollarValueCurrentField.SetValue(valuableComponent, (float)value);
+                    if (dollarValueOriginalField != null) dollarValueOriginalField.SetValue(valuableComponent, (float)value);
+                    if (dollarValueSetField != null) dollarValueSetField.SetValue(valuableComponent, true);
+                    var excludeFromExtractionField = valuableObjType.GetField("excludeFromExtraction", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (excludeFromExtractionField != null)
+                    {
+                        excludeFromExtractionField.SetValue(valuableComponent, true);
+                    }
+                    var discoveredField = valuableObjType.GetField("discovered", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (discoveredField != null)
+                    {
+                        discoveredField.SetValue(valuableComponent, true);
+                    }
+                    var addedToHaulListField = valuableObjType.GetField("addedToDollarHaulList", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (addedToHaulListField != null)
+                    {
+                        addedToHaulListField.SetValue(valuableComponent, true);
+                    }
+                    var dollarValueRPC = valuableObjType.GetMethod("DollarValueSetRPC", BindingFlags.Public | BindingFlags.Instance);
+                    if (dollarValueRPC != null)
+                    {
+                        dollarValueRPC.Invoke(valuableComponent, new object[] { (float)value });
+                    }
+                }
+                GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                visual.transform.SetParent(valuableObj.transform, false);
+                visual.transform.localPosition = Vector3.zero;
+                visual.transform.localScale = new Vector3(0.15f, 0.15f, 0.15f) * sizeMultiplier;
+                Renderer renderer = visual.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    renderer.material.color = new Color(1f, 0.84f, 0f);
+                    renderer.material.SetFloat("_Metallic", 1f);
+                    renderer.material.SetFloat("_Glossiness", 0.8f);
+                }
+                if (SemiFunc.IsMultiplayer())
+                {
+                    ConfigureSyncComponents(valuableObj);
+                }
+                valuableObj.tag = "SpawnedValuable";
+                var mapInstance = typeof(Map).GetField("Instance", BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
+                if (mapInstance != null)
+                {
+                    valuableObj.AddComponent<ExcludeFromMapTracking>();
+                }
+                DLog.Log($"Created valuable object directly: {itemName} with value: {value}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                DLog.LogError($"Failed to create valuable directly: {ex.Message}");
+                return false;
+            }
+        }
+
+        private class ExcludeFromMapTracking : MonoBehaviour
+        {
+            void Start()
+            {
+                gameObject.layer = LayerMask.NameToLayer("Ignore Raycast");
+            }
+        }
+
+        private static string GetPrefabPath(string itemName)
+        {
+            if (itemName.Contains("Valuable"))
+            {
+                return "Valuables/" + itemName;
+            }
+            else if (itemName.StartsWith("Item "))
+            {
+                return "Items/" + itemName;
+            }
+            return "Items/" + itemName;
+        }
+
+        private static GameObject GetItemPrefab(string itemName)
+        {
+            if (itemPrefabCache.ContainsKey(itemName) && itemPrefabCache[itemName] != null)
+            {
+                return itemPrefabCache[itemName];
+            }
+            GameObject prefab = null;
+            if (itemName.Contains("Valuable"))
+            {
+                if (itemName.Contains("Valuable"))
+                {
+                    if (itemName == "Valuable Small" && AssetManager.instance.surplusValuableSmall != null)
+                    {
+                        prefab = AssetManager.instance.surplusValuableSmall;
+                    }
+                    else
+                    {
+                        string fieldName = null;
+                        if (itemName == "Valuable Small") fieldName = "surplusValuableSmall";
+                        else if (itemName == "Valuable Medium") fieldName = "surplusValuableMedium";
+                        else if (itemName == "Valuable Large") fieldName = "surplusValuableLarge";
+                        if (fieldName != null && AssetManager.instance != null)
+                        {
+                            var field = AssetManager.instance.GetType().GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                            if (field != null)
+                            {
+                                prefab = field.GetValue(AssetManager.instance) as GameObject;
+                            }
+                        }
+                    }
+                    if (prefab == null)
+                    {
+                        DLog.Log($"Trying to find an existing valuable in the scene for: {itemName}");
+                        var valuableObjects = UnityEngine.Object.FindObjectsOfType(Type.GetType("ValuableObject, Assembly-CSharp"));
+                        if (valuableObjects != null && valuableObjects.Length > 0)
+                        {
+                            foreach (var obj in valuableObjects)
+                            {
+                                GameObject go = (obj as MonoBehaviour)?.gameObject;
+                                if (go != null)
+                                {
+                                    prefab = go;
+                                    DLog.Log($"Using existing valuable object as template: {go.name}");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (prefab == null)
+                    {
+                        string[] resourcePaths = {
+                            "Valuables/Valuable",
+                            "Valuables/ValuableSmall",
+                            "Valuables/ValuableMedium",
+                            "Valuables/ValuableLarge",
+                            "Prefabs/Valuable",
+                            "Prefabs/ValuableSmall"
+                        };
+                        foreach (string path in resourcePaths)
+                        {
+                            prefab = Resources.Load<GameObject>(path);
+                            if (prefab != null)
+                            {
+                                DLog.Log($"Found valuable prefab at Resources path: {path}");
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    prefab = Resources.Load<GameObject>("Valuables/" + itemName);
+                }
+            }
+            else
+            {
+                var statsManager = StatsManager.instance;
+                if (statsManager != null)
+                {
+                    var itemDictionaryField = statsManager.GetType().GetField("itemDictionary", BindingFlags.Public | BindingFlags.Instance);
+                    if (itemDictionaryField != null)
+                    {
+                        var itemDictionary = itemDictionaryField.GetValue(statsManager) as Dictionary<string, Item>;
+                        if (itemDictionary != null && itemDictionary.ContainsKey(itemName))
+                        {
+                            var item = itemDictionary[itemName];
+                            if (item != null && item.prefab != null)
+                            {
+                                prefab = item.prefab;
+                            }
+                        }
+                    }
+                }
+                if (prefab == null)
+                {
+                    prefab = Resources.Load<GameObject>("Items/" + itemName);
+                }
+            }
+            if (prefab != null)
+            {
+                itemPrefabCache[itemName] = prefab;
+            }
+            else
+            {
+                DLog.LogError($"Could not find prefab for item: {itemName}");
+            }
+            return prefab;
         }
 
         private static void ConfigureSyncComponents(GameObject item)
@@ -82,10 +430,8 @@ namespace dark_cheat
             PhotonView pv = item.GetComponent<PhotonView>() ?? item.AddComponent<PhotonView>();
             pv.ViewID = PhotonNetwork.AllocateViewID(0);
             DLog.Log("PhotonView added to item: " + pv.ViewID);
-
             PhotonTransformView transformView = item.GetComponent<PhotonTransformView>() ?? item.AddComponent<PhotonTransformView>();
             DLog.Log("PhotonTransformView added to item");
-
             Rigidbody rb = item.GetComponent<Rigidbody>();
             if (rb != null)
             {
@@ -94,12 +440,10 @@ namespace dark_cheat
                 rigidbodyView.m_SynchronizeAngularVelocity = true;
                 DLog.Log("PhotonRigidbodyView added and configured on item");
             }
-
             if (item.GetComponent<ItemSync>() == null)
             {
                 item.AddComponent<ItemSync>();
             }
-
             pv.ObservedComponents = new List<Component> { transformView };
             if (rb != null)
             {
@@ -121,13 +465,22 @@ namespace dark_cheat
                 DLog.LogError("ValuableObject component not found");
                 return;
             }
-
             DLog.Log("ValuableObject component found");
             SetFieldValue(valuableComponent, "dollarValueOverride", value);
             SetFieldValue(valuableComponent, "dollarValueOriginal", (float)value);
             SetFieldValue(valuableComponent, "dollarValueCurrent", (float)value);
             SetFieldValue(valuableComponent, "dollarValueSet", true);
-
+            SetFieldValue(valuableComponent, "excludeFromExtraction", true);
+            var dollarHaulListField = valuableComponent.GetType().GetField("addedToDollarHaulList", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (dollarHaulListField != null)
+            {
+                dollarHaulListField.SetValue(valuableComponent, true);
+            }
+            var discoveredField = valuableComponent.GetType().GetField("discovered", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (discoveredField != null)
+            {
+                discoveredField.SetValue(valuableComponent, true);
+            }
             var dollarValueRPC = valuableComponent.GetType().GetMethod("DollarValueSetRPC", BindingFlags.Public | BindingFlags.Instance);
             if (dollarValueRPC != null)
             {
@@ -139,14 +492,38 @@ namespace dark_cheat
                     {
                         photonView.RequestOwnership();
                         photonView.RPC("DollarValueSetRPC", RpcTarget.Others, (float)value);
-                        photonView.RPC("DiscoverRPC", RpcTarget.All);
-                        photonView.RPC("AddToDollarHaulListRPC", RpcTarget.All);
                     }
                 }
             }
             else
             {
                 DLog.LogError("DollarValueSetRPC method not found");
+            }
+            try
+            {
+                var statsManager = StatsManager.instance;
+                if (statsManager != null)
+                {
+                    string valuableIdentifier = "";
+                    var instanceNameField = spawnedItem.GetComponent(Type.GetType("ItemAttributes, Assembly-CSharp"))?.GetType().GetField("instanceName");
+                    if (instanceNameField != null)
+                    {
+                        valuableIdentifier = instanceNameField.GetValue(spawnedItem.GetComponent(Type.GetType("ItemAttributes, Assembly-CSharp"))) as string;
+                    }
+                    if (!string.IsNullOrEmpty(valuableIdentifier))
+                    {
+                        var removeValuableMethod = statsManager.GetType().GetMethod("RemoveValuableFromHaul", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (removeValuableMethod != null)
+                        {
+                            removeValuableMethod.Invoke(statsManager, new object[] { valuableIdentifier });
+                            DLog.Log($"Removed valuable {valuableIdentifier} from extraction goal tracking");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DLog.Log($"Error trying to remove valuable from tracking: {ex.Message}");
             }
         }
 
@@ -158,7 +535,6 @@ namespace dark_cheat
                 DLog.LogError("PhysGrabObject component not found");
                 return;
             }
-
             DLog.Log("PhysGrabObject component found");
             SetFieldValue(physComponent, "spawnTorque", UnityEngine.Random.insideUnitSphere * 0.05f);
             if (isMultiplayer)

@@ -226,6 +226,15 @@ namespace dark_cheat
         private float menuY = 50f;
         private const float titleBarHeight = 30f;
 
+        private List<string> availableItemsList = new List<string>();
+        private int selectedItemToSpawnIndex = 0;
+        private Vector2 itemSpawnerScrollPosition = Vector2.zero;
+        private int itemSpawnValue = 45000;
+        private bool isChangingItemValue = false;
+        private float itemValueSliderPos = 4.0f;
+        private bool showItemSpawner = false;
+        private bool isHost = false;
+
         private bool showingActionSelector = false;
         private Vector2 actionSelectorScroll = Vector2.zero;
 
@@ -245,6 +254,11 @@ namespace dark_cheat
         private Vector2 dragOffsetActionSelector;
         private GUIStyle overlayDimStyle;
         private GUIStyle actionSelectorBoxStyle;
+
+        private void CheckIfHost()
+        {
+            isHost = !SemiFunc.IsMultiplayer() || PhotonNetwork.IsMasterClient;
+        }
 
         private void UpdateTeleportOptions()
         {
@@ -307,6 +321,8 @@ namespace dark_cheat
         {
             hotkeyManager = HotkeyManager.Instance;
 
+            availableItemsList = ItemSpawner.GetAvailableItems();
+
             if (unlimitedBatteryComponent == null)
             {
                 GameObject batteryObj = new GameObject("BatteryManager");
@@ -338,6 +354,7 @@ namespace dark_cheat
 
         public void Update()
         {
+            CheckIfHost();
             levelCheckTimer += Time.deltaTime;
             if (levelCheckTimer >= LEVEL_CHECK_INTERVAL)
             {
@@ -1217,7 +1234,7 @@ namespace dark_cheat
                             }
                             Vector3 targetPosition = localPlayer.transform.position + Vector3.up * 1.5f;
                             transform.position = targetPosition;
-                            ItemSpawner.SpawnItem(targetPosition);
+                            ItemSpawner.SpawnMoney(targetPosition);
                             DLog.Log("Money spawned.");
                         }
                         yPos += parentSpacing;
@@ -1253,7 +1270,7 @@ namespace dark_cheat
 
                         UpdateEnemyList();
                         UIHelper.Label("Select an enemy:", menuX + 30, enemyYPos);
-                        enemyYPos += 20;
+                        enemyYPos += childIndent;
 
                         enemyScrollPosition = GUI.BeginScrollView(new Rect(menuX + 30, enemyYPos, 540, 200), enemyScrollPosition, new Rect(0, 0, 520, enemyNames.Count * 35), false, true);
                         for (int i = 0; i < enemyNames.Count; i++)
@@ -1271,14 +1288,14 @@ namespace dark_cheat
                             Enemies.KillSelectedEnemy(selectedEnemyIndex, enemyList, enemyNames);
                             DLog.Log($"Attempt to kill the selected enemy completed: {enemyNames[selectedEnemyIndex]}");
                         }
-                        enemyYPos += 40;
+                        enemyYPos += parentSpacing;
 
                         if (UIHelper.Button("Kill All Enemies", menuX + 30, enemyYPos))
                         {
                             Enemies.KillAllEnemies();
                             DLog.Log("Attempt to kill all enemies completed.");
                         }
-                        enemyYPos += 40;
+                        enemyYPos += parentSpacing;
 
                         if (UIHelper.Button(showEnemyTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, enemyYPos))
                         {
@@ -1288,7 +1305,7 @@ namespace dark_cheat
                                 UpdateEnemyTeleportOptions();
                             }
                         }
-                        enemyYPos += 40;
+                        enemyYPos += parentSpacing;
 
                         if (showEnemyTeleportUI)
                         {
@@ -1301,7 +1318,7 @@ namespace dark_cheat
                             {
                                 showEnemyTeleportDropdown = !showEnemyTeleportDropdown;
                             }
-                            enemyYPos += 40;
+                            enemyYPos += parentSpacing;
 
                             List<string> availablePlayers = new List<string>();
                             for (int i = 0; i < playerNames.Count; i++)
@@ -1324,7 +1341,7 @@ namespace dark_cheat
                                     float labelX = menuX + (600 - labelWidth) / 2;
 
                                     GUI.Label(new Rect(labelX, enemyYPos, labelWidth, 25), "No other players available, so lonely :(", noWrapStyle);
-                                    enemyYPos += 30;
+                                    enemyYPos += childSpacing;
                                 }
                                 else
                                 {
@@ -1355,7 +1372,7 @@ namespace dark_cheat
                                         }
                                     }
                                     GUI.EndScrollView();
-                                    enemyYPos += dropdownHeight + 10;
+                                    enemyYPos += dropdownHeight + childSpacing;
                                 }
                             }
                             else if (availablePlayers.Count == 0)
@@ -1368,7 +1385,7 @@ namespace dark_cheat
                                 float labelX = menuX + (600 - labelWidth) / 2;
 
                                 GUI.Label(new Rect(labelX, enemyYPos, labelWidth, 25), "No other players available, so lonely :(", noWrapStyle);
-                                enemyYPos += 30;
+                                enemyYPos += childSpacing;
                             }
 
                             if (UIHelper.Button("Execute Teleport", menuX + 30, enemyYPos))
@@ -1401,12 +1418,10 @@ namespace dark_cheat
                         Rect itemsViewRect = new Rect(menuX + 20, menuY + 95, 560, 700);
                         Rect itemsContentRect = new Rect(0, 0, 540, 1200);
                         itemsScrollPosition = GUI.BeginScrollView(itemsViewRect, itemsScrollPosition, itemsContentRect);
-
                         yPos = 10;
 
                         UIHelper.Label("Select an item:", 0, yPos);
                         yPos += childIndent;
-
                         itemScrollPosition = GUI.BeginScrollView(new Rect(0, yPos, 540, 200), itemScrollPosition, new Rect(0, 0, 520, itemList.Count * 35), false, true);
                         for (int i = 0; i < itemList.Count; i++)
                         {
@@ -1441,20 +1456,149 @@ namespace dark_cheat
                             DLog.Log("Teleporting all items initiated.");
                         }
                         yPos += parentSpacing;
-                        
-                        if (UIHelper.Button("Change Item Value to 10K [HOST]", 0, yPos))
+
+                        GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
+                        labelStyle.normal.textColor = Color.white;
+
+                        GUI.Label(new Rect(0, yPos, 540, 20), "Change Item Value [HOST]:", GUI.skin.label);
+                        yPos += 25;
+
+                        int displayValue = (int)Mathf.Pow(10, itemValueSliderPos);
+                        GUI.Label(new Rect(0, yPos, 540, 20), $"${displayValue:N0}", GUI.skin.label);
+                        yPos += 25;
+
+                        float newSliderPos = GUI.HorizontalSlider(new Rect(0, yPos, 540, 20), itemValueSliderPos, 3.0f, 9.0f);
+                        yPos += 25;
+
+                        if (newSliderPos != itemValueSliderPos)
+                        {
+                            itemValueSliderPos = newSliderPos;
+                        }
+
+                        if (GUI.Button(new Rect(0, yPos, 540, 30), "Apply Value Change"))
                         {
                             if (selectedItemIndex >= 0 && selectedItemIndex < itemList.Count)
                             {
-                                ItemTeleport.SetItemValue(itemList[selectedItemIndex], 10000);
-                                DLog.Log($"Updated value: {itemList[selectedItemIndex].Value}");
+                                ItemTeleport.SetItemValue(itemList[selectedItemIndex], displayValue);
+                                DLog.Log($"Updated value to ${displayValue:N0}: {itemList[selectedItemIndex].Name}");
                             }
                             else
                             {
                                 DLog.Log("No valid item selected to change value!");
                             }
                         }
-                        
+                        yPos += parentSpacing;
+
+                        if (UIHelper.Button(showItemSpawner ? "Hide Item Spawner [HOST]" : "Show Item Spawner [HOST]", 0, yPos))
+                        {
+                            showItemSpawner = !showItemSpawner;
+                            if (showItemSpawner && availableItemsList.Count == 0)
+                            {
+                                availableItemsList = ItemSpawner.GetAvailableItems();
+                            }
+                        }
+                        yPos += parentSpacing;
+
+                        if (showItemSpawner)
+                        {
+                            if (!isHost)
+                            {
+                                GUIStyle hostWarningStyle = new GUIStyle(GUI.skin.label)
+                                {
+                                    normal = { textColor = Color.red },
+                                    fontStyle = FontStyle.Bold,
+                                    fontSize = 14,
+                                    alignment = TextAnchor.MiddleCenter
+                                };
+                                GUI.Label(new Rect(0, yPos, 540, 25), "⚠ Only the host can spawn items in multiplayer!", hostWarningStyle);
+                                yPos += 30;
+                            }
+
+                            GUI.Label(new Rect(0, yPos, 540, 20), "Select item to spawn:");
+                            yPos += childIndent;
+
+                            itemSpawnerScrollPosition = GUI.BeginScrollView(
+                                new Rect(0, yPos, 540, 150),
+                                itemSpawnerScrollPosition,
+                                new Rect(0, 0, 520, availableItemsList.Count * 30),
+                                false, true);
+
+                            for (int i = 0; i < availableItemsList.Count; i++)
+                            {
+                                if (i == selectedItemToSpawnIndex) GUI.color = Color.white;
+                                else GUI.color = Color.gray;
+
+                                if (GUI.Button(new Rect(0, i * 30, 520, 30), availableItemsList[i]))
+                                {
+                                    selectedItemToSpawnIndex = i;
+                                }
+
+                                GUI.color = Color.white;
+                            }
+                            GUI.EndScrollView();
+                            yPos += 160;
+
+                            bool isValuable = availableItemsList.Count > 0 &&
+                                             selectedItemToSpawnIndex < availableItemsList.Count &&
+                                             availableItemsList[selectedItemToSpawnIndex].Contains("Valuable");
+
+                            if (isValuable)
+                            {
+                                string formattedValue = string.Format("{0:n0}", itemSpawnValue);
+                                GUI.Label(new Rect(0, yPos, 540, 20), $"Item Value: ${formattedValue}");
+                                yPos += childIndent;
+
+                                float sliderValue = Mathf.Log10((float)itemSpawnValue / 1000f) / 6f; // 6 = log10(1,000,000,000/1,000)
+                                float newSliderValue = GUI.HorizontalSlider(new Rect(0, yPos, 540, 20), sliderValue, 0f, 1f);
+
+                                if (newSliderValue != sliderValue)
+                                {
+                                    itemSpawnValue = (int)(Mathf.Pow(10, newSliderValue * 6f) * 1000f);
+
+                                    itemSpawnValue = Mathf.Clamp(itemSpawnValue, 1000, 1000000000);
+                                }
+
+                                yPos += childIndent;
+                            }
+
+                            GUI.enabled = isHost && availableItemsList.Count > 0 && selectedItemToSpawnIndex < availableItemsList.Count;
+
+                            if (GUI.Button(new Rect(0, yPos, 540, 30), "Spawn Selected Item"))
+                            {
+                                if (isHost)
+                                {
+                                    GameObject localPlayer = DebugCheats.GetLocalPlayer();
+                                    if (localPlayer != null)
+                                    {
+                                        Vector3 spawnPosition = localPlayer.transform.position + localPlayer.transform.forward * 1.5f + Vector3.up * 1f;
+                                        string itemName = availableItemsList[selectedItemToSpawnIndex];
+
+                                        if (isValuable)
+                                        {
+                                            ItemSpawner.SpawnItem(itemName, spawnPosition, itemSpawnValue);
+                                            DLog.Log($"Spawned valuable: {itemName} with value: ${itemSpawnValue}");
+                                        }
+                                        else
+                                        {
+                                            ItemSpawner.SpawnItem(itemName, spawnPosition);
+                                            DLog.Log($"Spawned item: {itemName}");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        DLog.Log("Local player not found!");
+                                    }
+                                }
+                                else
+                                {
+                                    DLog.Log("Only the host can spawn items in multiplayer!");
+                                }
+                            }
+
+                            GUI.enabled = true;
+                            yPos += parentSpacing;
+                        }
+
                         GUI.EndScrollView();
                         break;
 
