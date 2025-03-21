@@ -425,13 +425,6 @@ namespace dark_cheat
                 {
                     NoclipController.UpdateMovement();
                 }
-                if (MapTools.showMapTweaks)
-                {
-                    if (MapTools.mapDisableHiddenOverlayCheckboxActive && !MapTools.mapDisableHiddenOverlayActive)
-                    {
-                        MapTools.changeOverlayStatus(true);
-                    }
-                }
             }
         }
 
@@ -1072,14 +1065,20 @@ namespace dark_cheat
                         }
                         currentY += parentSpacing;
 
-                        MapTools.showMapTweaks = UIHelper.Checkbox("Map Tweaks", MapTools.showMapTweaks, menuX + 30, currentY);
-                        currentY += MapTools.showMapTweaks ? childIndent : parentSpacing;
+                        UIHelper.Label("Map Tweaks:", menuX + 31, currentY);
+                        currentY += childIndent;
 
-                        if (MapTools.showMapTweaks)
+                        if (UIHelper.Button("Disable '?' overlay(could not be undone on level)", menuX + 30, currentY))
                         {
-                            MapTools.mapDisableHiddenOverlayCheckboxActive = UIHelper.Checkbox("Disable '?' overlay(could not be undone)", MapTools.mapDisableHiddenOverlayCheckboxActive, menuX + 50, currentY);
-                            currentY += childSpacing;
+                            MapTools.changeOverlayStatus(true);
                         }
+                        currentY += parentSpacing;
+                        
+                        if (UIHelper.Button("Discover Map Valuables", menuX + 30, currentY))
+                        {
+                            MapTools.DiscoveryMapValuables();
+                        }
+                        currentY += parentSpacing;
 
                         UIHelper.Label("Flashlight Intensity: " + Hax2.flashlightIntensity, menuX + 31, currentY);
                         currentY += childIndent;
