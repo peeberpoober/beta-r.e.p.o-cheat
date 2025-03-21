@@ -7,6 +7,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using System.Linq;
 using SingularityGroup.HotReload;
+using System.Runtime.CompilerServices;
 
 namespace dark_cheat
 {
@@ -771,78 +772,90 @@ namespace dark_cheat
                     currentCategory = MenuCategory.Hotkeys;
 
                 GUIStyle instructionStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, normal = { textColor = Color.white } };
-                GUI.Label(new Rect(menuX + 20, menuY + 75, 580, 20), $"Open/Close: {hotkeyManager.MenuToggleKey} | Reload: {hotkeyManager.ReloadKey} | Unload: {hotkeyManager.UnloadKey}", instructionStyle);
+                GUI.Label(new Rect(menuX + 25, menuY + 75, 580, 20), $"Open/Close: {hotkeyManager.MenuToggleKey} | Reload: {hotkeyManager.ReloadKey} | Unload: {hotkeyManager.UnloadKey}", instructionStyle);
 
-                float parentSpacing = 40f;    // Space between main parent options when children are hidden
-                float childIndent = 20f;      // Indentation for child options
-                float childSpacing = 30f;     // Space between child options
+                float yPos = 10;
+                float parentSpacing = 40;    // Space between main parent options when children are hidden
+                float childSpacing = 30;     // Space between child options
+                float childIndent = 20;      // Indentation for child options
+                float scrollListSpacing = 215; // Space between list and next parent option
 
                 switch (currentCategory)
                 {
                     case MenuCategory.Self:
-                        Rect selfViewRect = new Rect(menuX + 20, menuY + 95, 560, 700);
+                        Rect selfViewRect = new Rect(menuX + 30, menuY + 95, 560, 700);
                         Rect selfContentRect = new Rect(0, 0, 540, 1200);
                         selfScrollPosition = GUI.BeginScrollView(selfViewRect, selfScrollPosition, selfContentRect);
 
-                        float yPos = 10;
+                        float selfYPos = yPos;
 
-                        bool newGodModeState = UIHelper.ButtonBool("God Mode", godModeActive, 0, yPos);
+                        bool newGodModeState = UIHelper.ButtonBool("God Mode", godModeActive, 0, selfYPos);
                         if (newGodModeState != godModeActive) { PlayerController.GodMode(); godModeActive = newGodModeState; DLog.Log("God mode toggled: " + godModeActive); }
-                        yPos += parentSpacing;
+                        selfYPos += parentSpacing;
 
-                        bool newTumbleGuardActive = UIHelper.ButtonBool("Tumble Guard", Hax2.debounce, 0, yPos);
+                        bool newTumbleGuardActive = UIHelper.ButtonBool("Tumble Guard", Hax2.debounce, 0, selfYPos);
                         if (newTumbleGuardActive != Hax2.debounce) { PlayerTumblePatch.ToggleTumbleGuard(); }
-                        yPos += parentSpacing;
+                        selfYPos += parentSpacing;
 
-                        bool newNoclipActive = UIHelper.ButtonBool("Noclip", NoclipController.noclipActive, 0, yPos);
+                        bool newNoclipActive = UIHelper.ButtonBool("Noclip", NoclipController.noclipActive, 0, selfYPos);
                         if (newNoclipActive != NoclipController.noclipActive) { NoclipController.ToggleNoclip(); }
-                        yPos += parentSpacing;
+                        selfYPos += parentSpacing;
 
-                        bool newHealState = UIHelper.ButtonBool("Infinite Health", infiniteHealthActive, 0, yPos);
+                        bool newHealState = UIHelper.ButtonBool("Infinite Health", infiniteHealthActive, 0, selfYPos);
                         if (newHealState != infiniteHealthActive) { infiniteHealthActive = newHealState; PlayerController.MaxHealth(); }
-                        yPos += parentSpacing;
+                        selfYPos += parentSpacing;
 
-                        bool newStaminaState = UIHelper.ButtonBool("Infinite Stamina", stamineState, 0, yPos);
+                        bool newStaminaState = UIHelper.ButtonBool("Infinite Stamina", stamineState, 0, selfYPos);
                         if (newStaminaState != stamineState) { stamineState = newStaminaState; PlayerController.MaxStamina(); DLog.Log("God mode toggled: " + stamineState); }
-                        yPos += parentSpacing;
+                        selfYPos += parentSpacing;
 
-                        bool newUnlimitedBatteryState = UIHelper.ButtonBool("Unlimited Battery [HOST]", unlimitedBatteryActive, 0, yPos);
+                        bool newUnlimitedBatteryState = UIHelper.ButtonBool("[HOST] Unlimited Battery", unlimitedBatteryActive, 0, selfYPos);
                         if (newUnlimitedBatteryState != unlimitedBatteryActive)
                         {
                             unlimitedBatteryActive = newUnlimitedBatteryState;
                             if (unlimitedBatteryComponent != null)
                                 unlimitedBatteryComponent.unlimitedBatteryEnabled = unlimitedBatteryActive;
                         }
-                        yPos += parentSpacing;
+                        selfYPos += parentSpacing;
 
-                        bool newPlayerColorState = UIHelper.ButtonBool("RGB Player", playerColor.isRandomizing, 0, yPos);
+                        bool newPlayerColorState = UIHelper.ButtonBool("RGB Player", playerColor.isRandomizing, 0, selfYPos);
                         if (newPlayerColorState != playerColor.isRandomizing)
                         {
                             playerColor.isRandomizing = newPlayerColorState;
                             DLog.Log("Randomize toggled: " + playerColor.isRandomizing);
                         }
-                        yPos += parentSpacing;
+                        selfYPos += parentSpacing;
 
-                        UIHelper.Label("Speed Value " + sliderValue, 0, yPos);
-                        yPos += childIndent;
-                        oldSliderValue = sliderValue;
-                        sliderValue = UIHelper.Slider(sliderValue, 1f, 30f, 0, yPos);
-                        yPos += childIndent;
-
-                        UIHelper.Label("Strength Value: " + sliderValueStrength, 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Strength: " + sliderValueStrength, 0, selfYPos);
+                        selfYPos += childIndent;
                         oldSliderValueStrength = sliderValueStrength;
-                        sliderValueStrength = UIHelper.Slider(sliderValueStrength, 1f, 100f, 0, yPos);
-                        yPos += childIndent;
+                        sliderValueStrength = UIHelper.Slider(sliderValueStrength, 1f, 100f, 0, selfYPos);
+                        selfYPos += childIndent;
 
-                        UIHelper.Label("Stamina Recharge Delay: " + Hax2.staminaRechargeDelay, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.staminaRechargeDelay = UIHelper.Slider(Hax2.staminaRechargeDelay, 0f, 10f, 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("[HOST] Throw Strength: " + Hax2.throwStrength, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.throwStrength = UIHelper.Slider(Hax2.throwStrength, 0f, 50f, 0, selfYPos);
+                        selfYPos += childIndent;
 
-                        UIHelper.Label("Stamina Recharge Rate: " + Hax2.staminaRechargeRate, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.staminaRechargeRate = UIHelper.Slider(Hax2.staminaRechargeRate, 1f, 20f, 0, yPos);
+                        UIHelper.Label("Speed: " + sliderValue, 0, selfYPos);
+                        selfYPos += childIndent;
+                        oldSliderValue = sliderValue;
+                        sliderValue = UIHelper.Slider(sliderValue, 1f, 30f, 0, selfYPos);
+                        selfYPos += childIndent;
+
+                        UIHelper.Label("Range: " + Hax2.grabRange, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.grabRange = UIHelper.Slider(Hax2.grabRange, 0f, 50f, 0, selfYPos);
+                        selfYPos += childIndent; 
+
+                        UIHelper.Label("Stamina Recharge Delay: " + Hax2.staminaRechargeDelay, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.staminaRechargeDelay = UIHelper.Slider(Hax2.staminaRechargeDelay, 0f, 10f, 0, selfYPos);
+                        selfYPos += childIndent;
+
+                        UIHelper.Label("Stamina Recharge Rate: " + Hax2.staminaRechargeRate, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.staminaRechargeRate = UIHelper.Slider(Hax2.staminaRechargeRate, 1f, 20f, 0, selfYPos);
                         if (Hax2.staminaRechargeDelay != oldStaminaRechargeDelay || Hax2.staminaRechargeRate != oldStaminaRechargeRate)
                         {
                             PlayerController.DecreaseStaminaRechargeDelay(Hax2.staminaRechargeDelay, Hax2.staminaRechargeRate);
@@ -850,52 +863,42 @@ namespace dark_cheat
                             oldStaminaRechargeDelay = Hax2.staminaRechargeDelay;
                             oldStaminaRechargeRate = Hax2.staminaRechargeRate;
                         }
-                        yPos += childIndent; 
+                        selfYPos += childIndent;
 
-                        UIHelper.Label("Crouch Delay: " + Hax2.crouchDelay, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.crouchDelay = UIHelper.Slider(Hax2.crouchDelay, 0f, 5f, 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Extra Jumps: " + Hax2.extraJumps, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.extraJumps = (int)UIHelper.Slider(Hax2.extraJumps, 1f, 100f, 0, selfYPos);
+                        selfYPos += childIndent;
 
-                        UIHelper.Label("Crouch Speed: " + Hax2.crouchSpeed, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.crouchSpeed = UIHelper.Slider(Hax2.crouchSpeed, 1f, 50f, 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Jump Force: " + Hax2.jumpForce, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.jumpForce = UIHelper.Slider(Hax2.jumpForce, 1f, 50f, 0, selfYPos);
+                        selfYPos += childIndent;
 
-                        UIHelper.Label("Jump Force: " + Hax2.jumpForce, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.jumpForce = UIHelper.Slider(Hax2.jumpForce, 1f, 50f, 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Gravity: " + Hax2.customGravity, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.customGravity = UIHelper.Slider(Hax2.customGravity, -10f, 50f, 0, selfYPos);
+                        selfYPos += childIndent;
 
-                        UIHelper.Label("Extra Jumps: " + Hax2.extraJumps, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.extraJumps = (int)UIHelper.Slider(Hax2.extraJumps, 1f, 100f, 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Crouch Delay: " + Hax2.crouchDelay, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.crouchDelay = UIHelper.Slider(Hax2.crouchDelay, 0f, 5f, 0, selfYPos);
+                        selfYPos += childIndent;
 
-                        UIHelper.Label("Custom Gravity: " + Hax2.customGravity, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.customGravity = UIHelper.Slider(Hax2.customGravity, -10f, 50f, 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Crouch Speed: " + Hax2.crouchSpeed, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.crouchSpeed = UIHelper.Slider(Hax2.crouchSpeed, 1f, 50f, 0, selfYPos);
+                        selfYPos += childIndent;
 
-                        UIHelper.Label("Grab Range: " + Hax2.grabRange, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.grabRange = UIHelper.Slider(Hax2.grabRange, 0f, 50f, 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Slide Decay: " + Hax2.slideDecay, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.slideDecay = UIHelper.Slider(Hax2.slideDecay, -10f, 50f, 0, selfYPos);
+                        selfYPos += childIndent;
 
-                        UIHelper.Label("Throw Strength: " + Hax2.throwStrength, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.throwStrength = UIHelper.Slider(Hax2.throwStrength, 0f, 50f, 0, yPos);
-                        yPos += childIndent;
-
-                        UIHelper.Label("Slide Decay: " + Hax2.slideDecay, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.slideDecay = UIHelper.Slider(Hax2.slideDecay, -10f, 50f, 0, yPos);
-                        yPos += childIndent;
-
-                        UIHelper.Label("Flashlight Intensity: " + Hax2.flashlightIntensity, 0, yPos);
-                        yPos += childIndent;
-                        Hax2.flashlightIntensity = UIHelper.Slider(Hax2.flashlightIntensity, 1f, 100f, 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Flashlight Intensity: " + Hax2.flashlightIntensity, 0, selfYPos);
+                        selfYPos += childIndent;
+                        Hax2.flashlightIntensity = UIHelper.Slider(Hax2.flashlightIntensity, 1f, 100f, 0, selfYPos);
+                        selfYPos += childIndent;
  
                         if (Hax2.crouchDelay != OldcrouchDelay)
                         {
@@ -947,113 +950,113 @@ namespace dark_cheat
                         break;
 
                     case MenuCategory.ESP:
-                        Rect espViewRect = new Rect(menuX + 20, menuY + 95, 560, 700);
+                        Rect espViewRect = new Rect(menuX + 30, menuY + 95, 560, 700);
                         Rect espContentRect = new Rect(0, 0, 540, 1200);
                         espScrollPosition = GUI.BeginScrollView(espViewRect, espScrollPosition, espContentRect);
 
-                        yPos = 10;
+                        float espYPos = yPos;
 
                         // Enemy ESP section
-                        DebugCheats.drawEspBool = UIHelper.Checkbox("Enemy ESP", DebugCheats.drawEspBool, 0, yPos);
-                        yPos += DebugCheats.drawEspBool ? childIndent : parentSpacing;
+                        DebugCheats.drawEspBool = UIHelper.Checkbox("Enemy ESP", DebugCheats.drawEspBool, 0, espYPos);
+                        espYPos += DebugCheats.drawEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawEspBool)
                         {
-                            DebugCheats.showEnemyBox = UIHelper.Checkbox("2D Box", DebugCheats.showEnemyBox, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.drawChamsBool = UIHelper.Checkbox("Chams", DebugCheats.drawChamsBool, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.showEnemyNames = UIHelper.Checkbox("Names", DebugCheats.showEnemyNames, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.showEnemyDistance = UIHelper.Checkbox("Distance", DebugCheats.showEnemyDistance, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.showEnemyHP = UIHelper.Checkbox("Health", DebugCheats.showEnemyHP, 20, yPos);
-                            yPos += childSpacing;
+                            DebugCheats.showEnemyBox = UIHelper.Checkbox("2D Box", DebugCheats.showEnemyBox, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.drawChamsBool = UIHelper.Checkbox("Chams", DebugCheats.drawChamsBool, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.showEnemyNames = UIHelper.Checkbox("Names", DebugCheats.showEnemyNames, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.showEnemyDistance = UIHelper.Checkbox("Distance", DebugCheats.showEnemyDistance, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.showEnemyHP = UIHelper.Checkbox("Health", DebugCheats.showEnemyHP, 20, espYPos);
+                            espYPos += childSpacing;
                         }
 
                         // Item ESP section
-                        DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, 0, yPos);
-                        yPos += DebugCheats.drawItemEspBool ? childIndent : parentSpacing;
+                        DebugCheats.drawItemEspBool = UIHelper.Checkbox("Item ESP", DebugCheats.drawItemEspBool, 0, espYPos);
+                        espYPos += DebugCheats.drawItemEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawItemEspBool)
                         {
-                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Box", DebugCheats.draw3DItemEspBool, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.showItemNames = UIHelper.Checkbox("Names", DebugCheats.showItemNames, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.showItemDistance = UIHelper.Checkbox("Distance", DebugCheats.showItemDistance, 20, yPos);
-                            yPos += childSpacing;
+                            DebugCheats.draw3DItemEspBool = UIHelper.Checkbox("3D Box", DebugCheats.draw3DItemEspBool, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.showItemNames = UIHelper.Checkbox("Names", DebugCheats.showItemNames, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.showItemDistance = UIHelper.Checkbox("Distance", DebugCheats.showItemDistance, 20, espYPos);
+                            espYPos += childSpacing;
 
                             // Item Distance slider (only shown when Show Item Distance is enabled)
                             if (DebugCheats.showItemDistance)
                             {
-                                GUI.Label(new Rect(40, yPos, 200, 20), $"Max Item Distance: {DebugCheats.maxItemEspDistance:F0}m");
-                                yPos += childIndent;
-                                DebugCheats.maxItemEspDistance = GUI.HorizontalSlider(new Rect(40, yPos, 200, 20), DebugCheats.maxItemEspDistance, 0f, 1000f);
-                                yPos += childIndent;
+                                GUI.Label(new Rect(40, espYPos, 200, 20), $"Max Item Distance: {DebugCheats.maxItemEspDistance:F0}m");
+                                espYPos += childIndent;
+                                DebugCheats.maxItemEspDistance = GUI.HorizontalSlider(new Rect(40, espYPos, 200, 20), DebugCheats.maxItemEspDistance, 0f, 1000f);
+                                espYPos += childIndent;
                             }
 
-                            DebugCheats.showItemValue = UIHelper.Checkbox("Value", DebugCheats.showItemValue, 20, yPos);
-                            yPos += childSpacing;
+                            DebugCheats.showItemValue = UIHelper.Checkbox("Value", DebugCheats.showItemValue, 20, espYPos);
+                            espYPos += childSpacing;
 
                             // Value Range Slider (only shown when Show Item Value is enabled)
                             if (DebugCheats.showItemValue)
                             {
-                                GUI.Label(new Rect(40, yPos, 200, 20), $"Min Item Value: ${DebugCheats.minItemValue}");
-                                yPos += childIndent;
+                                GUI.Label(new Rect(40, espYPos, 200, 20), $"Min Item Value: ${DebugCheats.minItemValue}");
+                                espYPos += childIndent;
 
                                 // Simple min value slider
                                 DebugCheats.minItemValue = Mathf.RoundToInt(GUI.HorizontalSlider(
-                                    new Rect(40, yPos, 200, 20),
+                                    new Rect(40, espYPos, 200, 20),
                                     DebugCheats.minItemValue, 0, 50000));
-                                yPos += childIndent;
+                                espYPos += childIndent;
                             }
 
-                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Dead Player Heads", DebugCheats.showPlayerDeathHeads, 20, yPos);
-                            yPos += childSpacing;
+                            DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Dead Player Heads", DebugCheats.showPlayerDeathHeads, 20, espYPos);
+                            espYPos += childSpacing;
                         }
 
                         // Extraction ESP section
-                        DebugCheats.drawExtractionPointEspBool = UIHelper.Checkbox("Extraction ESP", DebugCheats.drawExtractionPointEspBool, 0, yPos);
-                        yPos += DebugCheats.drawExtractionPointEspBool ? childIndent : parentSpacing;
+                        DebugCheats.drawExtractionPointEspBool = UIHelper.Checkbox("Extraction ESP", DebugCheats.drawExtractionPointEspBool, 0, espYPos);
+                        espYPos += DebugCheats.drawExtractionPointEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawExtractionPointEspBool)
                         {
-                            DebugCheats.showExtractionNames = UIHelper.Checkbox("Name/Status", DebugCheats.showExtractionNames, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.showExtractionDistance = UIHelper.Checkbox("Distance", DebugCheats.showExtractionDistance, 20, yPos);
-                            yPos += childSpacing;
+                            DebugCheats.showExtractionNames = UIHelper.Checkbox("Name/Status", DebugCheats.showExtractionNames, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.showExtractionDistance = UIHelper.Checkbox("Distance", DebugCheats.showExtractionDistance, 20, espYPos);
+                            espYPos += childSpacing;
                         }
 
                         // Player ESP section
-                        DebugCheats.drawPlayerEspBool = UIHelper.Checkbox("Player ESP", DebugCheats.drawPlayerEspBool, 0, yPos);
-                        yPos += DebugCheats.drawPlayerEspBool ? childIndent : parentSpacing;
+                        DebugCheats.drawPlayerEspBool = UIHelper.Checkbox("Player ESP", DebugCheats.drawPlayerEspBool, 0, espYPos);
+                        espYPos += DebugCheats.drawPlayerEspBool ? childIndent : parentSpacing;
                         if (DebugCheats.drawPlayerEspBool)
                         {
-                            DebugCheats.draw2DPlayerEspBool = UIHelper.Checkbox("2D Box", DebugCheats.draw2DPlayerEspBool, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("3D Box", DebugCheats.draw3DPlayerEspBool, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.showPlayerNames = UIHelper.Checkbox("Names", DebugCheats.showPlayerNames, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.showPlayerDistance = UIHelper.Checkbox("Distance", DebugCheats.showPlayerDistance, 20, yPos);
-                            yPos += childSpacing;
-                            DebugCheats.showPlayerHP = UIHelper.Checkbox("Health", DebugCheats.showPlayerHP, 20, yPos);
-                            yPos += childSpacing;
+                            DebugCheats.draw2DPlayerEspBool = UIHelper.Checkbox("2D Box", DebugCheats.draw2DPlayerEspBool, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.draw3DPlayerEspBool = UIHelper.Checkbox("3D Box", DebugCheats.draw3DPlayerEspBool, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.showPlayerNames = UIHelper.Checkbox("Names", DebugCheats.showPlayerNames, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.showPlayerDistance = UIHelper.Checkbox("Distance", DebugCheats.showPlayerDistance, 20, espYPos);
+                            espYPos += childSpacing;
+                            DebugCheats.showPlayerHP = UIHelper.Checkbox("Health", DebugCheats.showPlayerHP, 20, espYPos);
+                            espYPos += childSpacing;
                         }
                         
                         GUI.EndScrollView();
                         break;
 
                     case MenuCategory.Combat:
-                        Rect combatViewRect = new Rect(menuX + 20, menuY + 95, 560, 700);
+                        Rect combatViewRect = new Rect(menuX + 30, menuY + 95, 560, 700);
                         Rect combatContentRect = new Rect(0, 0, 540, 1200);
                         combatScrollPosition = GUI.BeginScrollView(combatViewRect, combatScrollPosition, combatContentRect);
 
-                        yPos = 10;
+                        float combatYPos = yPos;
 
                         UpdatePlayerList();
-                        UIHelper.Label("Select a player:", 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Select a player:", 0, combatYPos);
+                        combatYPos += childIndent;
                         
-                        playerScrollPosition = GUI.BeginScrollView(new Rect(0, yPos, 540, 200), playerScrollPosition, new Rect(0, 0, 520, playerNames.Count * 35), false, true);
+                        playerScrollPosition = GUI.BeginScrollView(new Rect(0, combatYPos, 540, 200), playerScrollPosition, new Rect(0, 0, 520, playerNames.Count * 35), false, true);
                         for (int i = 0; i < playerNames.Count; i++)
                         {
                             if (i == selectedPlayerIndex) GUI.color = Color.white;
@@ -1062,9 +1065,9 @@ namespace dark_cheat
                             GUI.color = Color.white;
                         }
                         GUI.EndScrollView();
-                        yPos += 215;
+                        combatYPos += scrollListSpacing;
 
-                        if (UIHelper.Button("Damage (-2)", 0, yPos))
+                        if (UIHelper.Button("-2 Damage", 0, combatYPos))
                         {
                             if (selectedPlayerIndex >= 0 && selectedPlayerIndex < playerList.Count)
                             {
@@ -1076,9 +1079,9 @@ namespace dark_cheat
                                 DLog.Log("No valid player selected to damage!");
                             }
                         }
-                        yPos += parentSpacing;
+                        combatYPos += parentSpacing;
 
-                        if (UIHelper.Button("Heal (to max)", 0, yPos))
+                        if (UIHelper.Button("Max Heal", 0, combatYPos))
                         {
                             if (selectedPlayerIndex >= 0 && selectedPlayerIndex < playerList.Count)
                             {
@@ -1090,90 +1093,126 @@ namespace dark_cheat
                                 DLog.Log("No valid player selected to heal!");
                             }
                         }
-                        yPos += parentSpacing;
+                        combatYPos += parentSpacing;
 
-                        if (UIHelper.Button("Kill", 0, yPos)) { Players.KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player killed: " + playerNames[selectedPlayerIndex]); }
-                        yPos += parentSpacing;
+                        if (UIHelper.Button("Kill", 0, combatYPos)) { Players.KillSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player killed: " + playerNames[selectedPlayerIndex]); }
+                        combatYPos += parentSpacing;
 
-                        if (UIHelper.Button("Revive", 0, yPos)) { Players.ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
-                        yPos += parentSpacing;
+                        if (UIHelper.Button("Revive", 0, combatYPos)) { Players.ReviveSelectedPlayer(selectedPlayerIndex, playerList, playerNames); DLog.Log("Player revived: " + playerNames[selectedPlayerIndex]); }
+                        combatYPos += parentSpacing;
 
-                        if (UIHelper.Button("Tumble", 0, yPos)) { Players.ForcePlayerTumble(); }
-                        yPos += parentSpacing;
+                        if (UIHelper.Button("Tumble", 0, combatYPos)) { Players.ForcePlayerTumble(); DLog.Log("Player tumbled: " + playerNames[selectedPlayerIndex]); }
+                        combatYPos += parentSpacing;
 
-                        if (UIHelper.Button(showTeleportUI ? "Hide Teleport Options" : "Teleport Options", 0, yPos))
+                        if (UIHelper.Button(showTeleportUI ? "Hide Teleport Options" : "Teleport Options", 0, combatYPos))
                         {
                             showTeleportUI = !showTeleportUI;
                             if (showTeleportUI)
                             {
                                 UpdateTeleportOptions();
                             }
-                        yPos += showTeleportUI ? parentSpacing : childIndent;
                         }
+                        combatYPos += parentSpacing;
 
                         if (showTeleportUI)
                         {
-                            UIHelper.Label("Teleport", centerX + contentWidth / 2 - 30, yPos);
-                            yPos += childSpacing;
+                            float sourceDropdownWidth = 180;
+                            float toTextWidth = 15;
+                            float destDropdownWidth = 180;
+                            float tpCenterX = 270;
+                            float tpSpacing = 15;
+                            float tpStartX = tpCenterX - ((sourceDropdownWidth + tpSpacing + toTextWidth + tpSpacing + destDropdownWidth) / 2);
+                            
+                            float sourceYPos = combatYPos;       
+                            string currentSource = teleportPlayerSourceIndex >= 0 && teleportPlayerSourceIndex < teleportPlayerSourceOptions.Length ?
+                                teleportPlayerSourceOptions[teleportPlayerSourceIndex] : "No source available";
+                            
+                            if (GUI.Button(new Rect(tpStartX, combatYPos, sourceDropdownWidth, 25), currentSource)) showSourceDropdown = !showSourceDropdown;
+                            
+                            GUI.Label(new Rect(tpStartX + sourceDropdownWidth + tpSpacing, combatYPos, toTextWidth, 25), "to");
+                            
+                            string currentDestination = teleportPlayerDestIndex >= 0 && teleportPlayerDestIndex < teleportPlayerDestOptions.Length ?
+                                teleportPlayerDestOptions[teleportPlayerDestIndex] : "No destination available";
+                            
+                            if (GUI.Button(new Rect(tpStartX + sourceDropdownWidth + tpSpacing + toTextWidth + tpSpacing, combatYPos, destDropdownWidth, 25), currentDestination)) showDestDropdown = !showDestDropdown;
+                            combatYPos += parentSpacing;
 
-                            float dropdownVisibleHeight = 150f;
-                            float executeButtonY = yPos + 40f;
-                            if (showSourceDropdown || showDestDropdown) // If either dropdown is open, move the execute button lower
+                            
+                            if (showSourceDropdown)
                             {
-                                executeButtonY = yPos + 40f + dropdownVisibleHeight + 10f;
-                            }
-                            if (GUI.Button(new Rect(centerX, yPos, 200, 25), teleportPlayerSourceOptions[teleportPlayerSourceIndex])) // Source selector button
-                            {
-                                showSourceDropdown = !showSourceDropdown;
-                                showDestDropdown = false;
-                            }
-                            UIHelper.Label("to", centerX + 210, yPos); // "to" label
-                            if (GUI.Button(new Rect(centerX + 250, yPos, 200, 25), teleportPlayerDestOptions[teleportPlayerDestIndex])) // Destination selector button
-                            {
-                                showDestDropdown = !showDestDropdown;
-                                showSourceDropdown = false;
-                            }
-                            yPos += childSpacing;
+                                int itemHeight = 25;
+                                int maxVisibleItems = 6;
+                                int visibleItems = Math.Min(teleportPlayerSourceOptions.Length, maxVisibleItems);
+                                float dropdownHeight = visibleItems * itemHeight;
+                                
+                                Rect dropdownRect = new Rect(tpStartX, sourceYPos + 25, sourceDropdownWidth, dropdownHeight);
+                                
+                                float contentHeight = teleportPlayerSourceOptions.Length * itemHeight;
 
-                            if (showSourceDropdown) // Source dropdown with scroll view (if open)
-                            {
-                                float totalSourceHeight = teleportPlayerSourceOptions.Length * 25f;
-                                bool needsScrollbar = totalSourceHeight > dropdownVisibleHeight;
-                                sourceDropdownScrollPosition = GUI.BeginScrollView( // Begin scroll view for source dropdown, hide scrollbar if not needed
-                                    new Rect(centerX, yPos, 200, dropdownVisibleHeight),
-                                    sourceDropdownScrollPosition,
-                                    new Rect(0, 0, needsScrollbar ? 180 : 200, totalSourceHeight),
-                                    false, needsScrollbar);
+                                // Adjust content height to account for skipping the selected item
+                                if (teleportPlayerSourceIndex >= 0 && teleportPlayerSourceIndex < teleportPlayerSourceOptions.Length)
+                                    contentHeight -= itemHeight;
+                                
+                                sourceDropdownScrollPosition = GUI.BeginScrollView(dropdownRect, sourceDropdownScrollPosition, new Rect(0, 0, 180, contentHeight));
+                                
+                                int displayedIndex = 0;
                                 for (int i = 0; i < teleportPlayerSourceOptions.Length; i++)
                                 {
-                                    if (GUI.Button(new Rect(0, i * 25, needsScrollbar ? 180 : 200, 25), teleportPlayerSourceOptions[i]))
+                                    if (i != teleportPlayerSourceIndex)
                                     {
+                                        if (GUI.Button(new Rect(0, displayedIndex * itemHeight, 180, itemHeight), teleportPlayerSourceOptions[i]))
+                                        {
                                         teleportPlayerSourceIndex = i;
-                                        showSourceDropdown = false;
+                                        }
+                                        displayedIndex++;
                                     }
                                 }
                                 GUI.EndScrollView();
                             }
-                            if (showDestDropdown) // Destination dropdown with scroll view (if open)
+                            
+                            if (showDestDropdown)
                             {
-                                float totalDestHeight = teleportPlayerDestOptions.Length * 25f;
-                                bool needsScrollbar = totalDestHeight > dropdownVisibleHeight;
-                                destDropdownScrollPosition = GUI.BeginScrollView( // Begin scroll view for destination dropdown, hide scrollbar if not needed
-                                    new Rect(centerX + 250, yPos, 200, dropdownVisibleHeight),
-                                    destDropdownScrollPosition,
-                                    new Rect(0, 0, needsScrollbar ? 180 : 200, totalDestHeight),
-                                    false, needsScrollbar);
+                                int itemHeight = 25;
+                                int maxVisibleItems = 6;
+                                int visibleItems = Math.Min(teleportPlayerDestOptions.Length, maxVisibleItems);
+                                float dropdownHeight = visibleItems * itemHeight;
+                                
+                                Rect dropdownRect = new Rect(tpStartX + destDropdownWidth + tpSpacing + toTextWidth + tpSpacing, sourceYPos + 25, destDropdownWidth, dropdownHeight);
+                                
+                                float contentHeight = teleportPlayerDestOptions.Length * itemHeight;
+
+                                // Adjust content height to account for skipping the selected item
+                                if (teleportPlayerDestIndex >= 0 && teleportPlayerDestIndex < teleportPlayerDestOptions.Length)
+                                    contentHeight -= itemHeight;
+                                
+                                destDropdownScrollPosition = GUI.BeginScrollView(dropdownRect, destDropdownScrollPosition, new Rect(0, 0, 180, contentHeight));
+                                
+                                int displayedIndex = 0;
                                 for (int i = 0; i < teleportPlayerDestOptions.Length; i++)
                                 {
-                                    if (GUI.Button(new Rect(0, i * 25, needsScrollbar ? 180 : 200, 25), teleportPlayerDestOptions[i]))
+                                    if (i != teleportPlayerDestIndex)
                                     {
+                                        if (GUI.Button(new Rect(0, displayedIndex * itemHeight, 180, itemHeight), teleportPlayerDestOptions[i]))
+                                        {
                                         teleportPlayerDestIndex = i;
-                                        showDestDropdown = false;
+                                        }
+                                        displayedIndex++;
                                     }
                                 }
                                 GUI.EndScrollView();
                             }
-                            if (UIHelper.Button("Execute Teleport", 30, executeButtonY)) // Execute teleport button
+                
+                            float executeButtonYPos = combatYPos + 10;
+                            
+                            float sourceDropdownOffset = 0;
+                            float destDropdownOffset = 0;
+                            
+                            if (showSourceDropdown && teleportPlayerSourceOptions.Length > 0)
+                                sourceDropdownOffset = Math.Min(teleportPlayerSourceOptions.Length, 6) * 25;
+                            if (showDestDropdown && teleportPlayerDestOptions.Length > 0)
+                                destDropdownOffset = Math.Min(teleportPlayerDestOptions.Length, 6) * 25;
+                            executeButtonYPos += Math.Max(sourceDropdownOffset, destDropdownOffset);
+                            if (GUI.Button(new Rect(tpCenterX - 75, executeButtonYPos, 150, 25), "Execute Teleport"))
                             {
                                 Teleport.ExecuteTeleportWithSeparateOptions(
                                     teleportPlayerSourceIndex,
@@ -1183,6 +1222,8 @@ namespace dark_cheat
                                     playerList);
                                 showSourceDropdown = false;
                                 showDestDropdown = false;
+ 
+                                DLog.Log("Teleport executed successfully");
                             }
                         }
                         
@@ -1190,17 +1231,17 @@ namespace dark_cheat
                         break;
 
                     case MenuCategory.Misc:
-                        Rect miscViewRect = new Rect(menuX + 20, menuY + 95, 560, 700);
+                        Rect miscViewRect = new Rect(menuX + 30, menuY + 95, 560, 700);
                         Rect miscContentRect = new Rect(0, 0, 540, 1200);
                         miscScrollPosition = GUI.BeginScrollView(miscViewRect, miscScrollPosition, miscContentRect);
 
-                        yPos = 10;
+                        float miscYPos = yPos;
 
                         UpdatePlayerList();
-                        UIHelper.Label("Select a player:", 0, yPos);
-                        yPos += childIndent;
+                        UIHelper.Label("Select a player:", 0, miscYPos);
+                        miscYPos += childIndent;
 
-                        playerScrollPosition = GUI.BeginScrollView(new Rect(0, yPos, 540, 200), playerScrollPosition, new Rect(0, 0, 520, playerNames.Count * 35), false, true);
+                        playerScrollPosition = GUI.BeginScrollView(new Rect(0, miscYPos, 540, 200), playerScrollPosition, new Rect(0, 0, 520, playerNames.Count * 35), false, true);
                         for (int i = 0; i < playerNames.Count; i++)
                         {
                             if (i == selectedPlayerIndex) GUI.color = Color.white;
@@ -1209,21 +1250,21 @@ namespace dark_cheat
                             GUI.color = Color.white;
                         }
                         GUI.EndScrollView();
-                        yPos += 215;
+                        miscYPos += scrollListSpacing;
 
-                        if (UIHelper.Button("Force Mute [HOST]", 0, yPos))
+                        if (UIHelper.Button("Force Mute", 0, miscYPos))
                         {
                             MiscFeatures.ForceMutePlayer();
                         }
-                        yPos += parentSpacing;
+                        miscYPos += parentSpacing;
 
-                        if (UIHelper.Button("Force High Volume [HOST]", 0, yPos))
+                        if (UIHelper.Button("Force High Volume", 0, miscYPos))
                         {
-                            MiscFeatures.ForcePlayerMicVolumeHigh(999);
+                            MiscFeatures.ForcePlayerMicVolumeHigh(9999);
                         }
-                        yPos += parentSpacing;
+                        miscYPos += parentSpacing;
 
-                        if (UIHelper.Button("Spawn Money [HOST]", 0, yPos))
+                        if (UIHelper.Button("[HOST] Spawn Money", 0, miscYPos))
                         {
                             DLog.Log("'Spawn Money' button clicked!");
                             GameObject localPlayer = DebugCheats.GetLocalPlayer();
@@ -1237,42 +1278,46 @@ namespace dark_cheat
                             ItemSpawner.SpawnMoney(targetPosition);
                             DLog.Log("Money spawned.");
                         }
-                        yPos += parentSpacing;
+                        miscYPos += parentSpacing;
 
-                        bool newNoFogState = UIHelper.ButtonBool("No Fog", MiscFeatures.NoFogEnabled, 0, yPos);
+                        bool newNoFogState = UIHelper.ButtonBool("No Fog", MiscFeatures.NoFogEnabled, 0, miscYPos);
                         if (newNoFogState != MiscFeatures.NoFogEnabled)
                         {
                             MiscFeatures.ToggleNoFog(newNoFogState);
                         }
-                        yPos += parentSpacing;
+                        miscYPos += parentSpacing;
 
-                        bool newWatermarkState = UIHelper.ButtonBool("Disable Watermark", !showWatermark, 0, yPos);
+                        bool newWatermarkState = UIHelper.ButtonBool("Disable Watermark", !showWatermark, 0, miscYPos);
                         if (newWatermarkState != !showWatermark)
                         {
                             showWatermark = !newWatermarkState;
                         }
-                        yPos += parentSpacing;
+                        miscYPos += parentSpacing;
 
-                        MapTools.showMapTweaks = UIHelper.Checkbox("Map Tweaks", MapTools.showMapTweaks, 0, yPos);
-                        yPos += MapTools.showMapTweaks ? childIndent : parentSpacing;
+                        MapTools.showMapTweaks = UIHelper.Checkbox("Map Tweaks", MapTools.showMapTweaks, 0, miscYPos);
+                        miscYPos += MapTools.showMapTweaks ? childIndent : parentSpacing;
 
                         if (MapTools.showMapTweaks)
                         {
-                            MapTools.mapDisableHiddenOverlayCheckboxActive = UIHelper.Checkbox("Disable '?' Overlay (can't be undone)", MapTools.mapDisableHiddenOverlayCheckboxActive, 20, yPos);
-                            yPos += childSpacing;
+                            MapTools.mapDisableHiddenOverlayCheckboxActive = UIHelper.Checkbox("Disable '?' Overlay (can't be undone)", MapTools.mapDisableHiddenOverlayCheckboxActive, 20, miscYPos);
+                            miscYPos += childSpacing;
                         }
                         
                         GUI.EndScrollView();
                         break;
 
                     case MenuCategory.Enemies:
-                        float enemyYPos = menuY + 95;
+                        Rect enemyViewRect = new Rect(menuX + 30, menuY + 95, 560, 700);
+                        Rect enemyContentRect = new Rect(0, 0, 540, 1200);
+                        enemiesScrollPosition = GUI.BeginScrollView(enemyViewRect, enemiesScrollPosition, enemyContentRect);
+
+                        float enemyYPos = yPos;
 
                         UpdateEnemyList();
-                        UIHelper.Label("Select an enemy:", menuX + 30, enemyYPos);
+                        UIHelper.Label("Select an enemy:", 0, enemyYPos);
                         enemyYPos += childIndent;
 
-                        enemyScrollPosition = GUI.BeginScrollView(new Rect(menuX + 30, enemyYPos, 540, 200), enemyScrollPosition, new Rect(0, 0, 520, enemyNames.Count * 35), false, true);
+                        enemyScrollPosition = GUI.BeginScrollView(new Rect(0, enemyYPos, 540, 200), enemyScrollPosition, new Rect(0, 0, 520, enemyNames.Count * 35), false, true);
                         for (int i = 0; i < enemyNames.Count; i++)
                         {
                             if (i == selectedEnemyIndex) GUI.color = Color.white;
@@ -1281,23 +1326,23 @@ namespace dark_cheat
                             GUI.color = Color.white;
                         }
                         GUI.EndScrollView();
-                        enemyYPos += 215;
+                        enemyYPos += scrollListSpacing;
 
-                        if (UIHelper.Button("Kill Selected Enemy", menuX + 30, enemyYPos))
+                        if (UIHelper.Button("Kill Enemy", 0, enemyYPos))
                         {
                             Enemies.KillSelectedEnemy(selectedEnemyIndex, enemyList, enemyNames);
                             DLog.Log($"Attempt to kill the selected enemy completed: {enemyNames[selectedEnemyIndex]}");
                         }
                         enemyYPos += parentSpacing;
 
-                        if (UIHelper.Button("Kill All Enemies", menuX + 30, enemyYPos))
+                        if (UIHelper.Button("Kill All Enemies", 0, enemyYPos))
                         {
                             Enemies.KillAllEnemies();
                             DLog.Log("Attempt to kill all enemies completed.");
                         }
                         enemyYPos += parentSpacing;
 
-                        if (UIHelper.Button(showEnemyTeleportUI ? "Hide Teleport Options" : "Teleport Options", menuX + 30, enemyYPos))
+                        if (UIHelper.Button(showEnemyTeleportUI ? "Hide Teleport Options" : "Teleport Options", 0, enemyYPos))
                         {
                             showEnemyTeleportUI = !showEnemyTeleportUI;
                             if (showEnemyTeleportUI)
@@ -1309,86 +1354,63 @@ namespace dark_cheat
 
                         if (showEnemyTeleportUI)
                         {
-                            GUI.Label(new Rect(menuX + 30, enemyYPos, 150, 25), "Teleport Enemy To:");
+                            float labelWidth = 150;
+                            float dropdownWidth = 200;
+                            float tpCenterX = 270;
+                            float tpSpacing = 20;
+ 
+                            float tpTotalWidth = labelWidth + tpSpacing + dropdownWidth;
+                            float tpStartX = tpCenterX - (tpTotalWidth / 2);
+                            
+                            GUI.Label(new Rect(tpStartX, enemyYPos, labelWidth, 25), "Teleport Enemy To      →");
 
                             string currentDestination = enemyTeleportDestIndex >= 0 && enemyTeleportDestIndex < enemyTeleportDestOptions.Length ?
                                 enemyTeleportDestOptions[enemyTeleportDestIndex] : "No players available";
 
-                            if (GUI.Button(new Rect(menuX + 180, enemyYPos, 200, 25), currentDestination))
+                            if (GUI.Button(new Rect(tpStartX + labelWidth + tpSpacing, enemyYPos, dropdownWidth, 25), currentDestination))
                             {
-                                showEnemyTeleportDropdown = !showEnemyTeleportDropdown;
+                                showEnemyTeleportDropdown = enemyTeleportDestOptions.Length > 0 ? !showEnemyTeleportDropdown : false;
                             }
                             enemyYPos += parentSpacing;
 
-                            List<string> availablePlayers = new List<string>();
-                            for (int i = 0; i < playerNames.Count; i++)
-                            {
-                                if (i != enemyTeleportDestIndex)
-                                {
-                                    availablePlayers.Add(playerNames[i]);
-                                }
-                            }
-
                             if (showEnemyTeleportDropdown)
                             {
-                                if (availablePlayers.Count == 0)
+                                int itemHeight = enemyTeleportDestOptions.Length > 0 ? 25 : 0;
+                                int maxVisibleItems = 6;
+                                int visibleItems = Math.Min(enemyTeleportDestOptions.Length, maxVisibleItems);
+                                float dropdownHeight = visibleItems * itemHeight;
+
+                                Rect dropdownRect = new Rect(tpStartX + labelWidth + tpSpacing, enemyYPos - 15, dropdownWidth, dropdownHeight);
+
+                                float contentHeight = enemyTeleportDestOptions.Length * itemHeight;
+                                
+                                // Adjust content height to account for skipping the selected item
+                                if (enemyTeleportDestIndex >= 0 && enemyTeleportDestIndex < enemyTeleportDestOptions.Length)
+                                    contentHeight -= itemHeight;
+
+                                enemyTeleportDropdownScrollPosition = GUI.BeginScrollView(dropdownRect, enemyTeleportDropdownScrollPosition, new Rect(0, 0, dropdownWidth - 20, contentHeight));
+
+                                int displayedIndex = 0;
+                                for (int i = 0; i < enemyTeleportDestOptions.Length; i++)
                                 {
-                                    GUIStyle noWrapStyle = new GUIStyle(GUI.skin.label);
-                                    noWrapStyle.alignment = TextAnchor.MiddleCenter;
-                                    noWrapStyle.wordWrap = false;
-
-                                    float labelWidth = 500f;
-                                    float labelX = menuX + (600 - labelWidth) / 2;
-
-                                    GUI.Label(new Rect(labelX, enemyYPos, labelWidth, 25), "No other players available, so lonely :(", noWrapStyle);
-                                    enemyYPos += childSpacing;
-                                }
-                                else
-                                {
-                                    int itemHeight = 25;
-                                    int maxVisibleItems = 6;
-                                    int visibleItems = Math.Min(availablePlayers.Count, maxVisibleItems);
-                                    float dropdownHeight = visibleItems * itemHeight;
-
-                                    Rect dropdownRect = new Rect(menuX + 180, enemyYPos, 200, dropdownHeight);
-
-                                    float contentHeight = availablePlayers.Count * itemHeight;
-
-                                    enemyTeleportDropdownScrollPosition = GUI.BeginScrollView(
-                                        dropdownRect,
-                                        enemyTeleportDropdownScrollPosition,
-                                        new Rect(0, 0, 180, contentHeight));
-
-                                    for (int i = 0; i < availablePlayers.Count; i++)
+                                    if (i != enemyTeleportDestIndex)
                                     {
-                                        if (GUI.Button(new Rect(0, i * itemHeight, 180, itemHeight), availablePlayers[i]))
+                                        if (GUI.Button(new Rect(0, displayedIndex * itemHeight, dropdownWidth - 20, itemHeight), enemyTeleportDestOptions[i]))
                                         {
-                                            int playerIndex = playerNames.IndexOf(availablePlayers[i]);
-                                            if (playerIndex >= 0)
-                                            {
-                                                enemyTeleportDestIndex = playerIndex;
-                                                showEnemyTeleportDropdown = false;
-                                            }
+                                            enemyTeleportDestIndex = i;
+                                            showEnemyTeleportDropdown = false;
                                         }
+                                        displayedIndex++;
                                     }
-                                    GUI.EndScrollView();
-                                    enemyYPos += dropdownHeight + childSpacing;
                                 }
-                            }
-                            else if (availablePlayers.Count == 0)
-                            {
-                                GUIStyle noWrapStyle = new GUIStyle(GUI.skin.label);
-                                noWrapStyle.alignment = TextAnchor.MiddleCenter;
-                                noWrapStyle.wordWrap = false;
-
-                                float labelWidth = 500f;
-                                float labelX = menuX + (600 - labelWidth) / 2;
-
-                                GUI.Label(new Rect(labelX, enemyYPos, labelWidth, 25), "No other players available, so lonely :(", noWrapStyle);
-                                enemyYPos += childSpacing;
+                                GUI.EndScrollView();
                             }
 
-                            if (UIHelper.Button("Execute Teleport", menuX + 30, enemyYPos))
+                            float executeButtonYPos = enemyYPos + 10;
+                            float dropdownOffset = 0;
+                            
+                            if (showEnemyTeleportDropdown && enemyTeleportDestOptions.Length > 0) dropdownOffset = Math.Min(enemyTeleportDestOptions.Length, 6) * 25;
+                            if (GUI.Button(new Rect(tpCenterX - 75f, executeButtonYPos, 150f, 25f), "Execute Teleport"))
                             {
                                 int playerIndex = enemyTeleportDestIndex;
                                 if (playerIndex >= 0 && playerIndex < playerList.Count)
@@ -1399,8 +1421,7 @@ namespace dark_cheat
                                     }
                                     else
                                     {
-                                        Enemies.TeleportEnemyToPlayer(selectedEnemyIndex, enemyList, enemyNames,
-                                                                    playerIndex, playerList, playerNames);
+                                        Enemies.TeleportEnemyToPlayer(selectedEnemyIndex, enemyList, enemyNames, playerIndex, playerList, playerNames);
                                     }
                                     UpdateEnemyList();
                                     DLog.Log($"Teleported {enemyNames[selectedEnemyIndex]} to {playerNames[playerIndex]}.");
@@ -1412,17 +1433,20 @@ namespace dark_cheat
                                 showEnemyTeleportDropdown = false;
                             }
                         }
+
+                        GUI.EndScrollView();
                         break;
 
                     case MenuCategory.Items:
                         Rect itemsViewRect = new Rect(menuX + 20, menuY + 95, 560, 700);
                         Rect itemsContentRect = new Rect(0, 0, 540, 1200);
                         itemsScrollPosition = GUI.BeginScrollView(itemsViewRect, itemsScrollPosition, itemsContentRect);
-                        yPos = 10;
+                        
+                        float itemYPos = yPos;
 
-                        UIHelper.Label("Select an item:", 0, yPos);
-                        yPos += childIndent;
-                        itemScrollPosition = GUI.BeginScrollView(new Rect(0, yPos, 540, 200), itemScrollPosition, new Rect(0, 0, 520, itemList.Count * 35), false, true);
+                        UIHelper.Label("Select an item:", 0, itemYPos);
+                        itemYPos += childIndent;
+                        itemScrollPosition = GUI.BeginScrollView(new Rect(0, itemYPos, 540, 200), itemScrollPosition, new Rect(0, 0, 520, itemList.Count * 35), false, true);
                         for (int i = 0; i < itemList.Count; i++)
                         {
                             if (i == selectedItemIndex) GUI.color = Color.white;
@@ -1434,9 +1458,9 @@ namespace dark_cheat
                             GUI.color = Color.white;
                         }
                         GUI.EndScrollView();
-                        yPos += 215;
+                        itemYPos += 215;
 
-                        if (UIHelper.Button("Teleport Item to Me [HOST]", 0, yPos))
+                        if (UIHelper.Button("Teleport Item to Me [HOST]", 0, itemYPos))
                         {
                             if (selectedItemIndex >= 0 && selectedItemIndex < itemList.Count)
                             {
@@ -1448,34 +1472,34 @@ namespace dark_cheat
                                 DLog.Log("No valid item selected for teleport!");
                             }
                         }
-                        yPos += parentSpacing;
+                        itemYPos += parentSpacing;
 
-                        if (UIHelper.Button("Teleport All Items to Me [HOST]", 0, yPos))
+                        if (UIHelper.Button("Teleport All Items to Me [HOST]", 0, itemYPos))
                         {
                             ItemTeleport.TeleportAllItemsToMe();
                             DLog.Log("Teleporting all items initiated.");
                         }
-                        yPos += parentSpacing;
+                        itemYPos += parentSpacing;
 
                         GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
                         labelStyle.normal.textColor = Color.white;
 
-                        GUI.Label(new Rect(0, yPos, 540, 20), "Change Item Value [HOST]:", GUI.skin.label);
-                        yPos += 25;
+                        GUI.Label(new Rect(0, itemYPos, 540, 20), "Change Item Value [HOST]:", GUI.skin.label);
+                        itemYPos += 25;
 
                         int displayValue = (int)Mathf.Pow(10, itemValueSliderPos);
-                        GUI.Label(new Rect(0, yPos, 540, 20), $"${displayValue:N0}", GUI.skin.label);
-                        yPos += 25;
+                        GUI.Label(new Rect(0, itemYPos, 540, 20), $"${displayValue:N0}", GUI.skin.label);
+                        itemYPos += 25;
 
-                        float newSliderPos = GUI.HorizontalSlider(new Rect(0, yPos, 540, 20), itemValueSliderPos, 3.0f, 9.0f);
-                        yPos += 25;
+                        float newSliderPos = GUI.HorizontalSlider(new Rect(0, itemYPos, 540, 20), itemValueSliderPos, 3.0f, 9.0f);
+                        itemYPos += 25;
 
                         if (newSliderPos != itemValueSliderPos)
                         {
                             itemValueSliderPos = newSliderPos;
                         }
 
-                        if (GUI.Button(new Rect(0, yPos, 540, 30), "Apply Value Change"))
+                        if (GUI.Button(new Rect(0, itemYPos, 540, 30), "Apply Value Change"))
                         {
                             if (selectedItemIndex >= 0 && selectedItemIndex < itemList.Count)
                             {
@@ -1487,9 +1511,9 @@ namespace dark_cheat
                                 DLog.Log("No valid item selected to change value!");
                             }
                         }
-                        yPos += parentSpacing;
+                        itemYPos += parentSpacing;
 
-                        if (UIHelper.Button(showItemSpawner ? "Hide Item Spawner [HOST]" : "Show Item Spawner [HOST]", 0, yPos))
+                        if (UIHelper.Button(showItemSpawner ? "Hide Item Spawner" : "Show Item Spawner", 0, itemYPos))
                         {
                             showItemSpawner = !showItemSpawner;
                             if (showItemSpawner && availableItemsList.Count == 0)
@@ -1497,15 +1521,15 @@ namespace dark_cheat
                                 availableItemsList = ItemSpawner.GetAvailableItems();
                             }
                         }
-                        yPos += parentSpacing;
+                        itemYPos += parentSpacing;
 
                         if (showItemSpawner)
                         {
-                            GUI.Label(new Rect(0, yPos, 540, 20), "Select item to spawn:");
-                            yPos += childIndent;
+                            GUI.Label(new Rect(0, itemYPos, 540, 20), "Select item to spawn:");
+                            itemYPos += childIndent;
 
                             itemSpawnerScrollPosition = GUI.BeginScrollView(
-                                new Rect(0, yPos, 540, 150),
+                                new Rect(0, itemYPos, 540, 150),
                                 itemSpawnerScrollPosition,
                                 new Rect(0, 0, 520, availableItemsList.Count * 30),
                                 false, true);
@@ -1523,24 +1547,22 @@ namespace dark_cheat
                                 GUI.color = Color.white;
                             }
                             GUI.EndScrollView();
-                            yPos += 160;
+                            itemYPos += 160;
 
-                            bool isValuable = availableItemsList.Count > 0 &&
-                                             selectedItemToSpawnIndex < availableItemsList.Count &&
-                                             availableItemsList[selectedItemToSpawnIndex].Contains("Valuable");
+                            bool isValuable = availableItemsList.Count > 0 && selectedItemToSpawnIndex < availableItemsList.Count && availableItemsList[selectedItemToSpawnIndex].Contains("Valuable");
 
                             if (isValuable)
                             {
                                 string formattedValue = string.Format("{0:n0}", itemSpawnValue);
-                                GUI.Label(new Rect(0, yPos, 540, 20), $"Item Value: ${formattedValue}");
-                                yPos += childIndent;
+                                GUI.Label(new Rect(0, itemYPos, 540, 20), $"Item Value: ${formattedValue}");
+                                itemYPos += childIndent;
 
                                 float sliderValue = Mathf.Log10((float)itemSpawnValue / 1000f) / 6f; // 6 = log10(1,000,000,000/1,000)
-                                float newSliderValue = GUI.HorizontalSlider(new Rect(0, yPos, 540, 20), sliderValue, 0f, 1f);
+                                float newSliderValue = GUI.HorizontalSlider(new Rect(0, itemYPos, 540, 20), sliderValue, 0f, 1f);
 
                                 if (newSliderValue != sliderValue)
                                 {
-                                    // Keep host check for value adjustment
+                                    // keep host check for value adjustment
                                     if (isHost)
                                     {
                                         itemSpawnValue = (int)(Mathf.Pow(10, newSliderValue * 6f) * 1000f);
@@ -1548,12 +1570,12 @@ namespace dark_cheat
                                     }
                                 }
 
-                                yPos += childIndent;
+                                itemYPos += childIndent;
                             }
 
                             GUI.enabled = availableItemsList.Count > 0 && selectedItemToSpawnIndex < availableItemsList.Count;
 
-                            if (GUI.Button(new Rect(0, yPos, 540, 30), "Spawn Selected Item"))
+                            if (GUI.Button(new Rect(0, itemYPos, 540, 30), "Spawn Selected Item"))
                             {
                                 GameObject localPlayer = DebugCheats.GetLocalPlayer();
                                 if (localPlayer != null)
@@ -1579,14 +1601,14 @@ namespace dark_cheat
                             }
 
                             GUI.enabled = true;
-                            yPos += parentSpacing;
+                            itemYPos += parentSpacing;
                         }
 
                         GUI.EndScrollView();
                         break;
 
                     case MenuCategory.Hotkeys:
-                        Rect viewRect = new Rect(menuX + 20, menuY + 95, 560, 700);
+                        Rect viewRect = new Rect(menuX + 30, menuY + 95, 560, 700);
                         Rect contentRect = new Rect(0, 0, 540, 1200);
 
                         if (!string.IsNullOrEmpty(hotkeyManager.KeyAssignmentError) && Time.time - hotkeyManager.ErrorMessageTime < HotkeyManager.ERROR_MESSAGE_DURATION)
@@ -1599,7 +1621,7 @@ namespace dark_cheat
                                 alignment = TextAnchor.MiddleCenter
                             };
 
-                            GUI.Label(new Rect(menuX + 20, menuY + 95, 560, 25), hotkeyManager.KeyAssignmentError, errorStyle);
+                            GUI.Label(new Rect(menuX + 30, menuY + 95, 560, 25), hotkeyManager.KeyAssignmentError, errorStyle);
 
                             viewRect.y += 30;
                             viewRect.height -= 30;
@@ -1607,7 +1629,7 @@ namespace dark_cheat
 
                         hotkeyScrollPosition = GUI.BeginScrollView(viewRect, hotkeyScrollPosition, contentRect);
 
-                        yPos = 10;
+                        float hotkeyYPos = yPos;
 
                         GUIStyle headerStyle = new GUIStyle(GUI.skin.label)
                         {
@@ -1616,56 +1638,56 @@ namespace dark_cheat
                             normal = { textColor = Color.white }
                         };
 
-                        GUI.Label(new Rect(20, yPos, 540, 25), "Hotkey Configuration", headerStyle);
-                        yPos += 30;
+                        GUI.Label(new Rect(20, hotkeyYPos, 540, 25), "Hotkey Configuration", headerStyle);
+                        hotkeyYPos += childSpacing;
 
-                        GUI.Label(new Rect(20, yPos, 540, 20), "How to set up a hotkey:", instructionStyle);
-                        yPos += 20;
-                        GUI.Label(new Rect(40, yPos, 540, 20), "1. Click on a key field → press desired key", instructionStyle);
-                        yPos += 20;
-                        GUI.Label(new Rect(40, yPos, 540, 20), "2. Click on action field → select function", instructionStyle);
-                        yPos += 25;
+                        GUI.Label(new Rect(20, hotkeyYPos, 540, 20), "How to set up a hotkey:", instructionStyle);
+                        hotkeyYPos += childIndent;
+                        GUI.Label(new Rect(40, hotkeyYPos, 540, 20), "1. Click on a key field → press desired key", instructionStyle);
+                        hotkeyYPos += childIndent;
+                        GUI.Label(new Rect(40, hotkeyYPos, 540, 20), "2. Click on action field → select function", instructionStyle);
+                        hotkeyYPos += 25;
 
                         GUIStyle warningStyle = new GUIStyle(GUI.skin.label)
                         {
                             fontSize = 12,
                             normal = { textColor = Color.yellow }
                         };
-                        GUI.Label(new Rect(20, yPos, 540, 20), "Warning: Ensure each key is only assigned to one action", warningStyle);
-                        yPos += 30;
+                        GUI.Label(new Rect(20, hotkeyYPos, 540, 20), "Warning: Ensure each key is only assigned to one action", warningStyle);
+                        hotkeyYPos += childSpacing;
 
-                        GUI.Label(new Rect(10, yPos, 540, 25), "System Keys", headerStyle);
-                        yPos += 30;
+                        GUI.Label(new Rect(10, hotkeyYPos, 540, 25), "System Keys", headerStyle);
+                        hotkeyYPos += childSpacing;
 
                         string menuToggleKeyText = (hotkeyManager.ConfiguringSystemKey && hotkeyManager.SystemKeyConfigIndex == 0 && hotkeyManager.WaitingForAnyKey)
                             ? "Press any key..." : hotkeyManager.MenuToggleKey.ToString();
-                        GUI.Label(new Rect(10, yPos, 150, 30), "Menu Toggle:");
-                        if (GUI.Button(new Rect(170, yPos, 290, 30), menuToggleKeyText))
+                        GUI.Label(new Rect(10, hotkeyYPos, 150, 30), "Menu Toggle:");
+                        if (GUI.Button(new Rect(170, hotkeyYPos, 290, 30), menuToggleKeyText))
                         {
                             hotkeyManager.StartConfigureSystemKey(0);
                         }
-                        yPos += 40;
+                        hotkeyYPos += parentSpacing;
 
                         string reloadKeyText = (hotkeyManager.ConfiguringSystemKey && hotkeyManager.SystemKeyConfigIndex == 1 && hotkeyManager.WaitingForAnyKey)
                             ? "Press any key..." : hotkeyManager.ReloadKey.ToString();
-                        GUI.Label(new Rect(10, yPos, 150, 30), "Reload:");
-                        if (GUI.Button(new Rect(170, yPos, 290, 30), reloadKeyText))
+                        GUI.Label(new Rect(10, hotkeyYPos, 150, 30), "Reload:");
+                        if (GUI.Button(new Rect(170, hotkeyYPos, 290, 30), reloadKeyText))
                         {
                             hotkeyManager.StartConfigureSystemKey(1);
                         }
-                        yPos += 40;
+                        hotkeyYPos += parentSpacing;
 
                         string unloadKeyText = (hotkeyManager.ConfiguringSystemKey && hotkeyManager.SystemKeyConfigIndex == 2 && hotkeyManager.WaitingForAnyKey)
                             ? "Press any key..." : hotkeyManager.UnloadKey.ToString();
-                        GUI.Label(new Rect(10, yPos, 150, 30), "Unload:");
-                        if (GUI.Button(new Rect(170, yPos, 290, 30), unloadKeyText))
+                        GUI.Label(new Rect(10, hotkeyYPos, 150, 30), "Unload:");
+                        if (GUI.Button(new Rect(170, hotkeyYPos, 290, 30), unloadKeyText))
                         {
                             hotkeyManager.StartConfigureSystemKey(2);
                         }
-                        yPos += 50;
+                        hotkeyYPos += 50;
 
-                        GUI.Label(new Rect(10, yPos, 540, 25), "Action Hotkeys", headerStyle);
-                        yPos += 30;
+                        GUI.Label(new Rect(10, hotkeyYPos, 540, 25), "Action Hotkeys", headerStyle);
+                        hotkeyYPos += childSpacing;
 
                         for (int i = 0; i < 12; i++)
                         {
@@ -1673,7 +1695,7 @@ namespace dark_cheat
                             string keyText = (currentKey == KeyCode.None) ? "Not Set" : currentKey.ToString();
                             string actionName = hotkeyManager.GetActionNameForKey(currentKey);
 
-                            Rect slotRect = new Rect(10, yPos, 150, 30);
+                            Rect slotRect = new Rect(10, hotkeyYPos, 150, 30);
                             bool isSelected = hotkeyManager.SelectedHotkeySlot == i && hotkeyManager.ConfiguringHotkey;
 
                             if (GUI.Button(slotRect, isSelected ? "Press any key..." : keyText))
@@ -1681,7 +1703,7 @@ namespace dark_cheat
                                 hotkeyManager.StartHotkeyConfiguration(i);
                             }
 
-                            Rect actionRect = new Rect(170, yPos, 290, 30);
+                            Rect actionRect = new Rect(170, hotkeyYPos, 290, 30);
                             if (GUI.Button(actionRect, actionName))
                             {
                                 if (currentKey != KeyCode.None)
@@ -1695,16 +1717,16 @@ namespace dark_cheat
                                 }
                             }
 
-                            Rect clearRect = new Rect(470, yPos, 60, 30);
+                            Rect clearRect = new Rect(470, hotkeyYPos, 60, 30);
                             if (GUI.Button(clearRect, "Clear") && currentKey != KeyCode.None)
                             {
                                 hotkeyManager.ClearHotkeyBinding(i);
                             }
 
-                            yPos += 40;
+                            hotkeyYPos += parentSpacing;
                         }
 
-                        if (GUI.Button(new Rect(10, yPos, 540, 30), "Save Hotkey Settings"))
+                        if (GUI.Button(new Rect(10, hotkeyYPos, 540, 30), "Save Hotkey Settings"))
                         {
                             hotkeyManager.SaveHotkeySettings();
                             DLog.Log("Hotkey settings saved manually");
