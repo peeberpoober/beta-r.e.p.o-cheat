@@ -1286,13 +1286,13 @@ namespace dark_cheat
 
                         if (MapTools.showMapTweaks) // Only show the buttons if the checkbox is selected
                         {
-                            if (GUI.Button(new Rect(menuX + 30, miscYPos, 200, 30), "Disable '?' overlay")) // Using fixed width similar to the enemy menu buttons
+                            if (UIHelper.Button("Disable '?' overlay(could not be undone on level)", 0, miscYPos))
                             {
                                 MapTools.changeOverlayStatus(true);
                             }
                             miscYPos += parentSpacing;
 
-                            if (GUI.Button(new Rect(menuX + 30, miscYPos, 200, 30), "Discover Map Valuables"))
+                            if (UIHelper.Button("Discover Map Valuables", 0, miscYPos))
                             {
                                 MapTools.DiscoveryMapValuables();
                             }
