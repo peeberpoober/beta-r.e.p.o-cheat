@@ -1534,15 +1534,15 @@ namespace dark_cheat
                                     fontSize = 14,
                                     alignment = TextAnchor.MiddleCenter
                                 };
-                                GUI.Label(new Rect(0, yPos, 540, 25), "⚠ Only the host can spawn items in multiplayer!", hostWarningStyle);
-                                yPos += 30;
+                                GUI.Label(new Rect(0, itemYPos, 540, 25), "⚠ Only the host can spawn items in multiplayer!", hostWarningStyle);
+                                itemYPos += 30;
                             }
 
-                            GUI.Label(new Rect(0, yPos, 540, 20), "Select item to spawn:");
-                            yPos += childIndent;
+                            GUI.Label(new Rect(0, itemYPos, 540, 20), "Select item to spawn:");
+                            itemYPos += childIndent;
 
                             itemSpawnerScrollPosition = GUI.BeginScrollView(
-                                new Rect(0, yPos, 540, 150),
+                                new Rect(0, itemYPos, 540, 150),
                                 itemSpawnerScrollPosition,
                                 new Rect(0, 0, 520, availableItemsList.Count * 30),
                                 false, true);
@@ -1560,18 +1560,18 @@ namespace dark_cheat
                                 GUI.color = Color.white;
                             }
                             GUI.EndScrollView();
-                            yPos += 160;
+                            itemYPos += 160;
 
                             bool isValuable = availableItemsList.Count > 0 && selectedItemToSpawnIndex < availableItemsList.Count && availableItemsList[selectedItemToSpawnIndex].Contains("Valuable");
 
                             if (isValuable)
                             {
                                 string formattedValue = string.Format("{0:n0}", itemSpawnValue);
-                                GUI.Label(new Rect(0, yPos, 540, 20), $"Item Value: ${formattedValue}");
-                                yPos += childIndent;
+                                GUI.Label(new Rect(0, itemYPos, 540, 20), $"Item Value: ${formattedValue}");
+                                itemYPos += childIndent;
 
                                 float sliderValue = Mathf.Log10((float)itemSpawnValue / 1000f) / 6f; // 6 = log10(1,000,000,000/1,000)
-                                float newSliderValue = GUI.HorizontalSlider(new Rect(0, yPos, 540, 20), sliderValue, 0f, 1f);
+                                float newSliderValue = GUI.HorizontalSlider(new Rect(0, itemYPos, 540, 20), sliderValue, 0f, 1f);
 
                                 if (newSliderValue != sliderValue)
                                 {
@@ -1580,12 +1580,12 @@ namespace dark_cheat
                                     itemSpawnValue = Mathf.Clamp(itemSpawnValue, 1000, 1000000000);
                                 }
 
-                                yPos += childIndent;
+                                itemYPos += childIndent;
                             }
 
                             GUI.enabled = isHost && availableItemsList.Count > 0 && selectedItemToSpawnIndex < availableItemsList.Count;
 
-                            if (GUI.Button(new Rect(0, yPos, 540, 30), "Spawn Selected Item"))
+                            if (GUI.Button(new Rect(0, itemYPos, 540, 30), "Spawn Selected Item"))
                             {
                                 if (isHost)
                                 {
@@ -1618,7 +1618,7 @@ namespace dark_cheat
                             }
 
                             GUI.enabled = true;
-                            yPos += parentSpacing;
+                            itemYPos += parentSpacing;
                         }
 
                         GUI.EndScrollView();
