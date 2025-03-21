@@ -3,9 +3,105 @@ using Photon.Pun;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Collections;
 
 namespace dark_cheat
 {
+    public class MaterialPreserver : MonoBehaviour
+    {
+        private Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
+        private float checkInterval = 0.1f;
+        private float timeUntilNextCheck = 0;
+        private bool initialized = false;
+
+        public void PreserveMaterials()
+        {
+            foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true)) // Store all renderer material references
+            {
+                if (renderer != null && renderer.materials.Length > 0)
+                {
+                    Material[] materialCopies = new Material[renderer.materials.Length]; // Create deep copies of all materials
+                    for (int i = 0; i < renderer.materials.Length; i++)
+                    {
+                        if (renderer.materials[i] != null)
+                        {
+                            materialCopies[i] = new Material(renderer.materials[i]);
+                        }
+                    }
+                    originalMaterials[renderer] = materialCopies;
+                }
+            }
+
+            initialized = true;
+            enabled = true; // Enable the component
+
+            RestoreMaterials(); // Force immediate check
+        }
+
+        private void RestoreMaterials()
+        {
+            foreach (var kvp in originalMaterials)
+            {
+                Renderer renderer = kvp.Key;
+                Material[] materials = kvp.Value;
+
+                if (renderer != null)
+                {
+                    bool needsRestore = false; // Check if current materials are different from our preserved ones
+
+                    if (renderer.materials.Length != materials.Length)
+                    {
+                        needsRestore = true;
+                    }
+                    else
+                    {
+                        for (int i = 0; i < materials.Length; i++)
+                        {
+                            if (renderer.materials[i] == null ||
+                                renderer.materials[i].shader != materials[i].shader ||
+                                (renderer.materials[i].mainTexture == null && materials[i].mainTexture != null))
+                            {
+                                needsRestore = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (needsRestore)
+                    {
+                        renderer.materials = materials;
+                        DLog.Log($"Restored materials for {renderer.gameObject.name}");
+                    }
+                }
+            }
+        }
+
+        void Update()
+        {
+            if (!initialized) return;
+
+            timeUntilNextCheck -= Time.deltaTime;
+            if (timeUntilNextCheck <= 0)
+            {
+                RestoreMaterials();
+                timeUntilNextCheck = checkInterval;
+            }
+        }
+
+        private float preservationDuration = 10f; // Keep preserving for 10 seconds, then disable
+        private float timeElapsed = 0f;
+
+        void FixedUpdate()
+        {
+            if (!initialized) return;
+
+            timeElapsed += Time.fixedDeltaTime;
+            if (timeElapsed > preservationDuration)
+            {
+                enabled = false; // Disable to save performance
+            }
+        }
+    }
     public class ItemSpawner : MonoBehaviourPunCallbacks
     {
         private static Dictionary<string, GameObject> itemPrefabCache = new Dictionary<string, GameObject>();
@@ -215,15 +311,16 @@ namespace dark_cheat
             {
                 DLog.Log($"Non-host spawning item: {itemName} at position: {position}");
 
-                GameObject itemPrefab = GetItemPrefab(itemName);
-                if (itemPrefab == null)
+                string prefabPath = GetPrefabPath(itemName); // Force a complete prefab load first
+                GameObject prefabResource = Resources.Load<GameObject>(prefabPath);
+
+                if (prefabResource == null)
                 {
-                    DLog.LogError($"Item prefab not found for: {itemName}");
+                    DLog.LogError($"Failed to load prefab resource for: {itemName}");
                     return;
                 }
 
-                var photonNetworkType = typeof(PhotonNetwork);
-
+                var photonNetworkType = typeof(PhotonNetwork); // Now perform the network instantiation
                 var instantiateMethod = photonNetworkType.GetMethod("NetworkInstantiate",
                     BindingFlags.NonPublic | BindingFlags.Static,
                     null,
@@ -246,10 +343,6 @@ namespace dark_cheat
                 }
 
                 var currentLevelPrefix = currentLevelPrefixField.GetValue(null);
-                string prefabPath = GetPrefabPath(itemName);
-
-                // Pre-load the resources to ensure they're available
-                Resources.Load<GameObject>(prefabPath);
 
                 var parameters = new InstantiateParameters(prefabPath,
                     position,
@@ -265,53 +358,9 @@ namespace dark_cheat
 
                 if (spawnedItem != null)
                 {
-                    // Request host to spawn a synced version
-                    PlayerCheatSync cheatSync = FindOrCreateCheatSync();
-                    if (cheatSync != null && cheatSync.photonView != null)
-                    {
-                        cheatSync.photonView.RPC("SpawnItemMirrorRPC", RpcTarget.MasterClient,
-                            itemName, position, value, PhotonNetwork.LocalPlayer.ActorNumber);
-                    }
+                    FindOrCreateCheatSync().StartCoroutine(SetupItemAndNotifyHost(spawnedItem, prefabResource, itemName, position, value));
 
-                    // Force model rebuild
-                    foreach (Renderer renderer in spawnedItem.GetComponentsInChildren<Renderer>(true))
-                    {
-                        if (renderer != null)
-                        {
-                            // Try to refresh each renderer
-                            renderer.enabled = false;
-                            renderer.enabled = true;
-                        }
-                    }
-
-                    if (itemName.Contains("Valuable") && value > 0)
-                    {
-                        var valuableComponent = spawnedItem.GetComponent(Type.GetType("ValuableObject, Assembly-CSharp"));
-                        if (valuableComponent != null)
-                        {
-                            SetFieldValue(valuableComponent, "dollarValueCurrent", (float)value);
-                            SetFieldValue(valuableComponent, "dollarValueOriginal", (float)value);
-                            SetFieldValue(valuableComponent, "dollarValueSet", true);
-
-                            var dollarValueRPC = valuableComponent.GetType().GetMethod("DollarValueSetRPC", BindingFlags.Public | BindingFlags.Instance);
-                            if (dollarValueRPC != null)
-                            {
-                                dollarValueRPC.Invoke(valuableComponent, new object[] { (float)value });
-                            }
-                        }
-                    }
-
-                    var physComponent = spawnedItem.GetComponent(Type.GetType("PhysGrabObject, Assembly-CSharp"));
-                    if (physComponent != null)
-                    {
-                        SetFieldValue(physComponent, "spawnTorque", UnityEngine.Random.insideUnitSphere * 0.05f);
-                    }
-
-                    // Recreate any missing renderers from prefab
-                    CopyRenderersFromPrefab(spawnedItem, itemPrefab);
-
-                    EnsureItemVisibility(spawnedItem);
-                    DLog.Log($"Successfully spawned {itemName} as non-host");
+                    DLog.Log($"Successfully spawned {itemName} as non-host"); // Process the local spawn first, delay the RPC
                 }
                 else
                 {
@@ -324,40 +373,205 @@ namespace dark_cheat
             }
         }
 
+        private static IEnumerator SetupItemAndNotifyHost(GameObject item, GameObject prefabResource, string itemName, Vector3 position, int value)
+        {
+            yield return new WaitForEndOfFrame(); // Wait frames for the object to be fully initialized
+
+            try // Apply materials from the prefab directly
+            {
+                foreach (Renderer itemRenderer in item.GetComponentsInChildren<Renderer>(true))
+                {
+                    string rendererPath = GetPathRelativeToRoot(itemRenderer.transform);
+
+                    Transform prefabTransform = prefabResource.transform; // Find the corresponding renderer in the prefab
+                    foreach (string pathPart in rendererPath.Split('/'))
+                    {
+                        if (string.IsNullOrEmpty(pathPart)) continue;
+                        prefabTransform = prefabTransform.Find(pathPart);
+                        if (prefabTransform == null) break;
+                    }
+
+                    if (prefabTransform != null)
+                    {
+                        Renderer prefabRenderer = prefabTransform.GetComponent<Renderer>();
+                        if (prefabRenderer != null && prefabRenderer.sharedMaterials.Length > 0)
+                        {
+                            Material[] newMaterials = new Material[prefabRenderer.sharedMaterials.Length]; // Create new material instances to avoid sharing
+                            for (int i = 0; i < prefabRenderer.sharedMaterials.Length; i++)
+                            {
+                                if (prefabRenderer.sharedMaterials[i] != null)
+                                {
+                                    newMaterials[i] = new Material(prefabRenderer.sharedMaterials[i]);
+                                }
+                            }
+
+                            itemRenderer.materials = newMaterials; // Apply the materials
+                        }
+                    }
+                }
+
+                MaterialPreserver preserver = item.AddComponent<MaterialPreserver>(); // Add the material preserver component
+                preserver.PreserveMaterials();
+
+                if (itemName.Contains("Valuable") && value > 0) // Setup valuable component
+                {
+                    var valuableComponent = item.GetComponent(Type.GetType("ValuableObject, Assembly-CSharp"));
+                    if (valuableComponent != null)
+                    {
+                        SetFieldValue(valuableComponent, "dollarValueCurrent", (float)value);
+                        SetFieldValue(valuableComponent, "dollarValueOriginal", (float)value);
+                        SetFieldValue(valuableComponent, "dollarValueSet", true);
+
+                        var dollarValueRPC = valuableComponent.GetType().GetMethod("DollarValueSetRPC", BindingFlags.Public | BindingFlags.Instance);
+                        if (dollarValueRPC != null)
+                        {
+                            dollarValueRPC.Invoke(valuableComponent, new object[] { (float)value });
+                        }
+                    }
+                }
+
+                var physComponent = item.GetComponent(Type.GetType("PhysGrabObject, Assembly-CSharp")); // Apply physics
+                if (physComponent != null)
+                {
+                    SetFieldValue(physComponent, "spawnTorque", UnityEngine.Random.insideUnitSphere * 0.05f);
+                }
+            }
+            catch (Exception ex)
+            {
+                DLog.LogError($"Error setting up item: {ex.Message}\n{ex.StackTrace}");
+            }
+
+            yield return new WaitForSeconds(0.1f); // Wait a bit more to make sure our setup is complete - outside the try block
+
+            try
+            {
+                PlayerCheatSync cheatSync = FindOrCreateCheatSync(); // Now notify the host
+                if (cheatSync != null && cheatSync.photonView != null)
+                {
+                    cheatSync.photonView.RPC("SpawnItemMirrorRPC", RpcTarget.MasterClient,
+                        itemName, position, value, PhotonNetwork.LocalPlayer.ActorNumber);
+                }
+
+                DLog.Log($"Successfully finalized spawn and notified host of {itemName}");
+            }
+            catch (Exception ex)
+            {
+                DLog.LogError($"Error notifying host: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
+        private static IEnumerator ApplyMaterialsWithDelay(GameObject item, Dictionary<string, Material> materials, string itemName, int value)
+        {
+            yield return new WaitForEndOfFrame(); // Wait frames to ensure the object is fully initialized
+            yield return new WaitForEndOfFrame();
+
+            try
+            {
+                foreach (Renderer renderer in item.GetComponentsInChildren<Renderer>(true)) // Apply materials to renderers
+                {
+                    if (renderer != null)
+                    {
+                        List<Material> newMaterials = new List<Material>();
+
+                        foreach (Material originalMat in renderer.sharedMaterials) // Get original materials to determine names
+                        {
+                            if (originalMat != null && materials.ContainsKey(originalMat.name))
+                            {
+                                newMaterials.Add(materials[originalMat.name]); // Use our cached material
+                            }
+                            else
+                            {
+                                string bestMatch = null; // Try to find by partial name match
+                                foreach (string matName in materials.Keys)
+                                {
+                                    if (originalMat != null && originalMat.name.Contains(matName) ||
+                                        (matName.Contains(originalMat != null ? originalMat.name : "default")))
+                                    {
+                                        bestMatch = matName;
+                                        break;
+                                    }
+                                }
+
+                                if (bestMatch != null)
+                                {
+                                    newMaterials.Add(materials[bestMatch]);
+                                }
+                                else
+                                { // Add a placeholder if needed
+                                    newMaterials.Add(originalMat != null ? originalMat : new Material(Shader.Find("Standard")));
+                                }
+                            }
+                        }
+
+                        if (newMaterials.Count > 0) // Apply the materials
+                        {
+                            renderer.materials = newMaterials.ToArray();
+                        }
+
+                        renderer.enabled = false; // Force renderer to refresh
+                        renderer.enabled = true;
+                    }
+                }
+
+                if (itemName.Contains("Valuable") && value > 0) // Setup valuable component
+                {
+                    var valuableComponent = item.GetComponent(Type.GetType("ValuableObject, Assembly-CSharp"));
+                    if (valuableComponent != null)
+                    {
+                        SetFieldValue(valuableComponent, "dollarValueCurrent", (float)value);
+                        SetFieldValue(valuableComponent, "dollarValueOriginal", (float)value);
+                        SetFieldValue(valuableComponent, "dollarValueSet", true);
+
+                        var dollarValueRPC = valuableComponent.GetType().GetMethod("DollarValueSetRPC", BindingFlags.Public | BindingFlags.Instance);
+                        if (dollarValueRPC != null)
+                        {
+                            dollarValueRPC.Invoke(valuableComponent, new object[] { (float)value });
+                        }
+                    }
+                }
+
+                var physComponent = item.GetComponent(Type.GetType("PhysGrabObject, Assembly-CSharp"));
+                if (physComponent != null)
+                {
+                    SetFieldValue(physComponent, "spawnTorque", UnityEngine.Random.insideUnitSphere * 0.05f);
+                }
+
+                DLog.Log($"Successfully finalized spawn of {itemName}");
+            }
+            catch (Exception ex)
+            {
+                DLog.LogError($"Error applying materials: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
         private static void CopyRenderersFromPrefab(GameObject target, GameObject prefab)
         {
             if (target == null || prefab == null) return;
 
-            // Check if target has any renderers
-            var targetRenderers = target.GetComponentsInChildren<Renderer>(true);
+            var targetRenderers = target.GetComponentsInChildren<Renderer>(true); // Check if target has any renderers
             if (targetRenderers == null || targetRenderers.Length == 0)
             {
-                // No renderers, need to copy from prefab
-                var prefabRenderers = prefab.GetComponentsInChildren<Renderer>(true);
+                var prefabRenderers = prefab.GetComponentsInChildren<Renderer>(true); // No renderers, need to copy from prefab
                 foreach (var prefabRenderer in prefabRenderers)
                 {
-                    // Find the corresponding child object in the target
                     Transform targetChild = FindCorrespondingChild(target.transform, prefabRenderer.transform);
-                    if (targetChild == null)
+                    if (targetChild == null) // Find the corresponding child object in the target
                     {
-                        // Create the child if it doesn't exist
-                        targetChild = new GameObject(prefabRenderer.name).transform;
+                        targetChild = new GameObject(prefabRenderer.name).transform; // Create the child if it doesn't exist
                         targetChild.SetParent(target.transform);
                         targetChild.localPosition = prefabRenderer.transform.localPosition;
                         targetChild.localRotation = prefabRenderer.transform.localRotation;
                         targetChild.localScale = prefabRenderer.transform.localScale;
                     }
 
-                    // Add renderer component if missing
-                    Renderer targetRenderer = targetChild.GetComponent<Renderer>();
+                    Renderer targetRenderer = targetChild.GetComponent<Renderer>(); // Add renderer component if missing
                     if (targetRenderer == null)
                     {
-                        // Copy renderer type
-                        if (prefabRenderer is MeshRenderer)
+                        if (prefabRenderer is MeshRenderer) // Copy renderer type
                         {
                             targetRenderer = targetChild.gameObject.AddComponent<MeshRenderer>();
-                            // Add mesh filter if needed
-                            MeshFilter prefabMeshFilter = prefabRenderer.GetComponent<MeshFilter>();
+
+                            MeshFilter prefabMeshFilter = prefabRenderer.GetComponent<MeshFilter>(); // Add mesh filter if needed
                             if (prefabMeshFilter != null && prefabMeshFilter.sharedMesh != null)
                             {
                                 MeshFilter targetMeshFilter = targetChild.GetComponent<MeshFilter>();
@@ -379,10 +593,29 @@ namespace dark_cheat
                         }
                     }
 
-                    // Copy materials
                     if (targetRenderer != null && prefabRenderer.sharedMaterials.Length > 0)
                     {
-                        targetRenderer.sharedMaterials = prefabRenderer.sharedMaterials;
+                        Material[] materials = new Material[prefabRenderer.sharedMaterials.Length];
+                        for (int i = 0; i < prefabRenderer.sharedMaterials.Length; i++) // Instead of just setting shared materials, create proper material instances
+                        {
+                            if (prefabRenderer.sharedMaterials[i] != null)
+                            {
+                                materials[i] = new Material(prefabRenderer.sharedMaterials[i]); // Create a new instance of the material
+
+                                foreach (var property in materials[i].GetTexturePropertyNames()) // Force material to refresh its textures
+                                {
+                                    Texture texture = materials[i].GetTexture(property);
+                                    if (texture != null)
+                                    {
+                                        materials[i].SetTexture(property, texture);
+                                    }
+                                }
+                            }
+                        }
+
+                        targetRenderer.materials = materials; // Apply as materials (not shared) to ensure unique instance
+
+                        targetRenderer.sharedMaterials = prefabRenderer.sharedMaterials;// Also set shared materials for consistency
                     }
                 }
             }
@@ -390,12 +623,10 @@ namespace dark_cheat
 
         private static Transform FindCorrespondingChild(Transform parent, Transform prefabChild)
         {
-            // Try to find by name
-            Transform child = parent.Find(prefabChild.name);
+            Transform child = parent.Find(prefabChild.name); // Try to find by name
             if (child != null) return child;
 
-            // Try to find by hierarchy path
-            string path = GetPathRelativeToRoot(prefabChild);
+            string path = GetPathRelativeToRoot(prefabChild); // Try to find by hierarchy path
             string[] pathParts = path.Split('/');
 
             Transform current = parent;
@@ -434,6 +665,42 @@ namespace dark_cheat
             {
                 DLog.LogError($"{fieldName} field not found");
             }
+        }
+
+        private static IEnumerator FinalizeItemSpawn(GameObject spawnedItem, GameObject prefab, string itemName, int value)
+        {
+            yield return new WaitForEndOfFrame(); // Give time for resources to load
+
+            CopyRenderersFromPrefab(spawnedItem, prefab); // Apply components and materials
+
+            if (itemName.Contains("Valuable") && value > 0) // Set up valuable component if needed
+            {
+                var valuableComponent = spawnedItem.GetComponent(Type.GetType("ValuableObject, Assembly-CSharp"));
+                if (valuableComponent != null)
+                {
+                    SetFieldValue(valuableComponent, "dollarValueCurrent", (float)value);
+                    SetFieldValue(valuableComponent, "dollarValueOriginal", (float)value);
+                    SetFieldValue(valuableComponent, "dollarValueSet", true);
+
+                    var dollarValueRPC = valuableComponent.GetType().GetMethod("DollarValueSetRPC", BindingFlags.Public | BindingFlags.Instance);
+                    if (dollarValueRPC != null)
+                    {
+                        dollarValueRPC.Invoke(valuableComponent, new object[] { (float)value });
+                    }
+                }
+            }
+
+            foreach (Renderer renderer in spawnedItem.GetComponentsInChildren<Renderer>(true)) // Force material refresh
+            {
+                if (renderer != null && renderer.materials.Length > 0)
+                {
+                    Material[] mats = renderer.materials;
+                    renderer.materials = mats; // Re-apply to force refresh
+                }
+            }
+
+            EnsureItemVisibility(spawnedItem);
+            DLog.Log($"Successfully finalized spawn of {itemName}");
         }
 
         private static PlayerCheatSync FindOrCreateCheatSync()
@@ -791,12 +1058,36 @@ namespace dark_cheat
 
         private static void EnsureItemVisibility(GameObject item)
         {
-            item.SetActive(true);
-            foreach (var renderer in item.GetComponentsInChildren<Renderer>(true))
+
+            foreach (Renderer renderer in item.GetComponentsInChildren<Renderer>(true)) // Add material texture verification
             {
-                renderer.enabled = true;
+                bool needsTextureRefresh = false; // Check if any material has missing textures
+                foreach (Material mat in renderer.materials)
+                {
+                    if (mat != null)
+                    {
+                        if (mat.HasProperty("_MainTex") && mat.mainTexture == null) // Check for main texture
+                        {
+                            needsTextureRefresh = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (needsTextureRefresh)
+                {
+                    string itemName = item.name.Replace("(Clone)", "").Trim(); // Try reloading materials from prefab
+                    GameObject prefab = Resources.Load<GameObject>(GetPrefabPath(itemName));
+                    if (prefab != null)
+                    {
+                        Renderer prefabRenderer = prefab.GetComponentInChildren<Renderer>();
+                        if (prefabRenderer != null)
+                        {
+                            renderer.sharedMaterials = prefabRenderer.sharedMaterials;
+                        }
+                    }
+                }
             }
-            item.layer = LayerMask.NameToLayer("Default");
         }
     }
 }
