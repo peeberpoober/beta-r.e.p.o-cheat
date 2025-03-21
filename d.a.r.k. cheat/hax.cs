@@ -80,8 +80,7 @@ namespace dark_cheat
 
         public static void InitSliderStyles()
         {
-            // Custom style for the slider
-            if (sliderStyle == null)
+            if (sliderStyle == null) // Custom style for the slider
             {
                 sliderStyle = new GUIStyle(GUI.skin.horizontalSlider)
                 {
@@ -105,14 +104,12 @@ namespace dark_cheat
         public static void Label(string text, float? customX = null, float? customY = null) => GUI.Label(NextControlRect(customX, customY), text);
         public static float Slider(float val, float min, float max, float? customX = null, float? customY = null)
         {
-            // Get control rect, but reduce height to 12px for better hitbox management
-            Rect rect = NextControlRect(customX, customY);
+            Rect rect = NextControlRect(customX, customY); // Get control rect, but reduce height to 12px for better hitbox management
             rect.height = 12f;
 
-            // Round value after interacting
             return Mathf.Round(GUI.HorizontalSlider(rect, val, min, max, sliderStyle, thumbStyle));
-        }
-   
+        } // Round value after interacting
+
         private static Texture2D MakeSolidBackground(Color color, float alpha)
         {
             Color key = new Color(color.r, color.g, color.b, alpha);
@@ -246,7 +243,7 @@ namespace dark_cheat
         private Vector2 enemiesScrollPosition = Vector2.zero;
         private Vector2 itemsScrollPosition = Vector2.zero;
         private Vector2 hotkeyScrollPosition = Vector2.zero;
- 
+
         private HotkeyManager hotkeyManager; // Reference to the HotkeyManager
         public bool showWatermark = true;
         private float actionSelectorX = 300f;
@@ -410,7 +407,7 @@ namespace dark_cheat
                     }
                 }
             }
-            
+
             Strength.UpdateStrength();
             if (RunManager.instance.levelCurrent != null && levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name))
             {
@@ -436,21 +433,13 @@ namespace dark_cheat
                 {
                     playerColor.colorRandomizer();
                 }
-                
-                // Execute hotkeys only when in game
-                hotkeyManager.CheckAndExecuteHotkeys();
-                
+
+                hotkeyManager.CheckAndExecuteHotkeys(); // Execute hotkeys only when in game
+
                 if (Hax2.showMenu) TryLockCamera();
                 if (NoclipController.noclipActive)
                 {
                     NoclipController.UpdateMovement();
-                }
-                if (MapTools.showMapTweaks)
-                {
-                    if (MapTools.mapDisableHiddenOverlayCheckboxActive && !MapTools.mapDisableHiddenOverlayActive)
-                    {
-                        MapTools.changeOverlayStatus(true);
-                    }
                 }
             }
         }
@@ -546,7 +535,7 @@ namespace dark_cheat
                         enemyName = nameField?.GetValue(enemyParent) as string ?? "Enemy";
                     }
                     int health = Enemies.GetEnemyHealth(enemy);
-                   DebugCheats.enemyHealthCache[enemy] = health;
+                    DebugCheats.enemyHealthCache[enemy] = health;
                     int maxHealth = Enemies.GetEnemyMaxHealth(enemy);
                     float healthPercentage = maxHealth > 0 ? (float)health / maxHealth : 0f;
                     string healthColor = healthPercentage > 0.66f ? "<color=green>" : (healthPercentage > 0.33f ? "<color=yellow>" : "<color=red>");
@@ -621,7 +610,8 @@ namespace dark_cheat
         private bool IsPlayerAlive(object player, string playerName)
         {
             int health = Players.GetPlayerHealth(player);
-            if (health < 0) {
+            if (health < 0)
+            {
                 DLog.Log($"Could not get health for {playerName}, assuming dead");
                 return true; // If we can't get health, assume player is dead
             }
@@ -674,23 +664,20 @@ namespace dark_cheat
                 GUI.Label(new Rect(10 + size.x + 10, 10, 200, size.y), "MADE BY Github/D4rkks", style);
             }
 
-            // handle modal first
-            if (showingActionSelector)
+            if (showingActionSelector) // handle modal first
             {
                 Rect fullOverlay = new Rect(0, 0, Screen.width, Screen.height);
                 GUI.Box(fullOverlay, "", overlayDimStyle);
 
                 Rect modalRect = new Rect(actionSelectorX, actionSelectorY, 400, 400);
 
-                // trying to only block events that are outside the modal window
-                if (Event.current.type == EventType.MouseDown ||
+                if (Event.current.type == EventType.MouseDown ||  // trying to only block events that are outside the modal window
                     Event.current.type == EventType.MouseUp ||
                     Event.current.type == EventType.MouseDrag)
                 {
                     if (!modalRect.Contains(Event.current.mousePosition))
                     {
-                        // blocking outer event
-                        Event.current.Use();
+                        Event.current.Use(); // blocking outer event
                     }
 
 
@@ -846,7 +833,7 @@ namespace dark_cheat
                         UIHelper.Label("Range: " + Hax2.grabRange, 0, selfYPos);
                         selfYPos += childIndent;
                         Hax2.grabRange = UIHelper.Slider(Hax2.grabRange, 0f, 50f, 0, selfYPos);
-                        selfYPos += childIndent; 
+                        selfYPos += childIndent;
 
                         UIHelper.Label("Stamina Recharge Delay: " + Hax2.staminaRechargeDelay, 0, selfYPos);
                         selfYPos += childIndent;
@@ -899,7 +886,7 @@ namespace dark_cheat
                         selfYPos += childIndent;
                         Hax2.flashlightIntensity = UIHelper.Slider(Hax2.flashlightIntensity, 1f, 100f, 0, selfYPos);
                         selfYPos += childIndent;
- 
+
                         if (Hax2.crouchDelay != OldcrouchDelay)
                         {
                             PlayerController.SetCrouchDelay(Hax2.crouchDelay);
@@ -945,7 +932,7 @@ namespace dark_cheat
                             PlayerController.SetFlashlightIntensity(Hax2.flashlightIntensity);
                             OldflashlightIntensity = Hax2.flashlightIntensity;
                         }
-                        
+
                         GUI.EndScrollView();
                         break;
 
@@ -1041,7 +1028,7 @@ namespace dark_cheat
                             DebugCheats.showPlayerHP = UIHelper.Checkbox("Health", DebugCheats.showPlayerHP, 20, espYPos);
                             espYPos += childSpacing;
                         }
-                        
+
                         GUI.EndScrollView();
                         break;
 
@@ -1055,7 +1042,7 @@ namespace dark_cheat
                         UpdatePlayerList();
                         UIHelper.Label("Select a player:", 0, combatYPos);
                         combatYPos += childIndent;
-                        
+
                         playerScrollPosition = GUI.BeginScrollView(new Rect(0, combatYPos, 540, 200), playerScrollPosition, new Rect(0, 0, 520, playerNames.Count * 35), false, true);
                         for (int i = 0; i < playerNames.Count; i++)
                         {
@@ -1122,39 +1109,39 @@ namespace dark_cheat
                             float tpCenterX = 270;
                             float tpSpacing = 15;
                             float tpStartX = tpCenterX - ((sourceDropdownWidth + tpSpacing + toTextWidth + tpSpacing + destDropdownWidth) / 2);
-                            
-                            float sourceYPos = combatYPos;       
+
+                            float sourceYPos = combatYPos;
                             string currentSource = teleportPlayerSourceIndex >= 0 && teleportPlayerSourceIndex < teleportPlayerSourceOptions.Length ?
                                 teleportPlayerSourceOptions[teleportPlayerSourceIndex] : "No source available";
-                            
+
                             if (GUI.Button(new Rect(tpStartX, combatYPos, sourceDropdownWidth, 25), currentSource)) showSourceDropdown = !showSourceDropdown;
-                            
+
                             GUI.Label(new Rect(tpStartX + sourceDropdownWidth + tpSpacing, combatYPos, toTextWidth, 25), "to");
-                            
+
                             string currentDestination = teleportPlayerDestIndex >= 0 && teleportPlayerDestIndex < teleportPlayerDestOptions.Length ?
                                 teleportPlayerDestOptions[teleportPlayerDestIndex] : "No destination available";
-                            
+
                             if (GUI.Button(new Rect(tpStartX + sourceDropdownWidth + tpSpacing + toTextWidth + tpSpacing, combatYPos, destDropdownWidth, 25), currentDestination)) showDestDropdown = !showDestDropdown;
                             combatYPos += parentSpacing;
 
-                            
+
                             if (showSourceDropdown)
                             {
                                 int itemHeight = 25;
                                 int maxVisibleItems = 6;
                                 int visibleItems = Math.Min(teleportPlayerSourceOptions.Length, maxVisibleItems);
                                 float dropdownHeight = visibleItems * itemHeight;
-                                
+
                                 Rect dropdownRect = new Rect(tpStartX, sourceYPos + 25, sourceDropdownWidth, dropdownHeight);
-                                
+
                                 float contentHeight = teleportPlayerSourceOptions.Length * itemHeight;
 
                                 // Adjust content height to account for skipping the selected item
                                 if (teleportPlayerSourceIndex >= 0 && teleportPlayerSourceIndex < teleportPlayerSourceOptions.Length)
                                     contentHeight -= itemHeight;
-                                
+
                                 sourceDropdownScrollPosition = GUI.BeginScrollView(dropdownRect, sourceDropdownScrollPosition, new Rect(0, 0, 180, contentHeight));
-                                
+
                                 int displayedIndex = 0;
                                 for (int i = 0; i < teleportPlayerSourceOptions.Length; i++)
                                 {
@@ -1162,31 +1149,31 @@ namespace dark_cheat
                                     {
                                         if (GUI.Button(new Rect(0, displayedIndex * itemHeight, 180, itemHeight), teleportPlayerSourceOptions[i]))
                                         {
-                                        teleportPlayerSourceIndex = i;
+                                            teleportPlayerSourceIndex = i;
                                         }
                                         displayedIndex++;
                                     }
                                 }
                                 GUI.EndScrollView();
                             }
-                            
+
                             if (showDestDropdown)
                             {
                                 int itemHeight = 25;
                                 int maxVisibleItems = 6;
                                 int visibleItems = Math.Min(teleportPlayerDestOptions.Length, maxVisibleItems);
                                 float dropdownHeight = visibleItems * itemHeight;
-                                
+
                                 Rect dropdownRect = new Rect(tpStartX + destDropdownWidth + tpSpacing + toTextWidth + tpSpacing, sourceYPos + 25, destDropdownWidth, dropdownHeight);
-                                
+
                                 float contentHeight = teleportPlayerDestOptions.Length * itemHeight;
 
                                 // Adjust content height to account for skipping the selected item
                                 if (teleportPlayerDestIndex >= 0 && teleportPlayerDestIndex < teleportPlayerDestOptions.Length)
                                     contentHeight -= itemHeight;
-                                
+
                                 destDropdownScrollPosition = GUI.BeginScrollView(dropdownRect, destDropdownScrollPosition, new Rect(0, 0, 180, contentHeight));
-                                
+
                                 int displayedIndex = 0;
                                 for (int i = 0; i < teleportPlayerDestOptions.Length; i++)
                                 {
@@ -1194,19 +1181,19 @@ namespace dark_cheat
                                     {
                                         if (GUI.Button(new Rect(0, displayedIndex * itemHeight, 180, itemHeight), teleportPlayerDestOptions[i]))
                                         {
-                                        teleportPlayerDestIndex = i;
+                                            teleportPlayerDestIndex = i;
                                         }
                                         displayedIndex++;
                                     }
                                 }
                                 GUI.EndScrollView();
                             }
-                
+
                             float executeButtonYPos = combatYPos + 10;
-                            
+
                             float sourceDropdownOffset = 0;
                             float destDropdownOffset = 0;
-                            
+
                             if (showSourceDropdown && teleportPlayerSourceOptions.Length > 0)
                                 sourceDropdownOffset = Math.Min(teleportPlayerSourceOptions.Length, 6) * 25;
                             if (showDestDropdown && teleportPlayerDestOptions.Length > 0)
@@ -1222,11 +1209,11 @@ namespace dark_cheat
                                     playerList);
                                 showSourceDropdown = false;
                                 showDestDropdown = false;
- 
+
                                 DLog.Log("Teleport executed successfully");
                             }
                         }
-                        
+
                         GUI.EndScrollView();
                         break;
 
@@ -1295,14 +1282,23 @@ namespace dark_cheat
                         miscYPos += parentSpacing;
 
                         MapTools.showMapTweaks = UIHelper.Checkbox("Map Tweaks", MapTools.showMapTweaks, 0, miscYPos);
-                        miscYPos += MapTools.showMapTweaks ? childIndent : parentSpacing;
+                        miscYPos += parentSpacing;
 
-                        if (MapTools.showMapTweaks)
+                        if (MapTools.showMapTweaks) // Only show the buttons if the checkbox is selected
                         {
-                            MapTools.mapDisableHiddenOverlayCheckboxActive = UIHelper.Checkbox("Disable '?' Overlay (can't be undone)", MapTools.mapDisableHiddenOverlayCheckboxActive, 20, miscYPos);
-                            miscYPos += childSpacing;
+                            if (GUI.Button(new Rect(menuX + 30, miscYPos, 200, 30), "Disable '?' overlay")) // Using fixed width similar to the enemy menu buttons
+                            {
+                                MapTools.changeOverlayStatus(true);
+                            }
+                            miscYPos += parentSpacing;
+
+                            if (GUI.Button(new Rect(menuX + 30, miscYPos, 200, 30), "Discover Map Valuables"))
+                            {
+                                MapTools.DiscoveryMapValuables();
+                            }
+                            miscYPos += parentSpacing;
                         }
-                        
+
                         GUI.EndScrollView();
                         break;
 
@@ -1358,10 +1354,10 @@ namespace dark_cheat
                             float dropdownWidth = 200;
                             float tpCenterX = 270;
                             float tpSpacing = 20;
- 
+
                             float tpTotalWidth = labelWidth + tpSpacing + dropdownWidth;
                             float tpStartX = tpCenterX - (tpTotalWidth / 2);
-                            
+
                             GUI.Label(new Rect(tpStartX, enemyYPos, labelWidth, 25), "Teleport Enemy To      →");
 
                             string currentDestination = enemyTeleportDestIndex >= 0 && enemyTeleportDestIndex < enemyTeleportDestOptions.Length ?
@@ -1383,7 +1379,7 @@ namespace dark_cheat
                                 Rect dropdownRect = new Rect(tpStartX + labelWidth + tpSpacing, enemyYPos - 15, dropdownWidth, dropdownHeight);
 
                                 float contentHeight = enemyTeleportDestOptions.Length * itemHeight;
-                                
+
                                 // Adjust content height to account for skipping the selected item
                                 if (enemyTeleportDestIndex >= 0 && enemyTeleportDestIndex < enemyTeleportDestOptions.Length)
                                     contentHeight -= itemHeight;
@@ -1408,7 +1404,7 @@ namespace dark_cheat
 
                             float executeButtonYPos = enemyYPos + 10;
                             float dropdownOffset = 0;
-                            
+
                             if (showEnemyTeleportDropdown && enemyTeleportDestOptions.Length > 0) dropdownOffset = Math.Min(enemyTeleportDestOptions.Length, 6) * 25;
                             if (GUI.Button(new Rect(tpCenterX - 75f, executeButtonYPos, 150f, 25f), "Execute Teleport"))
                             {
@@ -1441,7 +1437,7 @@ namespace dark_cheat
                         Rect itemsViewRect = new Rect(menuX + 20, menuY + 95, 560, 700);
                         Rect itemsContentRect = new Rect(0, 0, 540, 1200);
                         itemsScrollPosition = GUI.BeginScrollView(itemsViewRect, itemsScrollPosition, itemsContentRect);
-                        
+
                         float itemYPos = yPos;
 
                         UIHelper.Label("Select an item:", 0, itemYPos);
@@ -1739,18 +1735,16 @@ namespace dark_cheat
 
             if (showingActionSelector)
             {
-                // draw full-screen overlay and consume mouse events so main GUI is blocked
                 Rect fullOverlay = new Rect(0, 0, Screen.width, Screen.height);
                 GUI.Box(fullOverlay, "", overlayDimStyle);
-                if (Event.current.type == EventType.MouseDown ||
+                if (Event.current.type == EventType.MouseDown || // draw full-screen overlay and consume mouse events so main GUI is blocked
                     Event.current.type == EventType.MouseUp ||
                     Event.current.type == EventType.MouseDrag)
                 {
                     Event.current.Use(); // consume events
                 }
 
-                // draw modal window using GUI.Window for natural dragging
-                Rect modalRect = new Rect(actionSelectorX, actionSelectorY, 400, 400);
+                Rect modalRect = new Rect(actionSelectorX, actionSelectorY, 400, 400); // draw modal window using GUI.Window for natural dragging
                 modalRect = GUI.Window(12345, modalRect, ActionSelectorWindow, "", actionSelectorBoxStyle);
                 actionSelectorX = modalRect.x;
                 actionSelectorY = modalRect.y;

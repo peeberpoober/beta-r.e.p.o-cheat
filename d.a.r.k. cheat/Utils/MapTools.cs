@@ -5,7 +5,6 @@ namespace dark_cheat
     public static class MapTools
     {
         public static bool showMapTweaks = false;
-        public static bool mapDisableHiddenOverlayCheckboxActive = false;
         public static bool mapDisableHiddenOverlayActive = false;
         public static bool mapCleanModeActive = false;
 
@@ -23,18 +22,12 @@ namespace dark_cheat
 
         public static void changeOverlayStatus(bool status)
         {
-            if (status == mapDisableHiddenOverlayActive) return;
-
-            MapModule[] modules = UnityEngine.Object.FindObjectsOfType<MapModule>(includeInactive: true);
-            // DLog.Log(modules.Length.ToString() + " " + status + mapDisableHiddenOverlayActive + " " + mapDisableHiddenOverlayCheckboxActive);
+            MapModule[] modules = UnityEngine.Object.FindObjectsOfType<MapModule>();
 
             if (modules.Length == 0)
             {
-                mapDisableHiddenOverlayActive = false;
                 return;
             }
-
-            mapDisableHiddenOverlayActive = status;
 
             foreach (MapModule module in modules)
             {
