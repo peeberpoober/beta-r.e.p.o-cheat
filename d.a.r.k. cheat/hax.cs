@@ -1501,19 +1501,6 @@ namespace dark_cheat
 
                         if (showItemSpawner)
                         {
-                            if (!isHost)
-                            {
-                                GUIStyle hostWarningStyle = new GUIStyle(GUI.skin.label)
-                                {
-                                    normal = { textColor = Color.red },
-                                    fontStyle = FontStyle.Bold,
-                                    fontSize = 14,
-                                    alignment = TextAnchor.MiddleCenter
-                                };
-                                GUI.Label(new Rect(0, yPos, 540, 25), "⚠ Only the host can spawn items in multiplayer!", hostWarningStyle);
-                                yPos += 30;
-                            }
-
                             GUI.Label(new Rect(0, yPos, 540, 20), "Select item to spawn:");
                             yPos += childIndent;
 
@@ -1553,45 +1540,41 @@ namespace dark_cheat
 
                                 if (newSliderValue != sliderValue)
                                 {
-                                    itemSpawnValue = (int)(Mathf.Pow(10, newSliderValue * 6f) * 1000f);
-
-                                    itemSpawnValue = Mathf.Clamp(itemSpawnValue, 1000, 1000000000);
+                                    // Keep host check for value adjustment
+                                    if (isHost)
+                                    {
+                                        itemSpawnValue = (int)(Mathf.Pow(10, newSliderValue * 6f) * 1000f);
+                                        itemSpawnValue = Mathf.Clamp(itemSpawnValue, 1000, 1000000000);
+                                    }
                                 }
 
                                 yPos += childIndent;
                             }
 
-                            GUI.enabled = isHost && availableItemsList.Count > 0 && selectedItemToSpawnIndex < availableItemsList.Count;
+                            GUI.enabled = availableItemsList.Count > 0 && selectedItemToSpawnIndex < availableItemsList.Count;
 
                             if (GUI.Button(new Rect(0, yPos, 540, 30), "Spawn Selected Item"))
                             {
-                                if (isHost)
+                                GameObject localPlayer = DebugCheats.GetLocalPlayer();
+                                if (localPlayer != null)
                                 {
-                                    GameObject localPlayer = DebugCheats.GetLocalPlayer();
-                                    if (localPlayer != null)
-                                    {
-                                        Vector3 spawnPosition = localPlayer.transform.position + localPlayer.transform.forward * 1.5f + Vector3.up * 1f;
-                                        string itemName = availableItemsList[selectedItemToSpawnIndex];
+                                    Vector3 spawnPosition = localPlayer.transform.position + localPlayer.transform.forward * 1.5f + Vector3.up * 1f;
+                                    string itemName = availableItemsList[selectedItemToSpawnIndex];
 
-                                        if (isValuable)
-                                        {
-                                            ItemSpawner.SpawnItem(itemName, spawnPosition, itemSpawnValue);
-                                            DLog.Log($"Spawned valuable: {itemName} with value: ${itemSpawnValue}");
-                                        }
-                                        else
-                                        {
-                                            ItemSpawner.SpawnItem(itemName, spawnPosition);
-                                            DLog.Log($"Spawned item: {itemName}");
-                                        }
+                                    if (isValuable)
+                                    {
+                                        ItemSpawner.SpawnItem(itemName, spawnPosition, itemSpawnValue);
+                                        DLog.Log($"Spawned valuable: {itemName} with value: ${itemSpawnValue}");
                                     }
                                     else
                                     {
-                                        DLog.Log("Local player not found!");
+                                        ItemSpawner.SpawnItem(itemName, spawnPosition);
+                                        DLog.Log($"Spawned item: {itemName}");
                                     }
                                 }
                                 else
                                 {
-                                    DLog.Log("Only the host can spawn items in multiplayer!");
+                                    DLog.Log("Local player not found!");
                                 }
                             }
 

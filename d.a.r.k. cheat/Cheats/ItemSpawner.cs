@@ -132,12 +132,14 @@ namespace dark_cheat
             try
             {
                 DLog.Log($"Spawning item: {itemName} at position: {position}");
-                if (!PhotonNetwork.IsMasterClient && PhotonNetwork.IsConnected)
+                bool isMultiplayer = SemiFunc.IsMultiplayer();
+
+                if (isMultiplayer && !PhotonNetwork.IsMasterClient)
                 {
-                    DLog.Log("Only the host can spawn items in multiplayer!");
+                    SpawnItemNonHost(itemName, position, value);
                     return;
                 }
-                bool isMultiplayer = SemiFunc.IsMultiplayer();
+
                 GameObject itemPrefab = GetItemPrefab(itemName);
                 if (itemPrefab == null && itemName.Contains("Valuable"))
                 {
@@ -152,12 +154,14 @@ namespace dark_cheat
                     DLog.LogError($"Item prefab not found for: {itemName}");
                     return;
                 }
+
                 GameObject spawnedItem;
                 object[] itemData = null;
                 if (itemName.Contains("Valuable") && value > 0)
                 {
                     itemData = new object[] { value };
                 }
+
                 if (!isMultiplayer)
                 {
                     DLog.Log("Offline mode: Spawning locally.");
@@ -185,10 +189,12 @@ namespace dark_cheat
                         ConfigureSyncComponents(spawnedItem);
                     }
                 }
+
                 if (itemName.Contains("Valuable") && value > 0)
                 {
                     ConfigureValuableObject(spawnedItem, value, isMultiplayer);
                 }
+
                 ConfigurePhysicsProperties(spawnedItem, position, isMultiplayer);
                 DLog.Log($"Successfully spawned {itemName}");
             }
@@ -201,6 +207,245 @@ namespace dark_cheat
                     CreateValuableDirectly(itemName, position, value);
                 }
             }
+        }
+
+        private static void SpawnItemNonHost(string itemName, Vector3 position, int value)
+        {
+            try
+            {
+                DLog.Log($"Non-host spawning item: {itemName} at position: {position}");
+
+                GameObject itemPrefab = GetItemPrefab(itemName);
+                if (itemPrefab == null)
+                {
+                    DLog.LogError($"Item prefab not found for: {itemName}");
+                    return;
+                }
+
+                var photonNetworkType = typeof(PhotonNetwork);
+
+                var instantiateMethod = photonNetworkType.GetMethod("NetworkInstantiate",
+                    BindingFlags.NonPublic | BindingFlags.Static,
+                    null,
+                    new Type[] { typeof(InstantiateParameters), typeof(bool), typeof(bool) },
+                    null);
+
+                if (instantiateMethod == null)
+                {
+                    DLog.LogError("NetworkInstantiate method not found");
+                    return;
+                }
+
+                var currentLevelPrefixField = photonNetworkType.GetField("currentLevelPrefix",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+
+                if (currentLevelPrefixField == null)
+                {
+                    DLog.LogError("currentLevelPrefix field not found");
+                    return;
+                }
+
+                var currentLevelPrefix = currentLevelPrefixField.GetValue(null);
+                string prefabPath = GetPrefabPath(itemName);
+
+                // Pre-load the resources to ensure they're available
+                Resources.Load<GameObject>(prefabPath);
+
+                var parameters = new InstantiateParameters(prefabPath,
+                    position,
+                    Quaternion.identity,
+                    0,
+                    null,
+                    (byte)currentLevelPrefix,
+                    null,
+                    PhotonNetwork.LocalPlayer,
+                    PhotonNetwork.ServerTimestamp);
+
+                GameObject spawnedItem = (GameObject)instantiateMethod.Invoke(null, new object[] { parameters, true, false });
+
+                if (spawnedItem != null)
+                {
+                    // Request host to spawn a synced version
+                    PlayerCheatSync cheatSync = FindOrCreateCheatSync();
+                    if (cheatSync != null && cheatSync.photonView != null)
+                    {
+                        cheatSync.photonView.RPC("SpawnItemMirrorRPC", RpcTarget.MasterClient,
+                            itemName, position, value, PhotonNetwork.LocalPlayer.ActorNumber);
+                    }
+
+                    // Force model rebuild
+                    foreach (Renderer renderer in spawnedItem.GetComponentsInChildren<Renderer>(true))
+                    {
+                        if (renderer != null)
+                        {
+                            // Try to refresh each renderer
+                            renderer.enabled = false;
+                            renderer.enabled = true;
+                        }
+                    }
+
+                    if (itemName.Contains("Valuable") && value > 0)
+                    {
+                        var valuableComponent = spawnedItem.GetComponent(Type.GetType("ValuableObject, Assembly-CSharp"));
+                        if (valuableComponent != null)
+                        {
+                            SetFieldValue(valuableComponent, "dollarValueCurrent", (float)value);
+                            SetFieldValue(valuableComponent, "dollarValueOriginal", (float)value);
+                            SetFieldValue(valuableComponent, "dollarValueSet", true);
+
+                            var dollarValueRPC = valuableComponent.GetType().GetMethod("DollarValueSetRPC", BindingFlags.Public | BindingFlags.Instance);
+                            if (dollarValueRPC != null)
+                            {
+                                dollarValueRPC.Invoke(valuableComponent, new object[] { (float)value });
+                            }
+                        }
+                    }
+
+                    var physComponent = spawnedItem.GetComponent(Type.GetType("PhysGrabObject, Assembly-CSharp"));
+                    if (physComponent != null)
+                    {
+                        SetFieldValue(physComponent, "spawnTorque", UnityEngine.Random.insideUnitSphere * 0.05f);
+                    }
+
+                    // Recreate any missing renderers from prefab
+                    CopyRenderersFromPrefab(spawnedItem, itemPrefab);
+
+                    EnsureItemVisibility(spawnedItem);
+                    DLog.Log($"Successfully spawned {itemName} as non-host");
+                }
+                else
+                {
+                    DLog.LogError("NetworkInstantiate returned null");
+                }
+            }
+            catch (Exception ex)
+            {
+                DLog.LogError($"Error in SpawnItemNonHost: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+
+        private static void CopyRenderersFromPrefab(GameObject target, GameObject prefab)
+        {
+            if (target == null || prefab == null) return;
+
+            // Check if target has any renderers
+            var targetRenderers = target.GetComponentsInChildren<Renderer>(true);
+            if (targetRenderers == null || targetRenderers.Length == 0)
+            {
+                // No renderers, need to copy from prefab
+                var prefabRenderers = prefab.GetComponentsInChildren<Renderer>(true);
+                foreach (var prefabRenderer in prefabRenderers)
+                {
+                    // Find the corresponding child object in the target
+                    Transform targetChild = FindCorrespondingChild(target.transform, prefabRenderer.transform);
+                    if (targetChild == null)
+                    {
+                        // Create the child if it doesn't exist
+                        targetChild = new GameObject(prefabRenderer.name).transform;
+                        targetChild.SetParent(target.transform);
+                        targetChild.localPosition = prefabRenderer.transform.localPosition;
+                        targetChild.localRotation = prefabRenderer.transform.localRotation;
+                        targetChild.localScale = prefabRenderer.transform.localScale;
+                    }
+
+                    // Add renderer component if missing
+                    Renderer targetRenderer = targetChild.GetComponent<Renderer>();
+                    if (targetRenderer == null)
+                    {
+                        // Copy renderer type
+                        if (prefabRenderer is MeshRenderer)
+                        {
+                            targetRenderer = targetChild.gameObject.AddComponent<MeshRenderer>();
+                            // Add mesh filter if needed
+                            MeshFilter prefabMeshFilter = prefabRenderer.GetComponent<MeshFilter>();
+                            if (prefabMeshFilter != null && prefabMeshFilter.sharedMesh != null)
+                            {
+                                MeshFilter targetMeshFilter = targetChild.GetComponent<MeshFilter>();
+                                if (targetMeshFilter == null)
+                                {
+                                    targetMeshFilter = targetChild.gameObject.AddComponent<MeshFilter>();
+                                }
+                                targetMeshFilter.sharedMesh = prefabMeshFilter.sharedMesh;
+                            }
+                        }
+                        else if (prefabRenderer is SkinnedMeshRenderer)
+                        {
+                            SkinnedMeshRenderer smr = targetChild.gameObject.AddComponent<SkinnedMeshRenderer>();
+                            SkinnedMeshRenderer prefabSMR = prefabRenderer as SkinnedMeshRenderer;
+                            if (prefabSMR.sharedMesh != null)
+                            {
+                                smr.sharedMesh = prefabSMR.sharedMesh;
+                            }
+                        }
+                    }
+
+                    // Copy materials
+                    if (targetRenderer != null && prefabRenderer.sharedMaterials.Length > 0)
+                    {
+                        targetRenderer.sharedMaterials = prefabRenderer.sharedMaterials;
+                    }
+                }
+            }
+        }
+
+        private static Transform FindCorrespondingChild(Transform parent, Transform prefabChild)
+        {
+            // Try to find by name
+            Transform child = parent.Find(prefabChild.name);
+            if (child != null) return child;
+
+            // Try to find by hierarchy path
+            string path = GetPathRelativeToRoot(prefabChild);
+            string[] pathParts = path.Split('/');
+
+            Transform current = parent;
+            for (int i = 0; i < pathParts.Length; i++)
+            {
+                Transform next = current.Find(pathParts[i]);
+                if (next == null) return null;
+                current = next;
+            }
+
+            return current;
+        }
+
+        private static string GetPathRelativeToRoot(Transform transform)
+        {
+            List<string> pathParts = new List<string>();
+            Transform current = transform;
+            while (current.parent != null)
+            {
+                pathParts.Add(current.name);
+                current = current.parent;
+            }
+
+            pathParts.Reverse();
+            return string.Join("/", pathParts);
+        }
+
+        private static void SetFieldValue(object obj, string fieldName, object value)
+        {
+            var field = obj.GetType().GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            if (field != null)
+            {
+                field.SetValue(obj, value);
+            }
+            else
+            {
+                DLog.LogError($"{fieldName} field not found");
+            }
+        }
+
+        private static PlayerCheatSync FindOrCreateCheatSync()
+        {
+            PlayerCheatSync cheatSync = UnityEngine.Object.FindObjectOfType<PlayerCheatSync>();
+            if (cheatSync == null)
+            {
+                GameObject cheatSyncObj = new GameObject("CheatSync");
+                cheatSync = cheatSyncObj.AddComponent<PlayerCheatSync>();
+                UnityEngine.Object.DontDestroyOnLoad(cheatSyncObj);
+            }
+            return cheatSync;
         }
 
         private static bool CreateValuableDirectly(string itemName, Vector3 position, int value)
@@ -303,7 +548,7 @@ namespace dark_cheat
             }
         }
 
-        private static string GetPrefabPath(string itemName)
+        public static string GetPrefabPath(string itemName)
         {
             if (itemName.Contains("Valuable"))
             {
@@ -541,19 +786,6 @@ namespace dark_cheat
             {
                 var photonView = spawnedItem.GetComponent<PhotonView>();
                 photonView?.RPC("SetPositionRPC", RpcTarget.MasterClient, position, Quaternion.identity);
-            }
-        }
-
-        private static void SetFieldValue(object obj, string fieldName, object value)
-        {
-            var field = obj.GetType().GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (field != null)
-            {
-                field.SetValue(obj, value);
-            }
-            else
-            {
-                DLog.LogError($"{fieldName} field not found");
             }
         }
 
