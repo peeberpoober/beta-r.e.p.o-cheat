@@ -999,6 +999,9 @@ namespace dark_cheat
 
                             DebugCheats.showPlayerDeathHeads = UIHelper.Checkbox("Dead Player Heads", DebugCheats.showPlayerDeathHeads, 20, espYPos);
                             espYPos += childSpacing;
+
+                            DebugCheats.drawItemChamsBool = UIHelper.Checkbox("Item Chams", DebugCheats.drawItemChamsBool, 20, espYPos);
+                            espYPos += childSpacing;
                         }
 
                         // Extraction ESP section

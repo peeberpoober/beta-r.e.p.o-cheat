@@ -11,6 +11,28 @@ namespace dark_cheat
 {
     static class DebugCheats
     {
+        private static bool _drawItemChamsBool = false;
+        public static bool drawItemChamsBool
+        {
+            get => _drawItemChamsBool;
+            set
+            {
+                if (value != _drawItemChamsBool)
+                {
+                    _drawItemChamsBool = value;
+
+                    if (!value)
+                    {
+                        foreach (var kvp in itemOriginalMaterials)
+                        {
+                            if (kvp.Key != null)
+                                kvp.Key.materials = kvp.Value;
+                        }
+                        itemOriginalMaterials.Clear();
+                    }
+                }
+            }
+        }
         public static int minItemValue = 0;
         public static int maxItemValue = 50000;
         public static float maxItemEspDistance = 1000f;
@@ -63,7 +85,10 @@ namespace dark_cheat
         private static Camera cachedCamera;
         private static Material visibleMaterial;
         private static Material hiddenMaterial;
-        private static Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
+        private static Material itemVisibleMaterial;
+        private static Material itemHiddenMaterial;
+        private static Dictionary<Renderer, Material[]> enemyOriginalMaterials = new Dictionary<Renderer, Material[]>();
+        private static Dictionary<Renderer, Material[]> itemOriginalMaterials = new Dictionary<Renderer, Material[]>();
         private static bool cachedOriginalCamera = false;
         private static float originalFarClipPlane = 0f;
         private static DepthTextureMode originalDepthTextureMode = DepthTextureMode.None;
@@ -88,15 +113,15 @@ namespace dark_cheat
                 if (value != _drawChamsBool)
                 {
                     _drawChamsBool = value;
+
                     if (!value)
                     {
-                        foreach (var renderer in originalMaterials.Keys)
+                        foreach (var kvp in enemyOriginalMaterials)
                         {
-                            if (renderer != null)
-                            {
-                                renderer.materials = originalMaterials[renderer];
-                            }
+                            if (kvp.Key != null)
+                                kvp.Key.materials = kvp.Value;
                         }
+                        enemyOriginalMaterials.Clear();
 
                         if (cachedOriginalCamera)
                         {
@@ -716,8 +741,8 @@ namespace dark_cheat
         public static void DrawESP()
         {
             bool isLevelAnimationStarted = _levelAnimationStartedField != null && (bool)_levelAnimationStartedField.GetValue(LoadingUI.instance);
-            if (RunManager.instance.levelCurrent != null && !Hax2.levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name) 
-                || !Hax2.levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name) 
+            if (RunManager.instance.levelCurrent != null && !Hax2.levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name)
+                || !Hax2.levelsToSearchItems.Contains(RunManager.instance.levelCurrent.name)
                 && isLevelAnimationStarted)
             {
                 return;
@@ -728,17 +753,17 @@ namespace dark_cheat
             {
                 UpdateLocalPlayer();
             }
-            
+
             // Split updates to avoid doing everything at once
             float currentTime = Time.time;
-            
+
             // Update player data more frequently but not every frame
             if (currentTime - lastPlayerUpdateTime > playerUpdateInterval)
             {
                 UpdatePlayerDataList();
                 lastPlayerUpdateTime = currentTime;
             }
-            
+
             if (currentTime - lastUpdateTime > updateInterval)
             {
                 if (drawEspBool || drawItemEspBool || drawExtractionPointEspBool || drawPlayerEspBool || draw2DPlayerEspBool || draw3DPlayerEspBool || draw3DItemEspBool)
@@ -764,39 +789,119 @@ namespace dark_cheat
             scaleX = (float)Screen.width / cachedCamera.pixelWidth;
             scaleY = (float)Screen.height / cachedCamera.pixelHeight;
 
+            if (!visibleMaterial || !hiddenMaterial)
+            {
+                Shader chamsShader = Shader.Find("Hidden/Internal-Colored");
+                if (chamsShader != null)
+                {
+                    hiddenMaterial = new Material(chamsShader);
+                    hiddenMaterial.SetInt("_SrcBlend", 5);
+                    hiddenMaterial.SetInt("_DstBlend", 10);
+                    hiddenMaterial.SetInt("_Cull", 0);
+                    hiddenMaterial.SetInt("_ZTest", 8);
+                    hiddenMaterial.SetInt("_ZWrite", 0);
+                    hiddenMaterial.SetColor("_Color", new Color(0.4f, 0.04f, 0.2f, 0.5f)); // Enemy - Pink
+                    hiddenMaterial.renderQueue = 4000;
+                    hiddenMaterial.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                    hiddenMaterial.EnableKeyword("_EMISSION");
+
+                    visibleMaterial = new Material(chamsShader);
+                    visibleMaterial.SetInt("_SrcBlend", 5);
+                    visibleMaterial.SetInt("_DstBlend", 10);
+                    visibleMaterial.SetInt("_Cull", 0);
+                    visibleMaterial.SetInt("_ZTest", 4);
+                    visibleMaterial.SetInt("_ZWrite", 0);
+                    visibleMaterial.SetColor("_Color", new Color(0f, 0.5f, 0.1f, 1f)); // Enemy - Green
+                    visibleMaterial.renderQueue = 4001;
+                    visibleMaterial.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                    visibleMaterial.EnableKeyword("_EMISSION");
+                }
+            }
+
+            if (!itemVisibleMaterial || !itemHiddenMaterial)
+            {
+                Shader chamsShader = Shader.Find("Hidden/Internal-Colored");
+                if (chamsShader != null)
+                {
+                    itemHiddenMaterial = new Material(chamsShader);
+                    itemHiddenMaterial.SetInt("_SrcBlend", 5);
+                    itemHiddenMaterial.SetInt("_DstBlend", 10);
+                    itemHiddenMaterial.SetInt("_Cull", 0);
+                    itemHiddenMaterial.SetInt("_ZTest", 8);
+                    itemHiddenMaterial.SetInt("_ZWrite", 0);
+                    itemHiddenMaterial.SetColor("_Color", new Color(0.6f, 0.3f, 0f, 0.4f)); // orange
+                    itemHiddenMaterial.renderQueue = 4000;
+
+                    itemVisibleMaterial = new Material(chamsShader);
+                    itemVisibleMaterial.SetInt("_SrcBlend", 5);
+                    itemVisibleMaterial.SetInt("_DstBlend", 10);
+                    itemVisibleMaterial.SetInt("_Cull", 0);
+                    itemVisibleMaterial.SetInt("_ZTest", 4);
+                    itemVisibleMaterial.SetInt("_ZWrite", 0);
+                    itemVisibleMaterial.SetColor("_Color", new Color(0.6f, 0.6f, 0f, 0.85f)); // yellow
+                    itemVisibleMaterial.renderQueue = 4001;
+                }
+            }
+
             if (drawChamsBool)
             {
-                if (!visibleMaterial || !hiddenMaterial)
+                Camera mainCamera = Camera.main;
+                if (mainCamera != null)
                 {
-                    Shader chamsShader = Shader.Find("Hidden/Internal-Colored"); // Credits to https://github.dev/IcyRelic/LethalMenu/tree/master/LethalMenu/Cheats
-                    if (chamsShader != null)
+                    if (!cachedOriginalCamera)
                     {
-                        DLog.Log("Found ChamsShader, creating material");
-                        hiddenMaterial = new Material(chamsShader);
-                        hiddenMaterial.SetInt("_SrcBlend", 5);
-                        hiddenMaterial.SetInt("_DstBlend", 10);
-                        hiddenMaterial.SetInt("_Cull", 0);
-                        hiddenMaterial.SetInt("_ZTest", 8);
-                        hiddenMaterial.SetInt("_ZWrite", 0);
-                        hiddenMaterial.SetColor("_Color", new Color(1f, 0.08f, 0.58f, 1f));
-                        hiddenMaterial.renderQueue = 4000;
-                        hiddenMaterial.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
-                        hiddenMaterial.EnableKeyword("_EMISSION");
-
-                        visibleMaterial = new Material(chamsShader);
-                        visibleMaterial.SetInt("_SrcBlend", 5);
-                        visibleMaterial.SetInt("_DstBlend", 10);
-                        visibleMaterial.SetInt("_Cull", 0);
-                        visibleMaterial.SetInt("_ZTest", 4);
-                        visibleMaterial.SetInt("_ZWrite", 0);
-                        visibleMaterial.SetColor("_Color", new Color(0f, 1f, 0.2f, 1f));
-                        visibleMaterial.renderQueue = 4001;
-                        visibleMaterial.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
-                        visibleMaterial.EnableKeyword("_EMISSION");
+                        originalFarClipPlane = mainCamera.farClipPlane;
+                        originalDepthTextureMode = mainCamera.depthTextureMode;
+                        originalOcclusionCulling = mainCamera.useOcclusionCulling;
+                        cachedOriginalCamera = true;
                     }
-                    else
+
+                    mainCamera.farClipPlane = 500f;
+                    mainCamera.depthTextureMode = DepthTextureMode.None;
+                    mainCamera.useOcclusionCulling = false;
+                }
+
+                foreach (var enemyInstance in enemyList)
+                {
+                    if (enemyInstance == null || !enemyInstance.gameObject.activeInHierarchy || enemyInstance.CenterTransform == null) continue;
+
+                    var enemyParent = enemyInstance.GetComponentInParent(Type.GetType("EnemyParent, Assembly-CSharp"));
+                    var renderers = enemyParent.GetComponentsInChildren<Renderer>(true);
+                    foreach (var renderer in renderers)
                     {
-                        DLog.Log("ChamsShader not found!");
+                        if (renderer == null || !renderer.gameObject.activeInHierarchy) continue;
+
+                        if (!enemyOriginalMaterials.ContainsKey(renderer))
+                        {
+                            enemyOriginalMaterials[renderer] = renderer.materials;
+                        }
+
+                        renderer.materials = new Material[] { hiddenMaterial, visibleMaterial };
+                    }
+                }
+            }
+
+            // === ITEM CHAMS ===
+            if (drawItemChamsBool)
+            {
+                foreach (var valuableObject in valuableObjects)
+                {
+                    if (valuableObject == null) continue;
+
+                    var transform = valuableObject.GetType().GetProperty("transform", BindingFlags.Public | BindingFlags.Instance)?.GetValue(valuableObject) as Transform;
+                    if (transform == null || !transform.gameObject.activeInHierarchy) continue;
+
+                    var renderers = transform.GetComponentsInChildren<Renderer>(true);
+                    foreach (var renderer in renderers)
+                    {
+                        if (renderer == null || !renderer.gameObject.activeInHierarchy) continue;
+
+                        if (!itemOriginalMaterials.ContainsKey(renderer))
+                        {
+                            itemOriginalMaterials[renderer] = renderer.materials;
+                        }
+
+                        renderer.materials = new Material[] { itemHiddenMaterial, itemVisibleMaterial };
                     }
                 }
 
@@ -819,49 +924,48 @@ namespace dark_cheat
                     mainCamera.useOcclusionCulling = false;
                 }
 
-                foreach (var enemyInstance in enemyList)
+            }
+
+            // === ITEM CHAMS ===
+            if (drawItemChamsBool)
+            {
+                foreach (var valuableObject in valuableObjects)
                 {
-                    if (enemyInstance == null || !enemyInstance.gameObject.activeInHierarchy || enemyInstance.CenterTransform == null) continue;
+                    if (valuableObject == null) continue;
 
-                    var allRenderers = new List<Renderer>();
+                    var transform = valuableObject.GetType().GetProperty("transform", BindingFlags.Public | BindingFlags.Instance)?.GetValue(valuableObject) as Transform;
+                    if (transform == null || !transform.gameObject.activeInHierarchy) continue;
 
-                    var enemyParent = enemyInstance.GetComponentInParent(Type.GetType("EnemyParent, Assembly-CSharp"));
-
-                    var standardRenderers = enemyParent.GetComponentsInChildren<Renderer>(true);
-                    if (standardRenderers != null && standardRenderers.Length > 0)
-                        allRenderers.AddRange(standardRenderers);
-
-                    var skinnedRenderers = enemyParent.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-                    if (skinnedRenderers != null && skinnedRenderers.Length > 0)
-                        allRenderers.AddRange(skinnedRenderers);
-
-                    if (allRenderers.Count > 0)
+                    var renderers = transform.GetComponentsInChildren<Renderer>(true);
+                    foreach (var renderer in renderers)
                     {
-                        //DLog.Log($"Found {allRenderers.Count} renderers for enemyInstance!");
-                        foreach (var renderer in allRenderers)
+                        if (renderer == null || !renderer.gameObject.activeInHierarchy) continue;
+
+                        if (!itemOriginalMaterials.ContainsKey(renderer))
                         {
-                            if (renderer == null || !renderer.gameObject.activeInHierarchy) continue;
-
-                            //renderer.enabled = true;
-
-                            if (!originalMaterials.ContainsKey(renderer))
-                            {
-                                originalMaterials[renderer] = renderer.materials;
-                            }
-
-                            Material[] newMats = new Material[2];
-                            newMats[0] = hiddenMaterial;
-                            newMats[1] = visibleMaterial;
-
-                            renderer.materials = newMats;
-
-                            //DLog.Log($"Applied chams shader to {renderer.gameObject.name}");
+                            itemOriginalMaterials[renderer] = renderer.materials;
                         }
+
+                        renderer.materials = new Material[] { itemHiddenMaterial, itemVisibleMaterial };
                     }
-                    else
+                }
+
+                Camera mainCamera = Camera.main;
+                if (mainCamera != null)
+                {
+                    if (!cachedOriginalCamera)
                     {
-                        DLog.Log("No renderers found for enemyInstance!");
+                        originalFarClipPlane = mainCamera.farClipPlane;
+                        originalDepthTextureMode = mainCamera.depthTextureMode;
+                        originalOcclusionCulling = mainCamera.useOcclusionCulling;
+                        cachedOriginalCamera = true;
                     }
+
+                    mainCamera.farClipPlane = 500f;
+
+                    mainCamera.depthTextureMode = DepthTextureMode.None;
+
+                    mainCamera.useOcclusionCulling = false;
                 }
             }
             if (drawEspBool)
