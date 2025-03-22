@@ -829,7 +829,7 @@ namespace dark_cheat
                     itemHiddenMaterial.SetInt("_Cull", 0);
                     itemHiddenMaterial.SetInt("_ZTest", 8);
                     itemHiddenMaterial.SetInt("_ZWrite", 0);
-                    itemHiddenMaterial.SetColor("_Color", new Color(0.1f, 0.3f, 0.6f, 0.4f)); // blue
+                    itemHiddenMaterial.SetColor("_Color", new Color(0.6f, 0.3f, 0f, 0.4f)); // orange
                     itemHiddenMaterial.renderQueue = 4000;
 
                     itemVisibleMaterial = new Material(chamsShader);
@@ -838,7 +838,7 @@ namespace dark_cheat
                     itemVisibleMaterial.SetInt("_Cull", 0);
                     itemVisibleMaterial.SetInt("_ZTest", 4);
                     itemVisibleMaterial.SetInt("_ZWrite", 0);
-                    itemVisibleMaterial.SetColor("_Color", new Color(0f, 0.5f, 0.5f, 0.9f)); // cyan
+                    itemVisibleMaterial.SetColor("_Color", new Color(0.6f, 0.6f, 0f, 0.85f)); // yellow
                     itemVisibleMaterial.renderQueue = 4001;
                 }
             }
